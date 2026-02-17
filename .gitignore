@@ -1,0 +1,38 @@
+# ─── Python ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ─── Virtual Environment ────────────────────────────
+venv/
+env/
+.venv/
+
+# ─── Django ──────────────────────────────────────────
+db.sqlite3
+staticfiles/
+media/
+*.log
+
+# ─── Environment Variables ───────────────────────────
+.env
+.env.local
+.env.production
+
+# ─── IDE ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Node (Frontend) ────────────────────────────────
+node_modules/
+.next/
+dist/
+
+# ─── OS ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
