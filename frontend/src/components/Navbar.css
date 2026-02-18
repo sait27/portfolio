@@ -1,0 +1,114 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-navbar);
+  padding: 1rem 0;
+  transition: all var(--transition-base);
+}
+
+.navbar--scrolled {
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 0.75rem 0;
+}
+
+.navbar__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar__logo {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.navbar__links {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.navbar__link {
+  position: relative;
+  padding: 0.5rem 1rem;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+
+.navbar__link:hover {
+  color: var(--text-primary);
+}
+
+.navbar__link--active {
+  color: var(--text-primary);
+}
+
+.navbar__indicator {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-full);
+}
+
+.navbar__cta {
+  font-size: var(--font-size-xs);
+}
+
+.navbar__toggle {
+  display: none;
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+/* ─── Mobile ───────────────────────────────────────────────────────────── */
+
+.navbar__mobile {
+  overflow: hidden;
+  border-top: 1px solid var(--border-glass);
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(20px);
+}
+
+.navbar__mobile-links {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+}
+
+.navbar__mobile-link {
+  display: block;
+  padding: 0.85rem var(--section-padding-x);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.navbar__mobile-link:hover,
+.navbar__mobile-link--active {
+  color: var(--text-primary);
+  background: var(--bg-glass);
+}
+
+@media (max-width: 768px) {
+  .navbar__links,
+  .navbar__cta {
+    display: none;
+  }
+
+  .navbar__toggle {
+    display: block;
+  }
+}

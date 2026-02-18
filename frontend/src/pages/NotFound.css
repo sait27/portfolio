@@ -1,0 +1,31 @@
+.notfound {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.notfound__content {
+  max-width: 450px;
+}
+
+.notfound__code {
+  font-size: clamp(5rem, 15vw, 10rem);
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.notfound__title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.notfound__text {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  font-size: var(--font-size-base);
+}
