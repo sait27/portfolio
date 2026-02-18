@@ -3,6 +3,8 @@ import { AnimatePresence } from 'framer-motion';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -61,43 +63,46 @@ function PublicLayout() {
 export default function App() {
   return (
     <HelmetProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Admin Routes — no Navbar/Footer */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="projects" element={<AdminProjects />} />
-              <Route path="messages" element={<AdminMessages />} />
-              <Route path="profile" element={<AdminProfile />} />
-            </Route>
+      <ErrorBoundary>
+        <AuthProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              {/* Admin Routes — no Navbar/Footer */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="projects" element={<AdminProjects />} />
+                <Route path="messages" element={<AdminMessages />} />
+                <Route path="profile" element={<AdminProfile />} />
+              </Route>
 
-            {/* Public Routes — with Navbar/Footer */}
-            <Route path="*" element={<PublicLayout />} />
-          </Routes>
+              {/* Public Routes — with Navbar/Footer */}
+              <Route path="*" element={<PublicLayout />} />
+            </Routes>
 
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: '#16161f',
-                color: '#f0f0f5',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px',
-                fontSize: '0.875rem',
-              },
-            }}
-          />
-        </BrowserRouter>
-      </AuthProvider>
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                style: {
+                  background: '#16161f',
+                  color: '#f0f0f5',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px',
+                  fontSize: '0.875rem',
+                },
+              }}
+            />
+          </BrowserRouter>
+        </AuthProvider>
+      </ErrorBoundary>
     </HelmetProvider>
   );
 }

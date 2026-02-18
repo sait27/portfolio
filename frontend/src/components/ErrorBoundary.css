@@ -1,0 +1,58 @@
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.error-boundary__content {
+  text-align: center;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+}
+
+.error-boundary__icon {
+  font-size: 3.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.error-boundary__content h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.error-boundary__content p {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.error-boundary__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.error-boundary__details {
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.error-boundary__details summary {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.error-boundary__details pre {
+  font-size: var(--font-size-xs);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
