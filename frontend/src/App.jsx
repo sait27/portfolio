@@ -6,12 +6,24 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
-// Pages
+// Public Pages
 import Home from './pages/Home';
 import About from './pages/About';
 import Projects from './pages/Projects';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
+
+// Admin Pages
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProjects from './pages/admin/AdminProjects';
+import AdminMessages from './pages/admin/AdminMessages';
+import AdminProfile from './pages/admin/AdminProfile';
+import ProtectedRoute from './pages/admin/ProtectedRoute';
+
+// Admin CSS
+import './pages/admin/AdminComponents.css';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -29,16 +41,49 @@ function AnimatedRoutes() {
   );
 }
 
+function PublicLayout() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) return null;
+
+  return (
+    <>
+      <Navbar />
+      <main>
+        <AnimatedRoutes />
+      </main>
+      <Footer />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <HelmetProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Navbar />
-          <main>
-            <AnimatedRoutes />
-          </main>
-          <Footer />
+          <Routes>
+            {/* Admin Routes — no Navbar/Footer */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="projects" element={<AdminProjects />} />
+              <Route path="messages" element={<AdminMessages />} />
+              <Route path="profile" element={<AdminProfile />} />
+            </Route>
+
+            {/* Public Routes — with Navbar/Footer */}
+            <Route path="*" element={<PublicLayout />} />
+          </Routes>
+
           <Toaster
             position="bottom-right"
             toastOptions={{
