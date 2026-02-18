@@ -12,6 +12,7 @@ from .serializers import (
     ExperienceSerializer,
     MessageCreateSerializer,
 )
+from .throttles import ContactRateThrottle
 
 
 # ─── Profile ────────────────────────────────────────────────────────────────
@@ -103,8 +104,10 @@ class ContactCreateView(generics.CreateAPIView):
     """
     POST /api/contact/
     Submits a new message from the contact form.
+    Rate limited to 3 submissions per hour per IP.
     """
     serializer_class = MessageCreateSerializer
+    throttle_classes = [ContactRateThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
