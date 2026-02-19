@@ -3,6 +3,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
 from . import admin_views
 from . import auth_views
+from . import superadmin_views
 
 urlpatterns = [
     # ── Auth ─────────────────────────────────────────────────────────────
@@ -13,6 +14,11 @@ urlpatterns = [
     path('auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='auth-forgot-password'),
     path('auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='auth-reset-password'),
     path('auth/change-password/', auth_views.ChangePasswordView.as_view(), name='auth-change-password'),
+
+    # ── Super Admin (platform owner only) ─────────────────────────────────
+    path('superadmin/stats/', superadmin_views.SuperAdminStatsView.as_view(), name='superadmin-stats'),
+    path('superadmin/users/', superadmin_views.SuperAdminUserListView.as_view(), name='superadmin-users'),
+    path('superadmin/users/<int:user_id>/', superadmin_views.SuperAdminUserDetailView.as_view(), name='superadmin-user-detail'),
 
     # ── Public Portfolio Endpoints (by username) ─────────────────────────
     path('u/<str:username>/profile/', views.PublicProfileView.as_view(), name='public-profile'),

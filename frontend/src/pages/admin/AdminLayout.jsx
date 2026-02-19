@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { FaExternalLinkAlt, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase, FaUserShield } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import './AdminLayout.css';
 
@@ -10,6 +10,10 @@ const SIDEBAR_LINKS = [
   { label: 'Experience', path: '/admin/experience', icon: <FaBriefcase /> },
   { label: 'Messages', path: '/admin/messages', icon: <FaEnvelope /> },
   { label: 'Profile', path: '/admin/profile', icon: <FaUser /> },
+];
+
+const ADMIN_ONLY_LINKS = [
+  { label: 'Super Admin', path: '/admin/super-admin', icon: <FaUserShield /> },
 ];
 
 export default function AdminLayout() {
@@ -47,6 +51,25 @@ export default function AdminLayout() {
               <span>{link.label}</span>
             </NavLink>
           ))}
+
+          {/* Super Admin links — only for platform admins */}
+          {user?.is_platform_admin && (
+            <>
+              <div style={{ borderTop: '1px solid var(--border-glass)', margin: '0.5rem 0' }} />
+              {ADMIN_ONLY_LINKS.map(link => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `admin-sidebar__link ${isActive ? 'admin-sidebar__link--active' : ''}`
+                  }
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         <div className="admin-sidebar__footer">

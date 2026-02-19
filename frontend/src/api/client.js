@@ -137,4 +137,14 @@ export const dashboardApi = {
 // ─── Backward compatibility alias ───────────────────────────────────────────
 export const adminApi = dashboardApi;
 
+// ─── Super Admin API (platform owner only) ──────────────────────────────────
+
+export const superAdminApi = {
+  getStats: () => api.get('/superadmin/stats/'),
+  getUsers: () => api.get('/superadmin/users/'),
+  getUser: (id) => api.get(`/superadmin/users/${id}/`),
+  toggleUser: (id, isActive) => api.patch(`/superadmin/users/${id}/`, { is_active: isActive }),
+  deleteUser: (id) => api.delete(`/superadmin/users/${id}/`),
+};
+
 export default api;

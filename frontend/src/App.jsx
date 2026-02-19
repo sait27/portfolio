@@ -22,6 +22,7 @@ import AdminSkills from './pages/admin/AdminSkills';
 import AdminExperience from './pages/admin/AdminExperience';
 import AdminMessages from './pages/admin/AdminMessages';
 import AdminProfile from './pages/admin/AdminProfile';
+import SuperAdminPanel from './pages/admin/SuperAdminPanel';
 import ProtectedRoute from './pages/admin/ProtectedRoute';
 
 // Admin CSS
@@ -63,6 +64,7 @@ export default function App() {
                 <Route path="experience" element={<AdminExperience />} />
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="profile" element={<AdminProfile />} />
+                <Route path="super-admin" element={<SuperAdminPanel />} />
               </Route>
 
               {/* ─── Public Portfolio (must be near last) ── */}
