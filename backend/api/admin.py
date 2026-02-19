@@ -6,8 +6,13 @@ from .models import Profile, SkillCategory, Skill, Project, Experience, Message
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'tagline', 'email', 'updated_at')
+    list_display = ('full_name', 'username_slug', 'user', 'is_platform_admin', 'updated_at')
+    list_filter = ('is_platform_admin',)
+    search_fields = ('full_name', 'username_slug', 'email')
     fieldsets = (
+        ('User', {
+            'fields': ('user', 'username_slug', 'is_platform_admin')
+        }),
         ('Personal Info', {
             'fields': ('full_name', 'tagline', 'bio', 'email')
         }),
@@ -19,18 +24,13 @@ class ProfileAdmin(admin.ModelAdmin):
         }),
     )
 
-    def has_add_permission(self, request):
-        """Prevent creating more than one Profile."""
-        if Profile.objects.exists():
-            return False
-        return super().has_add_permission(request)
-
 
 # ─── Skill Category ────────────────────────────────────────────────────────
 
 @admin.register(SkillCategory)
 class SkillCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'order', 'skill_count')
+    list_display = ('name', 'user', 'slug', 'order', 'skill_count')
+    list_filter = ('user',)
     list_editable = ('order',)
     prepopulated_fields = {'slug': ('name',)}
 
@@ -43,8 +43,8 @@ class SkillCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Skill)
 class SkillAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'order', 'created_at')
-    list_filter = ('category',)
+    list_display = ('name', 'user', 'category', 'order', 'created_at')
+    list_filter = ('user', 'category')
     list_editable = ('order',)
     search_fields = ('name',)
 
@@ -53,47 +53,32 @@ class SkillAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'is_featured', 'is_visible', 'order', 'date_built')
-    list_filter = ('category', 'is_featured', 'is_visible')
+    list_display = ('title', 'user', 'category', 'is_featured', 'is_visible', 'order')
+    list_filter = ('user', 'category', 'is_featured', 'is_visible')
     list_editable = ('is_featured', 'is_visible', 'order')
     search_fields = ('title', 'description')
     prepopulated_fields = {'slug': ('title',)}
     filter_horizontal = ('tech_stack',)
-    fieldsets = (
-        ('Basic Info', {
-            'fields': ('title', 'slug', 'short_description', 'description', 'category', 'date_built')
-        }),
-        ('Media & Links', {
-            'fields': ('thumbnail', 'live_url', 'repo_url')
-        }),
-        ('Tech Stack', {
-            'fields': ('tech_stack',)
-        }),
-        ('Display Options', {
-            'fields': ('is_featured', 'is_visible', 'order')
-        }),
-    )
 
 
 # ─── Experience ─────────────────────────────────────────────────────────────
 
 @admin.register(Experience)
 class ExperienceAdmin(admin.ModelAdmin):
-    list_display = ('role', 'company', 'start_date', 'end_date', 'is_current', 'order')
+    list_display = ('role', 'company', 'user', 'start_date', 'is_current', 'order')
+    list_filter = ('user', 'is_current')
     list_editable = ('is_current', 'order')
-    list_filter = ('is_current',)
 
 
 # ─── Message ───────────────────────────────────────────────────────────────
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('sender_name', 'sender_email', 'subject', 'is_read', 'created_at')
-    list_filter = ('is_read',)
+    list_display = ('sender_name', 'recipient', 'subject', 'is_read', 'created_at')
+    list_filter = ('recipient', 'is_read')
     list_editable = ('is_read',)
-    search_fields = ('sender_name', 'sender_email', 'subject', 'content')
+    search_fields = ('sender_name', 'sender_email', 'subject')
     readonly_fields = ('sender_name', 'sender_email', 'subject', 'content', 'honeypot', 'created_at')
 
     def has_add_permission(self, request):
-        """Messages are created via API only, not admin."""
         return False

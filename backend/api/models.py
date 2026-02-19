@@ -1,49 +1,54 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.text import slugify
 
 
-# ─── Profile (Singleton) ───────────────────────────────────────────────────
+# ─── Profile (One per User) ────────────────────────────────────────────────
 
 class Profile(models.Model):
-    """Single-row model for the portfolio owner's info."""
+    """User profile — one per registered user."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    username_slug = models.SlugField(unique=True, help_text="Public URL slug, e.g., /sait27")
     full_name = models.CharField(max_length=100)
-    tagline = models.CharField(max_length=200, help_text="e.g., Full-Stack Python Developer")
-    bio = models.TextField()
+    tagline = models.CharField(max_length=200, blank=True, help_text="e.g., Full-Stack Python Developer")
+    bio = models.TextField(blank=True)
     avatar = models.URLField(blank=True, help_text="Cloudinary URL for profile photo")
     resume = models.URLField(blank=True, help_text="Cloudinary URL for resume PDF")
     github_url = models.URLField(blank=True)
     linkedin_url = models.URLField(blank=True)
     twitter_url = models.URLField(blank=True)
     email = models.EmailField()
+    is_platform_admin = models.BooleanField(default=False, help_text="Super admin flag — platform owner only")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Profile"
-        verbose_name_plural = "Profile"
+        verbose_name_plural = "Profiles"
 
     def __str__(self):
-        return self.full_name
+        return f"{self.full_name} (@{self.username_slug})"
 
     def save(self, *args, **kwargs):
-        """Enforce singleton — only one Profile row allowed."""
-        if not self.pk and Profile.objects.exists():
-            raise ValueError("Only one Profile instance is allowed. Edit the existing one.")
+        if not self.username_slug:
+            self.username_slug = slugify(self.user.username)
         super().save(*args, **kwargs)
 
 
-# ─── Skill Category (Dynamic, Admin-Controlled) ────────────────────────────
+# ─── Skill Category (Per User) ─────────────────────────────────────────────
 
 class SkillCategory(models.Model):
-    """Dynamic categories for organizing skills (e.g., Backend, AI Models, IDEs)."""
-    name = models.CharField(max_length=50, unique=True)
-    slug = models.SlugField(unique=True, blank=True)
+    """Dynamic categories for organizing skills — scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skill_categories')
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(blank=True)
     order = models.IntegerField(default=0, help_text="Lower numbers appear first")
 
     class Meta:
         verbose_name = "Skill Category"
         verbose_name_plural = "Skill Categories"
         ordering = ['order', 'name']
+        unique_together = ['user', 'name']
 
     def __str__(self):
         return self.name
@@ -57,7 +62,8 @@ class SkillCategory(models.Model):
 # ─── Skill ──────────────────────────────────────────────────────────────────
 
 class Skill(models.Model):
-    """Individual skill linked to a dynamic category."""
+    """Individual skill linked to a dynamic category — scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
     name = models.CharField(max_length=50)
     icon = models.URLField(blank=True, help_text="SVG or icon image URL")
     category = models.ForeignKey(
@@ -78,7 +84,7 @@ class Skill(models.Model):
 # ─── Project ───────────────────────────────────────────────────────────────
 
 class Project(models.Model):
-    """Portfolio project with full metadata."""
+    """Portfolio project — scoped to each user."""
 
     CATEGORY_CHOICES = [
         ('fullstack', 'Full Stack'),
@@ -88,11 +94,12 @@ class Project(models.Model):
         ('other', 'Other'),
     ]
 
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='projects')
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True)
-    thumbnail = models.URLField(help_text="Cloudinary URL for cover image")
-    description = models.TextField(help_text="Detailed project description (supports markdown)")
-    short_description = models.CharField(max_length=300, help_text="One-liner for card view")
+    slug = models.SlugField(blank=True)
+    thumbnail = models.URLField(blank=True, help_text="Cloudinary URL for cover image")
+    description = models.TextField(blank=True, help_text="Detailed project description (supports markdown)")
+    short_description = models.CharField(max_length=300, blank=True, help_text="One-liner for card view")
     tech_stack = models.ManyToManyField(Skill, blank=True, related_name='projects')
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     live_url = models.URLField(blank=True, help_text="Deployed site URL")
@@ -106,6 +113,7 @@ class Project(models.Model):
 
     class Meta:
         ordering = ['order', '-date_built']
+        unique_together = ['user', 'slug']
 
     def __str__(self):
         return self.title
@@ -119,7 +127,8 @@ class Project(models.Model):
 # ─── Experience ─────────────────────────────────────────────────────────────
 
 class Experience(models.Model):
-    """Professional experience timeline entry."""
+    """Professional experience timeline entry — scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
     role = models.CharField(max_length=100)
     company = models.CharField(max_length=100)
     company_url = models.URLField(blank=True)
@@ -146,7 +155,8 @@ class Experience(models.Model):
 # ─── Message (Contact Form) ────────────────────────────────────────────────
 
 class Message(models.Model):
-    """Incoming messages from the contact form."""
+    """Incoming messages from the contact form — scoped to each user."""
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     sender_name = models.CharField(max_length=100)
     sender_email = models.EmailField()
     subject = models.CharField(max_length=200, blank=True)

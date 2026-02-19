@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaProjectDiagram, FaEnvelope, FaCode, FaBriefcase } from 'react-icons/fa';
-import { adminApi } from '../../api/client';
+import { dashboardApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 export default function AdminDashboard() {
@@ -10,20 +10,19 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi.getDashboard()
+    dashboardApi.getStats()
       .then(res => setStats(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const statCards = stats ? [
-    { label: 'Total Projects', value: stats.total_projects, color: 'accent', icon: <FaProjectDiagram /> },
-    { label: 'Visible Projects', value: stats.visible_projects, color: 'cyan', icon: <FaProjectDiagram /> },
-    { label: 'Featured', value: stats.featured_projects, color: 'pink', icon: <FaProjectDiagram /> },
-    { label: 'Total Skills', value: stats.total_skills, color: 'accent', icon: <FaCode /> },
-    { label: 'Categories', value: stats.total_categories, color: 'cyan', icon: <FaCode /> },
-    { label: 'Experience', value: stats.total_experience, color: 'pink', icon: <FaBriefcase /> },
-    { label: 'Total Messages', value: stats.total_messages, color: 'accent', icon: <FaEnvelope /> },
+    { label: 'Total Projects', value: stats.projects, color: 'accent', icon: <FaProjectDiagram /> },
+    { label: 'Featured', value: stats.featured_projects, color: 'cyan', icon: <FaProjectDiagram /> },
+    { label: 'Total Skills', value: stats.skills, color: 'accent', icon: <FaCode /> },
+    { label: 'Categories', value: stats.categories, color: 'cyan', icon: <FaCode /> },
+    { label: 'Experience', value: stats.experience, color: 'pink', icon: <FaBriefcase /> },
+    { label: 'Total Messages', value: stats.messages, color: 'accent', icon: <FaEnvelope /> },
     { label: 'Unread Messages', value: stats.unread_messages, color: 'pink', icon: <FaEnvelope /> },
   ] : [];
 

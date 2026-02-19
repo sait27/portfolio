@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { adminApi } from '../api/client';
+import { authApi } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -8,22 +8,20 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if tokens exist on mount
+  // Check if tokens exist on mount, verify by fetching /auth/me
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (token) {
-      setIsAuthenticated(true);
-      // Try to fetch admin profile to verify token is valid
-      adminApi.getDashboard()
-        .then(() => {
+      authApi.me()
+        .then(({ data }) => {
+          setUser(data);
           setIsAuthenticated(true);
-          setUser({ role: 'admin' });
         })
         .catch(() => {
-          // Token expired or invalid
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           setIsAuthenticated(false);
+          setUser(null);
         })
         .finally(() => setIsLoading(false));
     } else {
@@ -32,11 +30,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (username, password) => {
-    const { data } = await adminApi.login({ username, password });
+    const { data } = await authApi.login({ username, password });
     localStorage.setItem('access_token', data.access);
     localStorage.setItem('refresh_token', data.refresh);
+
+    // Fetch user profile
+    const { data: userData } = await authApi.me();
+    setUser(userData);
     setIsAuthenticated(true);
-    setUser({ role: 'admin' });
+    return data;
+  }, []);
+
+  const register = useCallback(async (registerData) => {
+    const { data } = await authApi.register(registerData);
+    localStorage.setItem('access_token', data.tokens.access);
+    localStorage.setItem('refresh_token', data.tokens.refresh);
+    setUser(data.user);
+    setIsAuthenticated(true);
     return data;
   }, []);
 
@@ -48,7 +58,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

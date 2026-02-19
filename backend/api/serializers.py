@@ -10,6 +10,9 @@ class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
         fields = ['id', 'name', 'icon', 'category', 'category_name', 'order']
+        extra_kwargs = {
+            'category': {'required': True},
+        }
 
 
 class SkillCategorySerializer(serializers.ModelSerializer):
@@ -18,6 +21,9 @@ class SkillCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SkillCategory
         fields = ['id', 'name', 'slug', 'order', 'skills']
+        extra_kwargs = {
+            'slug': {'read_only': True},
+        }
 
 
 # ─── Profile Serializer ────────────────────────────────────────────────────
@@ -26,10 +32,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            'id', 'full_name', 'tagline', 'bio', 'avatar', 'resume',
+            'id', 'username_slug', 'full_name', 'tagline', 'bio', 'avatar', 'resume',
             'github_url', 'linkedin_url', 'twitter_url', 'email',
             'updated_at'
         ]
+        extra_kwargs = {
+            'username_slug': {'read_only': True},
+        }
 
 
 # ─── Project Serializers ───────────────────────────────────────────────────
@@ -55,7 +64,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'thumbnail', 'description',
             'short_description', 'tech_stack', 'category',
-            'live_url', 'repo_url', 'is_featured',
+            'live_url', 'repo_url', 'is_featured', 'is_visible',
             'date_built', 'created_at', 'updated_at'
         ]
 

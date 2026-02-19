@@ -1,15 +1,13 @@
 from rest_framework.permissions import BasePermission
 
 
-class IsAdminOwner(BasePermission):
+class IsSuperAdmin(BasePermission):
     """
-    Custom permission: only allow access to superusers / staff.
-    Used to protect all admin CRUD endpoints.
+    Only allow access to the platform super admin.
+    Checks the Profile.is_platform_admin flag.
     """
-
     def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.is_staff
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        profile = getattr(request.user, 'profile', None)
+        return profile and profile.is_platform_admin

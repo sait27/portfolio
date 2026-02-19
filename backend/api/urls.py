@@ -2,47 +2,44 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
 from . import admin_views
+from . import auth_views
 
 urlpatterns = [
-    # ── Public Endpoints ──────────────────────────────────────────────────
-    path('profile/', views.ProfileView.as_view(), name='profile'),
-    path('skills/', views.SkillListView.as_view(), name='skill-list'),
-    path('skill-categories/', views.SkillCategoryListView.as_view(), name='skill-category-list'),
-    path('projects/', views.ProjectListView.as_view(), name='project-list'),
-    path('projects/<slug:slug>/', views.ProjectDetailView.as_view(), name='project-detail'),
-    path('experience/', views.ExperienceListView.as_view(), name='experience-list'),
-    path('contact/', views.ContactCreateView.as_view(), name='contact-create'),
-
-    # ── JWT Auth ──────────────────────────────────────────────────────────
+    # ── Auth ─────────────────────────────────────────────────────────────
+    path('auth/register/', auth_views.RegisterView.as_view(), name='auth-register'),
     path('auth/token/', TokenObtainPairView.as_view(), name='token-obtain'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+    path('auth/me/', auth_views.MeView.as_view(), name='auth-me'),
+    path('auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='auth-forgot-password'),
+    path('auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='auth-reset-password'),
+    path('auth/change-password/', auth_views.ChangePasswordView.as_view(), name='auth-change-password'),
 
-    # ── Admin Dashboard ──────────────────────────────────────────────────
-    path('admin/dashboard/', admin_views.AdminDashboardView.as_view(), name='admin-dashboard'),
+    # ── Public Portfolio Endpoints (by username) ─────────────────────────
+    path('u/<str:username>/profile/', views.PublicProfileView.as_view(), name='public-profile'),
+    path('u/<str:username>/skills/', views.PublicSkillListView.as_view(), name='public-skills'),
+    path('u/<str:username>/projects/', views.PublicProjectListView.as_view(), name='public-projects'),
+    path('u/<str:username>/projects/<slug:slug>/', views.PublicProjectDetailView.as_view(), name='public-project-detail'),
+    path('u/<str:username>/experience/', views.PublicExperienceListView.as_view(), name='public-experience'),
+    path('u/<str:username>/contact/', views.PublicContactView.as_view(), name='public-contact'),
 
-    # ── Admin Profile ────────────────────────────────────────────────────
-    path('admin/profile/', admin_views.AdminProfileView.as_view(), name='admin-profile'),
+    # ── Dashboard (authenticated user's own data) ────────────────────────
+    path('dashboard/stats/', admin_views.DashboardStatsView.as_view(), name='dashboard-stats'),
+    path('dashboard/profile/', admin_views.DashboardProfileView.as_view(), name='dashboard-profile'),
 
-    # ── Admin Projects CRUD ──────────────────────────────────────────────
-    path('admin/projects/', admin_views.AdminProjectListCreateView.as_view(), name='admin-project-list'),
-    path('admin/projects/<int:pk>/', admin_views.AdminProjectDetailView.as_view(), name='admin-project-detail'),
+    path('dashboard/projects/', admin_views.DashboardProjectListCreateView.as_view(), name='dashboard-projects'),
+    path('dashboard/projects/<int:pk>/', admin_views.DashboardProjectDetailView.as_view(), name='dashboard-project-detail'),
 
-    # ── Admin Skills CRUD ────────────────────────────────────────────────
-    path('admin/skills/', admin_views.AdminSkillListCreateView.as_view(), name='admin-skill-list'),
-    path('admin/skills/<int:pk>/', admin_views.AdminSkillDetailView.as_view(), name='admin-skill-detail'),
+    path('dashboard/skills/', admin_views.DashboardSkillListCreateView.as_view(), name='dashboard-skills'),
+    path('dashboard/skills/<int:pk>/', admin_views.DashboardSkillDetailView.as_view(), name='dashboard-skill-detail'),
 
-    # ── Admin Skill Categories CRUD ──────────────────────────────────────
-    path('admin/skill-categories/', admin_views.AdminSkillCategoryListCreateView.as_view(), name='admin-category-list'),
-    path('admin/skill-categories/<int:pk>/', admin_views.AdminSkillCategoryDetailView.as_view(), name='admin-category-detail'),
+    path('dashboard/skill-categories/', admin_views.DashboardCategoryListCreateView.as_view(), name='dashboard-categories'),
+    path('dashboard/skill-categories/<int:pk>/', admin_views.DashboardCategoryDetailView.as_view(), name='dashboard-category-detail'),
 
-    # ── Admin Experience CRUD ────────────────────────────────────────────
-    path('admin/experience/', admin_views.AdminExperienceListCreateView.as_view(), name='admin-experience-list'),
-    path('admin/experience/<int:pk>/', admin_views.AdminExperienceDetailView.as_view(), name='admin-experience-detail'),
+    path('dashboard/experience/', admin_views.DashboardExperienceListCreateView.as_view(), name='dashboard-experience'),
+    path('dashboard/experience/<int:pk>/', admin_views.DashboardExperienceDetailView.as_view(), name='dashboard-experience-detail'),
 
-    # ── Admin Messages ───────────────────────────────────────────────────
-    path('admin/messages/', admin_views.AdminMessageListView.as_view(), name='admin-message-list'),
-    path('admin/messages/<int:pk>/', admin_views.AdminMessageDetailView.as_view(), name='admin-message-detail'),
+    path('dashboard/messages/', admin_views.DashboardMessageListView.as_view(), name='dashboard-messages'),
+    path('dashboard/messages/<int:pk>/', admin_views.DashboardMessageDetailView.as_view(), name='dashboard-message-detail'),
 
-    # ── Admin Upload ─────────────────────────────────────────────────────
-    path('admin/upload/', admin_views.AdminUploadView.as_view(), name='admin-upload'),
+    path('dashboard/upload/', admin_views.DashboardUploadView.as_view(), name='dashboard-upload'),
 ]

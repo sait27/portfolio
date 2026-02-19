@@ -4,9 +4,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
-import cloudinary
-import cloudinary.uploader
-
 from .models import Profile, SkillCategory, Skill, Project, Experience, Message
 from .serializers import (
     ProfileSerializer,
@@ -17,215 +14,234 @@ from .serializers import (
     ExperienceSerializer,
     MessageListSerializer,
 )
-from .permissions import IsAdminOwner
 
 
-# ─── Admin Profile ──────────────────────────────────────────────────────────
+# ─── Dashboard Stats ───────────────────────────────────────────────────────
 
-class AdminProfileView(generics.RetrieveUpdateAPIView):
+class DashboardStatsView(APIView):
     """
-    GET  /api/admin/profile/  — Read profile
-    PUT  /api/admin/profile/  — Update profile
+    GET /api/dashboard/stats/
+    Returns dashboard stats for the logged-in user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            'projects': Project.objects.filter(user=user).count(),
+            'featured_projects': Project.objects.filter(user=user, is_featured=True).count(),
+            'skills': Skill.objects.filter(user=user).count(),
+            'categories': SkillCategory.objects.filter(user=user).count(),
+            'experience': Experience.objects.filter(user=user).count(),
+            'messages': Message.objects.filter(recipient=user).count(),
+            'unread_messages': Message.objects.filter(recipient=user, is_read=False).count(),
+        })
+
+
+# ─── Dashboard Profile ─────────────────────────────────────────────────────
+
+class DashboardProfileView(generics.RetrieveUpdateAPIView):
+    """
+    GET  /api/dashboard/profile/  — Read own profile
+    PUT  /api/dashboard/profile/  — Update own profile
     """
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        profile = Profile.objects.first()
-        if not profile:
-            # Auto-create a blank profile if none exists
-            profile = Profile.objects.create(
-                full_name="Your Name",
-                tagline="Your Tagline",
-                bio="Write your bio here...",
-                email="you@example.com"
-            )
+        profile, _ = Profile.objects.get_or_create(
+            user=self.request.user,
+            defaults={
+                'full_name': self.request.user.username,
+                'email': self.request.user.email,
+                'username_slug': self.request.user.username,
+            }
+        )
         return profile
 
 
-# ─── Admin Projects CRUD ───────────────────────────────────────────────────
+# ─── Dashboard Projects CRUD ──────────────────────────────────────────────
 
-class AdminProjectListCreateView(generics.ListCreateAPIView):
+class DashboardProjectListCreateView(generics.ListCreateAPIView):
     """
-    GET  /api/admin/projects/  — List ALL projects (including hidden)
-    POST /api/admin/projects/  — Create a new project
+    GET  /api/dashboard/projects/  — List own projects
+    POST /api/dashboard/projects/  — Create a new project
     """
-    queryset = Project.objects.all().prefetch_related('tech_stack')
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Project.objects.filter(user=self.request.user).prefetch_related('tech_stack')
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return ProjectDetailSerializer
         return ProjectListSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
-class AdminProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+class DashboardProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/admin/projects/{id}/  — Read full project detail
-    PUT    /api/admin/projects/{id}/  — Update project
-    DELETE /api/admin/projects/{id}/  — Delete project
+    GET    /api/dashboard/projects/{id}/  — Read own project
+    PUT    /api/dashboard/projects/{id}/  — Update own project
+    DELETE /api/dashboard/projects/{id}/  — Delete own project
     """
-    queryset = Project.objects.all().prefetch_related('tech_stack')
     serializer_class = ProjectDetailSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Project.objects.filter(user=self.request.user).prefetch_related('tech_stack')
 
 
-# ─── Admin Skills CRUD ─────────────────────────────────────────────────────
+# ─── Dashboard Skills CRUD ────────────────────────────────────────────────
 
-class AdminSkillListCreateView(generics.ListCreateAPIView):
+class DashboardSkillListCreateView(generics.ListCreateAPIView):
     """
-    GET  /api/admin/skills/  — List all skills
-    POST /api/admin/skills/  — Create a new skill
+    GET  /api/dashboard/skills/  — List own skills
+    POST /api/dashboard/skills/  — Create a new skill
     """
-    queryset = Skill.objects.all()
     serializer_class = SkillSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
     pagination_class = None
 
+    def get_queryset(self):
+        return Skill.objects.filter(user=self.request.user)
 
-class AdminSkillDetailView(generics.RetrieveUpdateDestroyAPIView):
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardSkillDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/admin/skills/{id}/  — Read skill
-    PUT    /api/admin/skills/{id}/  — Update skill
-    DELETE /api/admin/skills/{id}/  — Delete skill
+    GET    /api/dashboard/skills/{id}/  — Read own skill
+    PUT    /api/dashboard/skills/{id}/  — Update own skill
+    DELETE /api/dashboard/skills/{id}/  — Delete own skill
     """
-    queryset = Skill.objects.all()
     serializer_class = SkillSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Skill.objects.filter(user=self.request.user)
 
 
-# ─── Admin Skill Categories CRUD ──────────────────────────────────────────
+# ─── Dashboard Skill Categories CRUD ──────────────────────────────────────
 
-class AdminSkillCategoryListCreateView(generics.ListCreateAPIView):
+class DashboardCategoryListCreateView(generics.ListCreateAPIView):
     """
-    GET  /api/admin/skill-categories/  — List all categories
-    POST /api/admin/skill-categories/  — Create a new category
+    GET  /api/dashboard/skill-categories/  — List own categories
+    POST /api/dashboard/skill-categories/  — Create a new category
     """
-    queryset = SkillCategory.objects.all()
     serializer_class = SkillCategorySerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
     pagination_class = None
 
+    def get_queryset(self):
+        return SkillCategory.objects.filter(user=self.request.user).prefetch_related('skills')
 
-class AdminSkillCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/admin/skill-categories/{id}/  — Read category
-    PUT    /api/admin/skill-categories/{id}/  — Update category
-    DELETE /api/admin/skill-categories/{id}/  — Delete category
+    GET    /api/dashboard/skill-categories/{id}/  — Read own category
+    PUT    /api/dashboard/skill-categories/{id}/  — Update own category
+    DELETE /api/dashboard/skill-categories/{id}/  — Delete own category
     """
-    queryset = SkillCategory.objects.all()
     serializer_class = SkillCategorySerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return SkillCategory.objects.filter(user=self.request.user)
 
 
-# ─── Admin Experience CRUD ─────────────────────────────────────────────────
+# ─── Dashboard Experience CRUD ────────────────────────────────────────────
 
-class AdminExperienceListCreateView(generics.ListCreateAPIView):
+class DashboardExperienceListCreateView(generics.ListCreateAPIView):
     """
-    GET  /api/admin/experience/  — List all experience entries
-    POST /api/admin/experience/  — Create a new experience entry
+    GET  /api/dashboard/experience/  — List own experience
+    POST /api/dashboard/experience/  — Create a new experience entry
     """
-    queryset = Experience.objects.all()
     serializer_class = ExperienceSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
     pagination_class = None
 
+    def get_queryset(self):
+        return Experience.objects.filter(user=self.request.user)
 
-class AdminExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/admin/experience/{id}/  — Read experience
-    PUT    /api/admin/experience/{id}/  — Update experience
-    DELETE /api/admin/experience/{id}/  — Delete experience
+    GET    /api/dashboard/experience/{id}/  — Read own experience
+    PUT    /api/dashboard/experience/{id}/  — Update own experience
+    DELETE /api/dashboard/experience/{id}/  — Delete own experience
     """
-    queryset = Experience.objects.all()
     serializer_class = ExperienceSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Experience.objects.filter(user=self.request.user)
 
 
-# ─── Admin Messages ────────────────────────────────────────────────────────
+# ─── Dashboard Messages ───────────────────────────────────────────────────
 
-class AdminMessageListView(generics.ListAPIView):
+class DashboardMessageListView(generics.ListAPIView):
     """
-    GET /api/admin/messages/  — List all contact messages
+    GET /api/dashboard/messages/  — List own messages
     """
-    queryset = Message.objects.all()
     serializer_class = MessageListSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Message.objects.filter(recipient=self.request.user)
 
 
-class AdminMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
+class DashboardMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/admin/messages/{id}/  — Read message detail
-    PATCH  /api/admin/messages/{id}/  — Mark as read/unread
-    DELETE /api/admin/messages/{id}/  — Delete message
+    GET    /api/dashboard/messages/{id}/  — Read own message
+    PATCH  /api/dashboard/messages/{id}/  — Mark as read/unread
+    DELETE /api/dashboard/messages/{id}/  — Delete own message
     """
-    queryset = Message.objects.all()
     serializer_class = MessageListSerializer
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Message.objects.filter(recipient=self.request.user)
 
 
-# ─── Admin Image Upload (Cloudinary) ───────────────────────────────────────
+# ─── Dashboard Upload (Cloudinary) ────────────────────────────────────────
 
-class AdminUploadView(APIView):
+class DashboardUploadView(APIView):
     """
-    POST /api/admin/upload/
-    Upload an image to Cloudinary and return the URL.
-
-    Body: multipart/form-data with 'file' field
-    Returns: { "url": "https://res.cloudinary.com/..." }
+    POST /api/dashboard/upload/
+    Upload a file to Cloudinary. Returns the secure URL.
     """
-    permission_classes = [IsAuthenticated, IsAdminOwner]
+    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
         file = request.FILES.get('file')
         if not file:
-            return Response(
-                {"detail": "No file provided."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'detail': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Determine folder based on content type
-        folder = 'portfolio/images'
-        if file.content_type == 'application/pdf':
-            folder = 'portfolio/documents'
+        # Size limit: 10MB
+        if file.size > 10 * 1024 * 1024:
+            return Response({'detail': 'File too large. Max 10MB.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        import cloudinary.uploader
         try:
             result = cloudinary.uploader.upload(
                 file,
-                folder=folder,
-                resource_type='auto',
-                quality='auto',
-                fetch_format='auto',
+                folder=f'portfolio/{request.user.username}',
+                resource_type='auto'
             )
             return Response({
-                "url": result['secure_url'],
-                "public_id": result['public_id'],
-            }, status=status.HTTP_201_CREATED)
+                'url': result['secure_url'],
+                'public_id': result['public_id'],
+            })
         except Exception as e:
-            return Response(
-                {"detail": f"Upload failed: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-# ─── Admin Dashboard Stats ────────────────────────────────────────────────
-
-class AdminDashboardView(APIView):
-    """
-    GET /api/admin/dashboard/
-    Returns overview stats for the admin dashboard.
-    """
-    permission_classes = [IsAuthenticated, IsAdminOwner]
-
-    def get(self, request):
-        return Response({
-            "total_projects": Project.objects.count(),
-            "visible_projects": Project.objects.filter(is_visible=True).count(),
-            "featured_projects": Project.objects.filter(is_featured=True).count(),
-            "total_skills": Skill.objects.count(),
-            "total_categories": SkillCategory.objects.count(),
-            "total_experience": Experience.objects.count(),
-            "total_messages": Message.objects.count(),
-            "unread_messages": Message.objects.filter(is_read=False).count(),
-        })
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

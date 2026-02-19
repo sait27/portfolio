@@ -107,6 +107,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+# ─── Email (Console backend for dev — prints to terminal) ──────────────────
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
 # ─── Django REST Framework ──────────────────────────────────────────────────
 
 REST_FRAMEWORK = {
