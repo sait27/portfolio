@@ -1,22 +1,20 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
 
-// Public Pages
-import Home from './pages/Home';
-import About from './pages/About';
-import Projects from './pages/Projects';
-import Contact from './pages/Contact';
-import NotFound from './pages/NotFound';
+// Public / Marketing
+import Landing from './pages/Landing';
 
-// Admin Pages
-import AdminLogin from './pages/admin/AdminLogin';
+// Auth Pages
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+
+// Dashboard (Admin) Pages
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProjects from './pages/admin/AdminProjects';
@@ -29,38 +27,8 @@ import ProtectedRoute from './pages/admin/ProtectedRoute';
 // Admin CSS
 import './pages/admin/AdminComponents.css';
 
-function AnimatedRoutes() {
-  const location = useLocation();
-
-  return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AnimatePresence>
-  );
-}
-
-function PublicLayout() {
-  const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
-
-  if (isAdminRoute) return null;
-
-  return (
-    <>
-      <Navbar />
-      <main>
-        <AnimatedRoutes />
-      </main>
-      <Footer />
-    </>
-  );
-}
+// TODO: Future phases
+// import PublicPortfolio from './pages/PublicPortfolio';  // MT-6: /:username
 
 export default function App() {
   return (
@@ -70,8 +38,17 @@ export default function App() {
           <BrowserRouter>
             <ScrollToTop />
             <Routes>
-              {/* Admin Routes — no Navbar/Footer */}
-              <Route path="/admin/login" element={<AdminLogin />} />
+              {/* ─── Marketing Landing Page ──────────────── */}
+              <Route path="/" element={<Landing />} />
+
+              {/* ─── Auth Routes ─────────────────────────── */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
+
+              {/* ─── Dashboard Routes (protected) ────────── */}
+              <Route path="/admin/login" element={<Login />} />
               <Route
                 path="/admin"
                 element={
@@ -88,8 +65,8 @@ export default function App() {
                 <Route path="profile" element={<AdminProfile />} />
               </Route>
 
-              {/* Public Routes — with Navbar/Footer */}
-              <Route path="*" element={<PublicLayout />} />
+              {/* TODO: MT-6 — Public Portfolio */}
+              {/* <Route path="/:username" element={<PublicPortfolio />} /> */}
             </Routes>
 
             <Toaster
