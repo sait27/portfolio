@@ -15,8 +15,33 @@
 .footer__logo {
   font-size: var(--font-size-xl);
   font-weight: 800;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.footer__logo-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.footer__email {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.footer__email:hover {
+  color: var(--accent-primary);
+}
+
+.footer__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .footer__tagline {

@@ -1,11 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { FaHome, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaHome, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import './AdminLayout.css';
 
 const SIDEBAR_LINKS = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: <FaTachometerAlt /> },
   { label: 'Projects', path: '/admin/projects', icon: <FaProjectDiagram /> },
+  { label: 'Skills', path: '/admin/skills', icon: <FaCode /> },
+  { label: 'Experience', path: '/admin/experience', icon: <FaBriefcase /> },
   { label: 'Messages', path: '/admin/messages', icon: <FaEnvelope /> },
   { label: 'Profile', path: '/admin/profile', icon: <FaUser /> },
 ];

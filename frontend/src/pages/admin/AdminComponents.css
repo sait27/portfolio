@@ -182,4 +182,109 @@
     margin: 1rem;
     max-height: 90vh;
   }
+
+  .admin-page-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start !important;
+  }
+}
+
+/* ─── Admin Page Header ─────────────────────────────────────────────────── */
+
+.admin-page-header h1 {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+
+.admin-page-header p {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* ─── Admin Action Buttons ──────────────────────────────────────────────── */
+
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass);
+  color: var(--text-secondary);
+}
+
+.admin-btn:hover {
+  border-color: var(--border-glass-hover);
+  color: var(--text-primary);
+}
+
+.admin-btn--edit:hover {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.admin-btn--delete {
+  color: var(--text-muted);
+}
+
+.admin-btn--delete:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ─── Skills & Categories Admin ─────────────────────────────────────────── */
+
+.admin-skill-category {
+  padding: 1.5rem;
+}
+
+.admin-skill-category__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-skill-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  border: 1px solid transparent;
+  transition: border-color var(--transition-fast);
+}
+
+.admin-skill-item:hover {
+  border-color: var(--border-glass);
+}
+
+/* ─── Experience Admin ──────────────────────────────────────────────────── */
+
+.admin-exp-card {
+  padding: 1.5rem;
 }

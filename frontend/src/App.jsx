@@ -20,6 +20,8 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProjects from './pages/admin/AdminProjects';
+import AdminSkills from './pages/admin/AdminSkills';
+import AdminExperience from './pages/admin/AdminExperience';
 import AdminMessages from './pages/admin/AdminMessages';
 import AdminProfile from './pages/admin/AdminProfile';
 import ProtectedRoute from './pages/admin/ProtectedRoute';
@@ -80,6 +82,8 @@ export default function App() {
               >
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="projects" element={<AdminProjects />} />
+                <Route path="skills" element={<AdminSkills />} />
+                <Route path="experience" element={<AdminExperience />} />
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="profile" element={<AdminProfile />} />
               </Route>

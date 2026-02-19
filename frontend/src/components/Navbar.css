@@ -23,9 +23,17 @@
 }
 
 .navbar__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   font-size: var(--font-size-xl);
   font-weight: 800;
   letter-spacing: -0.02em;
+}
+
+.navbar__logo-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .navbar__links {
@@ -62,6 +70,17 @@
   border-radius: var(--radius-full);
 }
 
+/* Right side — Resume + CTA */
+.navbar__right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navbar__resume {
+  font-size: var(--font-size-xs);
+}
+
 .navbar__cta {
   font-size: var(--font-size-xs);
 }
@@ -88,7 +107,9 @@
 }
 
 .navbar__mobile-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.85rem var(--section-padding-x);
   font-size: var(--font-size-base);
   font-weight: 500;
@@ -104,7 +125,7 @@
 
 @media (max-width: 768px) {
   .navbar__links,
-  .navbar__cta {
+  .navbar__right {
     display: none;
   }
 
