@@ -26,6 +26,14 @@
   margin-bottom: 2rem;
 }
 
+.admin-sidebar__username {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
 .admin-sidebar__nav {
   flex: 1;
   display: flex;

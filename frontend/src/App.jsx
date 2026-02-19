@@ -27,8 +27,8 @@ import ProtectedRoute from './pages/admin/ProtectedRoute';
 // Admin CSS
 import './pages/admin/AdminComponents.css';
 
-// TODO: Future phases
-// import PublicPortfolio from './pages/PublicPortfolio';  // MT-6: /:username
+// Public Portfolio
+import PublicPortfolio from './pages/PublicPortfolio';
 
 export default function App() {
   return (
@@ -65,8 +65,8 @@ export default function App() {
                 <Route path="profile" element={<AdminProfile />} />
               </Route>
 
-              {/* TODO: MT-6 — Public Portfolio */}
-              {/* <Route path="/:username" element={<PublicPortfolio />} /> */}
+              {/* ─── Public Portfolio (must be near last) ── */}
+              <Route path="/:username" element={<PublicPortfolio />} />
             </Routes>
 
             <Toaster

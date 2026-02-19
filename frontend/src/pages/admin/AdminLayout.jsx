@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { FaHome, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import './AdminLayout.css';
 
@@ -13,20 +13,25 @@ const SIDEBAR_LINKS = [
 ];
 
 export default function AdminLayout() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate('/admin/login', { replace: true });
+    navigate('/login', { replace: true });
   };
+
+  const username = user?.username || user?.username_slug || '';
 
   return (
     <div className="admin-layout">
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar__logo">
-          <span className="gradient-text">Admin</span>
+          <span className="gradient-text">{user?.full_name || 'Dashboard'}</span>
+          {username && (
+            <span className="admin-sidebar__username">@{username}</span>
+          )}
         </div>
 
         <nav className="admin-sidebar__nav">
@@ -45,10 +50,12 @@ export default function AdminLayout() {
         </nav>
 
         <div className="admin-sidebar__footer">
-          <NavLink to="/" className="admin-sidebar__link">
-            <FaHome />
-            <span>View Site</span>
-          </NavLink>
+          {username && (
+            <NavLink to={`/${username}`} className="admin-sidebar__link">
+              <FaExternalLinkAlt />
+              <span>My Portfolio</span>
+            </NavLink>
+          )}
           <button onClick={handleLogout} className="admin-sidebar__link admin-sidebar__logout">
             <FaSignOutAlt />
             <span>Logout</span>
