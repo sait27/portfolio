@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
+import ScrollProgress from './components/ScrollProgress';
 
 // Public / Marketing
 import Landing from './pages/Landing';
@@ -14,18 +15,18 @@ import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 
-// Dashboard (Admin) Pages
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProjects from './pages/admin/AdminProjects';
-import AdminSkills from './pages/admin/AdminSkills';
-import AdminExperience from './pages/admin/AdminExperience';
-import AdminMessages from './pages/admin/AdminMessages';
-import AdminProfile from './pages/admin/AdminProfile';
-import SuperAdminPanel from './pages/admin/SuperAdminPanel';
+// User Dashboard Pages
+import UserLayout from './pages/admin/AdminLayout';
+import UserDashboard from './pages/admin/AdminDashboard';
+import UserProjects from './pages/admin/AdminProjects';
+import UserSkills from './pages/admin/AdminSkills';
+import UserExperience from './pages/admin/AdminExperience';
+import UserMessages from './pages/admin/AdminMessages';
+import UserProfile from './pages/admin/AdminProfile';
+import AdminPanel from './pages/admin/SuperAdminPanel';
 import ProtectedRoute from './pages/admin/ProtectedRoute';
 
-// Admin CSS
+// User Dashboard CSS
 import './pages/admin/AdminComponents.css';
 
 // Public Portfolio
@@ -38,6 +39,7 @@ export default function App() {
         <AuthProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <ScrollProgress />
             <Routes>
               {/* ─── Marketing Landing Page ──────────────── */}
               <Route path="/" element={<Landing />} />
@@ -48,23 +50,35 @@ export default function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
-              {/* ─── Dashboard Routes (protected) ────────── */}
+              {/* ─── User Dashboard Routes (protected) ────────── */}
+              <Route path="/user/login" element={<Login />} />
+              <Route
+                path="/user"
+                element={
+                  <ProtectedRoute>
+                    <UserLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="dashboard" element={<UserDashboard />} />
+                <Route path="projects" element={<UserProjects />} />
+                <Route path="skills" element={<UserSkills />} />
+                <Route path="experience" element={<UserExperience />} />
+                <Route path="messages" element={<UserMessages />} />
+                <Route path="profile" element={<UserProfile />} />
+              </Route>
+
+              {/* ─── Admin Routes (platform admin only) ────────── */}
               <Route path="/admin/login" element={<Login />} />
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute>
-                    <AdminLayout />
+                  <ProtectedRoute requirePlatformAdmin={true}>
+                    <UserLayout />
                   </ProtectedRoute>
                 }
               >
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="projects" element={<AdminProjects />} />
-                <Route path="skills" element={<AdminSkills />} />
-                <Route path="experience" element={<AdminExperience />} />
-                <Route path="messages" element={<AdminMessages />} />
-                <Route path="profile" element={<AdminProfile />} />
-                <Route path="super-admin" element={<SuperAdminPanel />} />
+                <Route path="dashboard" element={<AdminPanel />} />
               </Route>
 
               {/* ─── Public Portfolio (must be near last) ── */}

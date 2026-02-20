@@ -12,17 +12,39 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/user/dashboard" replace />;
   }
+
+  const validateField = (field, value) => {
+    const newErrors = { ...errors };
+    if (field === 'username') {
+      if (!value.trim()) newErrors.username = 'Username is required';
+      else delete newErrors.username;
+    }
+    if (field === 'password') {
+      if (!value.trim()) newErrors.password = 'Password is required';
+      else if (value.length < 6) newErrors.password = 'Password must be at least 6 characters';
+      else delete newErrors.password;
+    }
+    setErrors(newErrors);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      toast.error('Please enter both username and password');
+    
+    // Validate all fields
+    const newErrors = {};
+    if (!username.trim()) newErrors.username = 'Username is required';
+    if (!password.trim()) newErrors.password = 'Password is required';
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Please fix the errors');
       return;
     }
 
@@ -30,7 +52,7 @@ export default function Login() {
     try {
       await login(username, password);
       toast.success('Welcome back!');
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/user/dashboard', { replace: true });
     } catch (err) {
       const detail = err.response?.data?.detail;
       toast.error(detail || 'Invalid credentials. Please try again.');
@@ -42,7 +64,7 @@ export default function Login() {
   return (
     <>
       <Helmet>
-        <title>Sign In | iCompaas</title>
+        <title>Sign In | PortfolioHub</title>
       </Helmet>
       <div className="auth-page">
         <motion.div
@@ -53,7 +75,7 @@ export default function Login() {
         >
           <div className="auth-header">
             <Link to="/" className="auth-logo">
-              iCompaas
+              PortfolioHub
             </Link>
             <div className="auth-icon">
               <FaLock />
@@ -70,13 +92,20 @@ export default function Login() {
                 <input
                   id="login-username"
                   type="text"
-                  className="form-input auth-input"
+                  className={`form-input auth-input ${errors.username ? 'form-input--error' : ''}`}
                   placeholder="Enter username"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    validateField('username', e.target.value);
+                  }}
+                  onBlur={(e) => validateField('username', e.target.value)}
                   autoFocus
+                  aria-invalid={!!errors.username}
+                  aria-describedby={errors.username ? 'username-error' : undefined}
                 />
               </div>
+              {errors.username && <span id="username-error" className="form-error" role="alert">{errors.username}</span>}
             </div>
 
             <div className="form-group">
@@ -86,20 +115,28 @@ export default function Login() {
                 <input
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
-                  className="form-input auth-input"
+                  className={`form-input auth-input ${errors.password ? 'form-input--error' : ''}`}
                   placeholder="Enter password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    validateField('password', e.target.value);
+                  }}
+                  onBlur={(e) => validateField('password', e.target.value)}
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
                 />
                 <button
                   type="button"
                   className="auth-toggle"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label="Toggle password"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  tabIndex={0}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
+              {errors.password && <span id="password-error" className="form-error" role="alert">{errors.password}</span>}
             </div>
 
             <div className="auth-forgot-link">
@@ -110,8 +147,14 @@ export default function Login() {
               type="submit"
               className="btn btn-primary btn-lg auth-submit"
               disabled={isLoading}
+              aria-busy={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? (
+                <>
+                  <span className="spinner" aria-hidden="true"></span>
+                  Signing in...
+                </>
+              ) : 'Sign In'}
             </button>
           </form>
 

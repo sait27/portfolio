@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaUsers, FaProjectDiagram, FaCode, FaEnvelope, FaUserShield, FaToggleOn, FaToggleOff, FaTrash, FaExternalLinkAlt, FaChartLine } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { superAdminApi } from '../../api/client';
+import { adminApi } from '../../api/client';
 import '../admin/AdminComponents.css';
 
 export default function SuperAdminPanel() {
@@ -14,8 +14,8 @@ export default function SuperAdminPanel() {
   const fetchData = async () => {
     try {
       const [statsRes, usersRes] = await Promise.all([
-        superAdminApi.getStats(),
-        superAdminApi.getUsers(),
+        adminApi.getStats(),
+        adminApi.getUsers(),
       ]);
       setStats(statsRes.data);
       const userData = usersRes.data.results || usersRes.data;
@@ -31,7 +31,7 @@ export default function SuperAdminPanel() {
 
   const handleToggleActive = async (userId, currentActive) => {
     try {
-      await superAdminApi.toggleUser(userId, !currentActive);
+      await adminApi.toggleUser(userId, !currentActive);
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: !currentActive } : u));
       toast.success(currentActive ? 'User deactivated' : 'User activated');
     } catch (err) {
@@ -41,7 +41,7 @@ export default function SuperAdminPanel() {
 
   const handleDelete = async (userId) => {
     try {
-      await superAdminApi.deleteUser(userId);
+      await adminApi.deleteUser(userId);
       setUsers(prev => prev.filter(u => u.id !== userId));
       setConfirmDelete(null);
       toast.success('User deleted');
@@ -54,7 +54,7 @@ export default function SuperAdminPanel() {
     return (
       <div style={{ padding: '2rem' }}>
         <div className="admin-page-header">
-          <h1><FaUserShield style={{ marginRight: '0.5rem' }} /> Super Admin</h1>
+          <h1><FaUserShield style={{ marginRight: '0.5rem' }} /> Admin Panel</h1>
           <p>Loading platform data...</p>
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function SuperAdminPanel() {
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div className="admin-page-header">
-        <h1><FaUserShield style={{ marginRight: '0.5rem', color: 'var(--accent-primary)' }} /> Super Admin Panel</h1>
+        <h1><FaUserShield style={{ marginRight: '0.5rem', color: 'var(--accent-primary)' }} /> Admin Panel</h1>
         <p>Platform overview and user management</p>
       </div>
 

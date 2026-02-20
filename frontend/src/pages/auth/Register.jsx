@@ -18,7 +18,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/user/dashboard" replace />;
   }
 
   const updateField = (field) => (e) => {
@@ -63,7 +63,7 @@ export default function Register() {
     try {
       await register(form);
       toast.success('Account created! Welcome aboard 🎉');
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/user/dashboard', { replace: true });
     } catch (err) {
       const data = err.response?.data;
       if (data && typeof data === 'object') {
@@ -83,7 +83,7 @@ export default function Register() {
   return (
     <>
       <Helmet>
-        <title>Create Account | iCompaas</title>
+        <title>Create Account | PortfolioHub</title>
       </Helmet>
       <div className="auth-page">
         <motion.div
@@ -94,7 +94,7 @@ export default function Register() {
         >
           <div className="auth-header">
             <Link to="/" className="auth-logo">
-              iCompaas
+              PortfolioHub
             </Link>
             <div className="auth-icon">
               <FaUserPlus />
@@ -122,7 +122,7 @@ export default function Register() {
               {errors.username && <span className="auth-field-error">{errors.username}</span>}
               {form.username && !errors.username && (
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                  Your portfolio: icompaas.com/<strong>{form.username.toLowerCase()}</strong>
+                  Your portfolio: portfoliohub.com/<strong>{form.username.toLowerCase()}</strong>
                 </span>
               )}
             </div>

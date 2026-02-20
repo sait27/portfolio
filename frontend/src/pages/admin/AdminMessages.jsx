@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaEnvelopeOpen, FaTrash, FaClock } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { adminApi } from '../../api/client';
+import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 export default function AdminMessages() {
@@ -12,7 +12,7 @@ export default function AdminMessages() {
 
   const fetchMessages = () => {
     setLoading(true);
-    adminApi.getMessages()
+    userApi.getMessages()
       .then(res => {
         const data = res.data.results || res.data;
         setMessages(Array.isArray(data) ? data : []);
@@ -25,7 +25,7 @@ export default function AdminMessages() {
 
   const toggleRead = async (msg) => {
     try {
-      await adminApi.updateMessage(msg.id, { is_read: !msg.is_read });
+      await userApi.updateMessage(msg.id, { is_read: !msg.is_read });
       fetchMessages();
     } catch {
       toast.error('Failed to update message');
@@ -35,7 +35,7 @@ export default function AdminMessages() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this message?')) return;
     try {
-      await adminApi.deleteMessage(id);
+      await userApi.deleteMessage(id);
       toast.success('Message deleted');
       if (selectedMessage?.id === id) setSelectedMessage(null);
       fetchMessages();

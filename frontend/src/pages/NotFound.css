@@ -5,10 +5,27 @@
   justify-content: center;
   text-align: center;
   padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.notfound::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pulse-glow 4s ease-in-out infinite;
 }
 
 .notfound__content {
   max-width: 450px;
+  position: relative;
+  z-index: 1;
 }
 
 .notfound__code {
@@ -16,6 +33,7 @@
   font-weight: 900;
   line-height: 1;
   margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
 }
 
 .notfound__title {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaStar } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { adminApi } from '../../api/client';
+import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 const CATEGORY_CHOICES = [
@@ -29,7 +29,7 @@ export default function AdminProjects() {
 
   const fetchProjects = () => {
     setLoading(true);
-    adminApi.getProjects()
+    userApi.getProjects()
       .then(res => {
         const data = res.data.results || res.data;
         setProjects(Array.isArray(data) ? data : []);
@@ -75,10 +75,10 @@ export default function AdminProjects() {
     setIsSubmitting(true);
     try {
       if (editingProject) {
-        await adminApi.updateProject(editingProject.id, formData);
+        await userApi.updateProject(editingProject.id, formData);
         toast.success('Project updated!');
       } else {
-        await adminApi.createProject(formData);
+        await userApi.createProject(formData);
         toast.success('Project created!');
       }
       setShowForm(false);
@@ -97,7 +97,7 @@ export default function AdminProjects() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this project? This cannot be undone.')) return;
     try {
-      await adminApi.deleteProject(id);
+      await userApi.deleteProject(id);
       toast.success('Project deleted');
       fetchProjects();
     } catch {

@@ -85,66 +85,69 @@ export const publicApi = {
   sendMessage: (username, data) => api.post(`/u/${username}/contact/`, data),
 };
 
-// ─── Dashboard API (authenticated user's own data) ──────────────────────────
+// ─── User Dashboard API (authenticated user's own data) ──────────────────────────
 
-export const dashboardApi = {
+export const userApi = {
   // Stats
-  getStats: () => api.get('/dashboard/stats/'),
+  getStats: () => api.get('/user/stats/'),
 
   // Profile
-  getProfile: () => api.get('/dashboard/profile/'),
-  updateProfile: (data) => api.put('/dashboard/profile/', data),
+  getProfile: () => api.get('/user/profile/'),
+  updateProfile: (data) => api.put('/user/profile/', data),
 
   // Projects
-  getProjects: () => api.get('/dashboard/projects/'),
-  createProject: (data) => api.post('/dashboard/projects/', data),
-  updateProject: (id, data) => api.put(`/dashboard/projects/${id}/`, data),
-  deleteProject: (id) => api.delete(`/dashboard/projects/${id}/`),
+  getProjects: () => api.get('/user/projects/'),
+  createProject: (data) => api.post('/user/projects/', data),
+  updateProject: (id, data) => api.put(`/user/projects/${id}/`, data),
+  deleteProject: (id) => api.delete(`/user/projects/${id}/`),
 
   // Skills
-  getSkills: () => api.get('/dashboard/skills/'),
-  createSkill: (data) => api.post('/dashboard/skills/', data),
-  updateSkill: (id, data) => api.put(`/dashboard/skills/${id}/`, data),
-  deleteSkill: (id) => api.delete(`/dashboard/skills/${id}/`),
+  getSkills: () => api.get('/user/skills/'),
+  createSkill: (data) => api.post('/user/skills/', data),
+  updateSkill: (id, data) => api.put(`/user/skills/${id}/`, data),
+  deleteSkill: (id) => api.delete(`/user/skills/${id}/`),
 
   // Skill Categories
-  getCategories: () => api.get('/dashboard/skill-categories/'),
-  createCategory: (data) => api.post('/dashboard/skill-categories/', data),
-  updateCategory: (id, data) => api.put(`/dashboard/skill-categories/${id}/`, data),
-  deleteCategory: (id) => api.delete(`/dashboard/skill-categories/${id}/`),
+  getCategories: () => api.get('/user/skill-categories/'),
+  createCategory: (data) => api.post('/user/skill-categories/', data),
+  updateCategory: (id, data) => api.put(`/user/skill-categories/${id}/`, data),
+  deleteCategory: (id) => api.delete(`/user/skill-categories/${id}/`),
 
   // Experience
-  getExperience: () => api.get('/dashboard/experience/'),
-  createExperience: (data) => api.post('/dashboard/experience/', data),
-  updateExperience: (id, data) => api.put(`/dashboard/experience/${id}/`, data),
-  deleteExperience: (id) => api.delete(`/dashboard/experience/${id}/`),
+  getExperience: () => api.get('/user/experience/'),
+  createExperience: (data) => api.post('/user/experience/', data),
+  updateExperience: (id, data) => api.put(`/user/experience/${id}/`, data),
+  deleteExperience: (id) => api.delete(`/user/experience/${id}/`),
 
   // Messages
-  getMessages: () => api.get('/dashboard/messages/'),
-  updateMessage: (id, data) => api.patch(`/dashboard/messages/${id}/`, data),
-  deleteMessage: (id) => api.delete(`/dashboard/messages/${id}/`),
+  getMessages: () => api.get('/user/messages/'),
+  updateMessage: (id, data) => api.patch(`/user/messages/${id}/`, data),
+  deleteMessage: (id) => api.delete(`/user/messages/${id}/`),
 
   // Upload
   uploadFile: (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post('/dashboard/upload/', formData, {
+    return api.post('/user/upload/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 };
 
-// ─── Backward compatibility alias ───────────────────────────────────────────
-export const adminApi = dashboardApi;
+// ─── Backward compatibility aliases ───────────────────────────────────────────
+export const dashboardApi = userApi;
 
-// ─── Super Admin API (platform owner only) ──────────────────────────────────
+// ─── Admin API (platform owner only) ──────────────────────────────────
 
-export const superAdminApi = {
-  getStats: () => api.get('/superadmin/stats/'),
-  getUsers: () => api.get('/superadmin/users/'),
-  getUser: (id) => api.get(`/superadmin/users/${id}/`),
-  toggleUser: (id, isActive) => api.patch(`/superadmin/users/${id}/`, { is_active: isActive }),
-  deleteUser: (id) => api.delete(`/superadmin/users/${id}/`),
+export const adminApi = {
+  getStats: () => api.get('/admin/stats/'),
+  getUsers: () => api.get('/admin/users/'),
+  getUser: (id) => api.get(`/admin/users/${id}/`),
+  toggleUser: (id, isActive) => api.patch(`/admin/users/${id}/`, { is_active: isActive }),
+  deleteUser: (id) => api.delete(`/admin/users/${id}/`),
 };
+
+// ─── Backward compatibility alias ───────────────────────────────────────────
+export const superAdminApi = adminApi;
 
 export default api;

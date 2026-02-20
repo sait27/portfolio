@@ -25,27 +25,56 @@ export default function Contact() {
     if (!formData.sender_name.trim()) newErrors.sender_name = 'Name is required';
     if (!formData.sender_email.trim()) {
       newErrors.sender_email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.sender_email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.sender_email)) {
       newErrors.sender_email = 'Enter a valid email address';
     }
     if (!formData.content.trim()) newErrors.content = 'Message is required';
-    if (formData.content.trim().length < 10) newErrors.content = 'Message must be at least 10 characters';
+    else if (formData.content.trim().length < 10) newErrors.content = 'Message must be at least 10 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+    if (name === 'sender_name') {
+      if (!value.trim()) newErrors.sender_name = 'Name is required';
+      else delete newErrors.sender_name;
+    }
+    if (name === 'sender_email') {
+      if (!value.trim()) newErrors.sender_email = 'Email is required';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) newErrors.sender_email = 'Enter a valid email';
+      else delete newErrors.sender_email;
+    }
+    if (name === 'content') {
+      if (!value.trim()) newErrors.content = 'Message is required';
+      else if (value.trim().length < 10) newErrors.content = 'At least 10 characters';
+      else delete newErrors.content;
+    }
+    setErrors(newErrors);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear field error on change
+    // Real-time validation
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      validateField(name, value);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    
+    // Check honeypot
+    if (formData.honeypot) {
+      console.warn('Bot detected');
+      return;
+    }
+    
+    if (!validate()) {
+      toast.error('Please fix the errors');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -53,6 +82,7 @@ export default function Contact() {
       setIsSubmitted(true);
       toast.success("Message sent! I'll get back to you soon.");
       setFormData({ sender_name: '', sender_email: '', subject: '', content: '', honeypot: '' });
+      setErrors({});
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (err.response?.status === 429) {
@@ -168,8 +198,11 @@ export default function Contact() {
                       placeholder="Your name"
                       value={formData.sender_name}
                       onChange={handleChange}
+                      onBlur={(e) => validateField('sender_name', e.target.value)}
+                      aria-invalid={!!errors.sender_name}
+                      aria-describedby={errors.sender_name ? 'name-error' : undefined}
                     />
-                    {errors.sender_name && <span className="form-error">{errors.sender_name}</span>}
+                    {errors.sender_name && <span id="name-error" className="form-error" role="alert">{errors.sender_name}</span>}
                   </div>
 
                   <div className="form-group">
@@ -182,8 +215,11 @@ export default function Contact() {
                       placeholder="your@email.com"
                       value={formData.sender_email}
                       onChange={handleChange}
+                      onBlur={(e) => validateField('sender_email', e.target.value)}
+                      aria-invalid={!!errors.sender_email}
+                      aria-describedby={errors.sender_email ? 'email-error' : undefined}
                     />
-                    {errors.sender_email && <span className="form-error">{errors.sender_email}</span>}
+                    {errors.sender_email && <span id="email-error" className="form-error" role="alert">{errors.sender_email}</span>}
                   </div>
 
                   <div className="form-group">
@@ -209,17 +245,24 @@ export default function Contact() {
                       rows={5}
                       value={formData.content}
                       onChange={handleChange}
+                      onBlur={(e) => validateField('content', e.target.value)}
+                      aria-invalid={!!errors.content}
+                      aria-describedby={errors.content ? 'content-error' : undefined}
                     />
-                    {errors.content && <span className="form-error">{errors.content}</span>}
+                    {errors.content && <span id="content-error" className="form-error" role="alert">{errors.content}</span>}
                   </div>
 
                   <button
                     type="submit"
                     className="btn btn-primary btn-lg contact__submit"
                     disabled={isSubmitting}
+                    aria-busy={isSubmitting}
                   >
                     {isSubmitting ? (
-                      <>Sending...</>
+                      <>
+                        <span className="spinner" aria-hidden="true"></span>
+                        Sending...
+                      </>
                     ) : (
                       <>Send Message <FaPaperPlane /></>
                     )}

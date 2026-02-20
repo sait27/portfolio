@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus, FaEdit, FaTrash, FaFolderOpen } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { adminApi } from '../../api/client';
+import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 const EMPTY_CATEGORY = { name: '', order: 0 };
@@ -28,8 +28,8 @@ export default function AdminSkills() {
     setLoading(true);
     try {
       const [catRes, skillRes] = await Promise.all([
-        adminApi.getCategories(),
-        adminApi.getSkills(),
+        userApi.getCategories(),
+        userApi.getSkills(),
       ]);
       const catData = catRes.data.results || catRes.data;
       const skillData = skillRes.data.results || skillRes.data;
@@ -64,10 +64,10 @@ export default function AdminSkills() {
     setIsSubmitting(true);
     try {
       if (editingCat) {
-        await adminApi.updateCategory(editingCat.id, catForm);
+        await userApi.updateCategory(editingCat.id, catForm);
         toast.success('Category updated!');
       } else {
-        await adminApi.createCategory(catForm);
+        await userApi.createCategory(catForm);
         toast.success('Category created!');
       }
       setShowCatForm(false);
@@ -82,7 +82,7 @@ export default function AdminSkills() {
   const deleteCat = async (id) => {
     if (!window.confirm('Delete this category and all its skills?')) return;
     try {
-      await adminApi.deleteCategory(id);
+      await userApi.deleteCategory(id);
       toast.success('Category deleted');
       fetchData();
     } catch {
@@ -116,10 +116,10 @@ export default function AdminSkills() {
     setIsSubmitting(true);
     try {
       if (editingSkill) {
-        await adminApi.updateSkill(editingSkill.id, skillForm);
+        await userApi.updateSkill(editingSkill.id, skillForm);
         toast.success('Skill updated!');
       } else {
-        await adminApi.createSkill(skillForm);
+        await userApi.createSkill(skillForm);
         toast.success('Skill created!');
       }
       setShowSkillForm(false);
@@ -137,7 +137,7 @@ export default function AdminSkills() {
   const deleteSkill = async (id) => {
     if (!window.confirm('Delete this skill?')) return;
     try {
-      await adminApi.deleteSkill(id);
+      await userApi.deleteSkill(id);
       toast.success('Skill deleted');
       fetchData();
     } catch {

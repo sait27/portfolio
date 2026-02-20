@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus, FaEdit, FaTrash, FaBriefcase, FaCalendarAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { adminApi } from '../../api/client';
+import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 const EMPTY_EXPERIENCE = {
@@ -22,7 +22,7 @@ export default function AdminExperience() {
 
   const fetchData = () => {
     setLoading(true);
-    adminApi.getExperience()
+    userApi.getExperience()
       .then(res => {
         const data = res.data.results || res.data;
         setExperiences(Array.isArray(data) ? data : []);
@@ -83,10 +83,10 @@ export default function AdminExperience() {
 
     try {
       if (editing) {
-        await adminApi.updateExperience(editing.id, payload);
+        await userApi.updateExperience(editing.id, payload);
         toast.success('Experience updated!');
       } else {
-        await adminApi.createExperience(payload);
+        await userApi.createExperience(payload);
         toast.success('Experience created!');
       }
       setShowForm(false);
@@ -104,7 +104,7 @@ export default function AdminExperience() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this experience entry?')) return;
     try {
-      await adminApi.deleteExperience(id);
+      await userApi.deleteExperience(id);
       toast.success('Deleted');
       fetchData();
     } catch {

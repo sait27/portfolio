@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaSave } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { adminApi } from '../../api/client';
+import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 export default function AdminProfile() {
@@ -11,7 +11,7 @@ export default function AdminProfile() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    adminApi.getProfile()
+    userApi.getProfile()
       .then(res => setProfile(res.data))
       .catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false));
@@ -26,7 +26,7 @@ export default function AdminProfile() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await adminApi.updateProfile(profile);
+      await userApi.updateProfile(profile);
       toast.success('Profile updated!');
     } catch (err) {
       const errors = err.response?.data;

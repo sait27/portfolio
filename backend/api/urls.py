@@ -15,10 +15,10 @@ urlpatterns = [
     path('auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='auth-reset-password'),
     path('auth/change-password/', auth_views.ChangePasswordView.as_view(), name='auth-change-password'),
 
-    # ── Super Admin (platform owner only) ─────────────────────────────────
-    path('superadmin/stats/', superadmin_views.SuperAdminStatsView.as_view(), name='superadmin-stats'),
-    path('superadmin/users/', superadmin_views.SuperAdminUserListView.as_view(), name='superadmin-users'),
-    path('superadmin/users/<int:user_id>/', superadmin_views.SuperAdminUserDetailView.as_view(), name='superadmin-user-detail'),
+    # ── Admin (platform owner only) ─────────────────────────────────
+    path('admin/stats/', superadmin_views.SuperAdminStatsView.as_view(), name='admin-stats'),
+    path('admin/users/', superadmin_views.SuperAdminUserListView.as_view(), name='admin-users'),
+    path('admin/users/<int:user_id>/', superadmin_views.SuperAdminUserDetailView.as_view(), name='admin-user-detail'),
 
     # ── Public Portfolio Endpoints (by username) ─────────────────────────
     path('u/<str:username>/profile/', views.PublicProfileView.as_view(), name='public-profile'),
@@ -28,7 +28,28 @@ urlpatterns = [
     path('u/<str:username>/experience/', views.PublicExperienceListView.as_view(), name='public-experience'),
     path('u/<str:username>/contact/', views.PublicContactView.as_view(), name='public-contact'),
 
-    # ── Dashboard (authenticated user's own data) ────────────────────────
+    # ── User Dashboard (authenticated user's own data) ────────────────────────
+    path('user/stats/', admin_views.DashboardStatsView.as_view(), name='user-stats'),
+    path('user/profile/', admin_views.DashboardProfileView.as_view(), name='user-profile'),
+
+    path('user/projects/', admin_views.DashboardProjectListCreateView.as_view(), name='user-projects'),
+    path('user/projects/<int:pk>/', admin_views.DashboardProjectDetailView.as_view(), name='user-project-detail'),
+
+    path('user/skills/', admin_views.DashboardSkillListCreateView.as_view(), name='user-skills'),
+    path('user/skills/<int:pk>/', admin_views.DashboardSkillDetailView.as_view(), name='user-skill-detail'),
+
+    path('user/skill-categories/', admin_views.DashboardCategoryListCreateView.as_view(), name='user-categories'),
+    path('user/skill-categories/<int:pk>/', admin_views.DashboardCategoryDetailView.as_view(), name='user-category-detail'),
+
+    path('user/experience/', admin_views.DashboardExperienceListCreateView.as_view(), name='user-experience'),
+    path('user/experience/<int:pk>/', admin_views.DashboardExperienceDetailView.as_view(), name='user-experience-detail'),
+
+    path('user/messages/', admin_views.DashboardMessageListView.as_view(), name='user-messages'),
+    path('user/messages/<int:pk>/', admin_views.DashboardMessageDetailView.as_view(), name='user-message-detail'),
+
+    path('user/upload/', admin_views.DashboardUploadView.as_view(), name='user-upload'),
+
+    # ── Dashboard (backward compatibility) ────────────────────────────
     path('dashboard/stats/', admin_views.DashboardStatsView.as_view(), name='dashboard-stats'),
     path('dashboard/profile/', admin_views.DashboardProfileView.as_view(), name='dashboard-profile'),
 

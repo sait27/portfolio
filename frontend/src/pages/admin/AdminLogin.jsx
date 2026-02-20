@@ -17,7 +17,7 @@ export default function AdminLogin() {
 
   // Redirect if already logged in
   if (isAuthenticated) {
-    navigate('/admin/dashboard', { replace: true });
+    navigate('/user/dashboard', { replace: true });
     return null;
   }
 
@@ -32,7 +32,7 @@ export default function AdminLogin() {
     try {
       await login(username, password);
       toast.success('Welcome back!');
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/user/dashboard', { replace: true });
     } catch (err) {
       const detail = err.response?.data?.detail;
       toast.error(detail || 'Invalid credentials. Please try again.');

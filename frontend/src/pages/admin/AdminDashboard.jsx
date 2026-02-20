@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaProjectDiagram, FaEnvelope, FaCode, FaBriefcase } from 'react-icons/fa';
-import { dashboardApi } from '../../api/client';
+import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 export default function AdminDashboard() {
@@ -10,7 +10,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dashboardApi.getStats()
+    userApi.getStats()
       .then(res => setStats(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -66,13 +66,13 @@ export default function AdminDashboard() {
         <h2 style={{ fontSize: 'var(--font-size-lg)' }}>Quick Actions</h2>
       </div>
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <Link to="/admin/projects" className="btn btn-primary btn-sm">
+        <Link to="/user/projects" className="btn btn-primary btn-sm">
           <FaProjectDiagram /> Manage Projects
         </Link>
-        <Link to="/admin/messages" className="btn btn-outline btn-sm">
+        <Link to="/user/messages" className="btn btn-outline btn-sm">
           <FaEnvelope /> View Messages
         </Link>
-        <Link to="/admin/profile" className="btn btn-outline btn-sm">
+        <Link to="/user/profile" className="btn btn-outline btn-sm">
           Edit Profile
         </Link>
       </div>

@@ -4,21 +4,22 @@ import { useAuth } from '../../context/AuthContext';
 import './AdminLayout.css';
 
 const SIDEBAR_LINKS = [
-  { label: 'Dashboard', path: '/admin/dashboard', icon: <FaTachometerAlt /> },
-  { label: 'Projects', path: '/admin/projects', icon: <FaProjectDiagram /> },
-  { label: 'Skills', path: '/admin/skills', icon: <FaCode /> },
-  { label: 'Experience', path: '/admin/experience', icon: <FaBriefcase /> },
-  { label: 'Messages', path: '/admin/messages', icon: <FaEnvelope /> },
-  { label: 'Profile', path: '/admin/profile', icon: <FaUser /> },
+  { label: 'Dashboard', path: '/user/dashboard', icon: <FaTachometerAlt /> },
+  { label: 'Projects', path: '/user/projects', icon: <FaProjectDiagram /> },
+  { label: 'Skills', path: '/user/skills', icon: <FaCode /> },
+  { label: 'Experience', path: '/user/experience', icon: <FaBriefcase /> },
+  { label: 'Messages', path: '/user/messages', icon: <FaEnvelope /> },
+  { label: 'Profile', path: '/user/profile', icon: <FaUser /> },
 ];
 
 const ADMIN_ONLY_LINKS = [
-  { label: 'Super Admin', path: '/admin/super-admin', icon: <FaUserShield /> },
+  { label: 'Admin Panel', path: '/admin/dashboard', icon: <FaUserShield /> },
 ];
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isAdminPortal = window.location.pathname.startsWith('/admin');
 
   const handleLogout = () => {
     logout();
@@ -27,19 +28,25 @@ export default function AdminLayout() {
 
   const username = user?.username || user?.username_slug || '';
 
+  // Show different sidebar based on portal type
+  const sidebarLinks = isAdminPortal ? [] : SIDEBAR_LINKS;
+  const showAdminLinks = !isAdminPortal && user?.is_platform_admin;
+
   return (
     <div className="admin-layout">
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar__logo">
-          <span className="gradient-text">{user?.full_name || 'Dashboard'}</span>
-          {username && (
+          <span className="gradient-text">
+            {isAdminPortal ? 'Admin Portal' : (user?.full_name || 'User Portal')}
+          </span>
+          {username && !isAdminPortal && (
             <span className="admin-sidebar__username">@{username}</span>
           )}
         </div>
 
         <nav className="admin-sidebar__nav">
-          {SIDEBAR_LINKS.map(link => (
+          {sidebarLinks.map(link => (
             <NavLink
               key={link.path}
               to={link.path}
@@ -52,8 +59,8 @@ export default function AdminLayout() {
             </NavLink>
           ))}
 
-          {/* Super Admin links — only for platform admins */}
-          {user?.is_platform_admin && (
+          {/* Admin Panel link — only for platform admins in user portal */}
+          {showAdminLinks && (
             <>
               <div style={{ borderTop: '1px solid var(--border-glass)', margin: '0.5rem 0' }} />
               {ADMIN_ONLY_LINKS.map(link => (
@@ -73,10 +80,16 @@ export default function AdminLayout() {
         </nav>
 
         <div className="admin-sidebar__footer">
-          {username && (
+          {username && !isAdminPortal && (
             <NavLink to={`/${username}`} className="admin-sidebar__link">
               <FaExternalLinkAlt />
               <span>My Portfolio</span>
+            </NavLink>
+          )}
+          {!isAdminPortal && (
+            <NavLink to="/user/dashboard" className="admin-sidebar__link">
+              <FaTachometerAlt />
+              <span>User Portal</span>
             </NavLink>
           )}
           <button onClick={handleLogout} className="admin-sidebar__link admin-sidebar__logout">

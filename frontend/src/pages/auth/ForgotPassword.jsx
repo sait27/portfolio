@@ -33,7 +33,7 @@ export default function ForgotPassword() {
   return (
     <>
       <Helmet>
-        <title>Forgot Password | iCompaas</title>
+        <title>Forgot Password | PortfolioHub</title>
       </Helmet>
       <div className="auth-page">
         <motion.div
@@ -44,7 +44,7 @@ export default function ForgotPassword() {
         >
           <div className="auth-header">
             <Link to="/" className="auth-logo">
-              iCompaas
+              PortfolioHub
             </Link>
           </div>
 

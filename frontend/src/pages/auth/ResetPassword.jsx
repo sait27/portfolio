@@ -43,7 +43,7 @@ export default function ResetPassword() {
   return (
     <>
       <Helmet>
-        <title>Reset Password | iCompaas</title>
+        <title>Reset Password | PortfolioHub</title>
       </Helmet>
       <div className="auth-page">
         <motion.div
@@ -54,7 +54,7 @@ export default function ResetPassword() {
         >
           <div className="auth-header">
             <Link to="/" className="auth-logo">
-              iCompaas
+              PortfolioHub
             </Link>
           </div>
 

@@ -17,6 +17,7 @@
   left: 0;
   bottom: 0;
   z-index: 50;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
 }
 
 .admin-sidebar__logo {
@@ -46,22 +47,46 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.7rem 1rem;
+  padding: 0.75rem 1rem;
   font-size: var(--font-size-sm);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.admin-sidebar__link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: var(--accent-gradient);
+  border-radius: 0 2px 2px 0;
+  transition: height var(--transition-base);
 }
 
 .admin-sidebar__link:hover {
   color: var(--text-primary);
   background: var(--bg-glass);
+  transform: translateX(4px);
+}
+
+.admin-sidebar__link:hover::before {
+  height: 60%;
 }
 
 .admin-sidebar__link--active {
   color: var(--accent-primary) !important;
-  background: rgba(124, 58, 237, 0.1) !important;
+  background: rgba(139, 92, 246, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.1);
+}
+
+.admin-sidebar__link--active::before {
+  height: 80%;
 }
 
 .admin-sidebar__footer {
@@ -121,11 +146,14 @@
   border-radius: var(--radius-lg);
   background: var(--bg-glass);
   border: 1px solid var(--border-glass);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  cursor: pointer;
 }
 
 .admin-stat:hover {
   border-color: var(--border-glass-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.1);
 }
 
 .admin-stat__label {
@@ -178,8 +206,13 @@
   color: var(--text-secondary);
 }
 
+.admin-table tr {
+  transition: all var(--transition-fast);
+}
+
 .admin-table tr:hover td {
   background: var(--bg-glass);
+  transform: scale(1.01);
 }
 
 /* Action buttons */
@@ -189,11 +222,12 @@
 }
 
 .admin-btn {
-  padding: 0.4rem 0.85rem;
+  padding: 0.5rem 0.9rem;
   font-size: var(--font-size-xs);
-  font-weight: 500;
+  font-weight: 600;
   border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  cursor: pointer;
 }
 
 .admin-btn--edit {
@@ -204,6 +238,8 @@
 
 .admin-btn--edit:hover {
   background: rgba(6, 182, 212, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
 }
 
 .admin-btn--delete {
@@ -214,6 +250,8 @@
 
 .admin-btn--delete:hover {
   background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 /* ─── Responsive ────────────────────────────────────────────────────────── */

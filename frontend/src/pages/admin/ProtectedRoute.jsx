@@ -3,10 +3,11 @@ import { useAuth } from '../../context/AuthContext';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 /**
- * Protects admin routes. Redirects to login if not authenticated.
+ * Protects user and admin routes. Redirects to login if not authenticated.
+ * For admin routes, also checks if user is platform admin.
  */
-export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, isLoading } = useAuth();
+export default function ProtectedRoute({ children, requirePlatformAdmin = false }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -18,6 +19,11 @@ export default function ProtectedRoute({ children }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Check platform admin requirement for admin portal
+  if (requirePlatformAdmin && !user?.is_platform_admin) {
+    return <Navigate to="/user/dashboard" replace />;
   }
 
   return children;

@@ -4,13 +4,14 @@ import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaArrowDown,
-  FaBriefcase, FaCalendarAlt, FaExternalLinkAlt, FaPaperPlane,
+  FaBriefcase, FaCalendarAlt, FaExternalLinkAlt, FaPaperPlane, FaTachometerAlt,
 } from 'react-icons/fa';
 import { HiDownload } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 import SectionWrapper from '../components/SectionWrapper';
 import LoadingSkeleton, { CardSkeleton } from '../components/LoadingSkeleton';
 import { publicApi } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import './PublicPortfolio.css';
 import '../pages/Home.css';
 
@@ -29,6 +30,7 @@ const fadeUp = {
 
 export default function PublicPortfolio() {
   const { username } = useParams();
+  const { isAuthenticated } = useAuth();
   const [profile, setProfile] = useState(null);
   const [skills, setSkills] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -110,6 +112,11 @@ export default function PublicPortfolio() {
           <a href="#projects">Projects</a>
           <a href="#experience">Experience</a>
           <a href="#contact">Contact</a>
+          {isAuthenticated && (
+            <Link to="/user/dashboard" className="btn btn-primary btn-sm">
+              <FaTachometerAlt /> Dashboard
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -324,7 +331,7 @@ export default function PublicPortfolio() {
 
       {/* ─── Footer ─────────────────────────────────────── */}
       <footer style={{ textAlign: 'center', padding: '2rem', borderTop: '1px solid var(--border-primary)', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-        Built with <span className="gradient-text">iCompaas</span> · © {new Date().getFullYear()} {profile?.full_name}
+        Built with <span className="gradient-text">PortfolioHub</span> · © {new Date().getFullYear()} {profile?.full_name}
       </footer>
     </>
   );

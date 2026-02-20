@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   FaRocket, FaPaintBrush, FaShieldAlt,
   FaLink, FaChartLine, FaMobileAlt,
 } from 'react-icons/fa';
+import { HiMenu, HiX } from 'react-icons/hi';
 import './Landing.css';
 
 const features = [
@@ -24,7 +26,7 @@ const features = [
     icon: <FaLink />,
     color: 'pink',
     title: 'Custom URL',
-    desc: 'Get your own public portfolio at icompaas.com/yourname — share it anywhere.',
+    desc: 'Get your own public portfolio at portfoliohub.com/yourname — share it anywhere.',
   },
   {
     icon: <FaShieldAlt />,
@@ -55,10 +57,19 @@ const fadeUp = {
 };
 
 export default function Landing() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <>
       <Helmet>
-        <title>iCompaas — Build Your Developer Portfolio in Minutes</title>
+        <title>PortfolioHub — Build Your Developer Brand in Minutes</title>
         <meta
           name="description"
           content="Create a stunning developer portfolio with a custom URL. Showcase your projects, skills, and experience — all for free."
@@ -66,6 +77,48 @@ export default function Landing() {
       </Helmet>
 
       <div className="landing">
+        {/* ─── Navbar ──────────────────────────────────────── */}
+        <motion.nav
+          className={`landing-nav ${isScrolled ? 'landing-nav--scrolled' : ''}`}
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="landing-nav__container">
+            <Link to="/" className="landing-nav__logo">
+              <span className="gradient-text">PortfolioHub</span>
+            </Link>
+            <div className="landing-nav__links">
+              <a href="#features">Features</a>
+              <a href="#how-it-works">How It Works</a>
+              <Link to="/user/login" className="btn btn-outline btn-sm">Sign In</Link>
+              <Link to="/register" className="btn btn-primary btn-sm">Get Started</Link>
+            </div>
+            <button
+              className="landing-nav__toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+            </button>
+          </div>
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                className="landing-nav__mobile"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
+                <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a>
+                <Link to="/user/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.nav>
         {/* ─── Hero ──────────────────────────────────────── */}
         <section className="landing-hero">
           <motion.div
@@ -78,7 +131,7 @@ export default function Landing() {
               <FaRocket /> Now in Beta — Free for Everyone
             </div>
             <h1 className="landing-hero__title">
-              Build Your <span>Developer Portfolio</span> in Minutes
+              Build Your <span>Developer Brand</span> in Minutes
             </h1>
             <p className="landing-hero__subtitle">
               Create a stunning portfolio with projects, skills, and experience.
@@ -88,7 +141,7 @@ export default function Landing() {
               <Link to="/register" className="btn btn-primary btn-lg">
                 Get Started Free
               </Link>
-              <Link to="/login" className="btn btn-outline btn-lg">
+              <Link to="/user/login" className="btn btn-outline btn-lg">
                 Sign In
               </Link>
             </div>
@@ -96,7 +149,7 @@ export default function Landing() {
         </section>
 
         {/* ─── Features ─────────────────────────────────── */}
-        <section className="landing-features">
+        <section id="features" className="landing-features">
           <div className="landing-section-header">
             <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
               Everything You Need
@@ -128,7 +181,7 @@ export default function Landing() {
         </section>
 
         {/* ─── How It Works ─────────────────────────────── */}
-        <section className="landing-steps">
+        <section id="how-it-works" className="landing-steps">
           <div className="landing-section-header">
             <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
               Three Simple Steps
@@ -172,7 +225,7 @@ export default function Landing() {
           >
             <h2>Ready to Stand Out?</h2>
             <p>
-              Join developers who've already built their portfolio on iCompaas.
+              Join developers who've already built their portfolio on PortfolioHub.
               It's free, fast, and looks incredible.
             </p>
             <Link to="/register" className="btn btn-primary btn-lg">
@@ -183,7 +236,7 @@ export default function Landing() {
 
         {/* ─── Footer ─────────────────────────────────────── */}
         <footer className="landing-footer">
-          © {new Date().getFullYear()} iCompaas. All rights reserved.
+          © {new Date().getFullYear()} PortfolioHub. All rights reserved.
         </footer>
       </div>
     </>

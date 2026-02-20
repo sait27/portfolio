@@ -6,6 +6,20 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+  position: relative;
+}
+
+.portfolio-not-found::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pulse-glow 4s ease-in-out infinite;
 }
 
 .portfolio-not-found h1 {
@@ -30,9 +44,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(13, 13, 23, 0.85);
-  backdrop-filter: blur(12px);
+  background: rgba(13, 13, 23, 0.9);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-glass);
+  transition: all var(--transition-base);
+}
+
+.portfolio-nav:hover {
+  background: rgba(13, 13, 23, 0.95);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
 }
 
 .portfolio-nav__name {
@@ -49,11 +69,27 @@
 .portfolio-nav__links a {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  transition: color var(--transition-fast);
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.portfolio-nav__links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-gradient);
+  transition: width var(--transition-base);
 }
 
 .portfolio-nav__links a:hover {
   color: var(--text-primary);
+}
+
+.portfolio-nav__links a:hover::after {
+  width: 100%;
 }
 
 /* Contact Section */
@@ -65,7 +101,7 @@
 .portfolio-contact__form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
 .portfolio-contact__row {
