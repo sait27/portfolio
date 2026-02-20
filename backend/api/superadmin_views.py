@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Profile, Project, SkillCategory, Skill, Experience, Message
 from .permissions import IsSuperAdmin
@@ -142,3 +143,77 @@ class SuperAdminUserDetailView(APIView):
             {'detail': f'User "{username}" and all their data have been deleted.'},
             status=status.HTTP_200_OK,
         )
+
+
+# ── Impersonation Views ──────────────────────────────────────────────────
+
+class ImpersonateUserView(APIView):
+    """Allow admin to impersonate a user."""
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Don't allow impersonating yourself
+        if user.id == request.user.id:
+            return Response(
+                {'detail': 'You cannot impersonate yourself.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Generate tokens for the target user
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # Store original admin user ID in session for later restoration
+        request.session['original_admin_id'] = request.user.id
+
+        return Response({
+            'access': access_token,
+            'refresh': refresh_token,
+            'impersonated_user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': getattr(user.profile, 'full_name', ''),
+            },
+            'original_admin_id': request.user.id,
+        })
+
+
+class StopImpersonationView(APIView):
+    """Stop impersonating and return to admin account."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        original_admin_id = request.data.get('original_admin_id')
+        
+        if not original_admin_id:
+            return Response(
+                {'detail': 'No impersonation session found.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            admin_user = User.objects.get(id=original_admin_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Original admin user not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Generate tokens for the original admin user
+        refresh = RefreshToken.for_user(admin_user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        return Response({
+            'access': access_token,
+            'refresh': refresh_token,
+            'admin_user': {
+                'id': admin_user.id,
+                'username': admin_user.username,
+                'email': admin_user.email,
+            },
+        })

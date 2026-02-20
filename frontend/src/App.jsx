@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 import ScrollProgress from './components/ScrollProgress';
+import ImpersonationBanner from './components/ImpersonationBanner';
 
 // Public / Marketing
 import Landing from './pages/Landing';
@@ -38,6 +39,7 @@ export default function App() {
       <ErrorBoundary>
         <AuthProvider>
           <BrowserRouter>
+            <ImpersonationBanner />
             <ScrollToTop />
             <ScrollProgress />
             <Routes>

@@ -145,6 +145,8 @@ export const adminApi = {
   getUser: (id) => api.get(`/admin/users/${id}/`),
   toggleUser: (id, isActive) => api.patch(`/admin/users/${id}/`, { is_active: isActive }),
   deleteUser: (id) => api.delete(`/admin/users/${id}/`),
+  impersonateUser: (id) => api.post(`/admin/impersonate/${id}/`),
+  stopImpersonation: (originalAdminId) => api.post('/admin/stop-impersonation/', { original_admin_id: originalAdminId }),
 };
 
 // ─── Backward compatibility alias ───────────────────────────────────────────

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaUsers, FaProjectDiagram, FaCode, FaEnvelope, FaUserShield, FaToggleOn, FaToggleOff, FaTrash, FaExternalLinkAlt, FaChartLine } from 'react-icons/fa';
+import { FaUsers, FaProjectDiagram, FaCode, FaEnvelope, FaUserShield, FaToggleOn, FaToggleOff, FaTrash, FaExternalLinkAlt, FaChartLine, FaUserSecret, FaSignOutAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import '../admin/AdminComponents.css';
 
 export default function SuperAdminPanel() {
@@ -10,6 +11,8 @@ export default function SuperAdminPanel() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [impersonating, setImpersonating] = useState(null);
+  const { user: currentUser } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -47,6 +50,26 @@ export default function SuperAdminPanel() {
       toast.success('User deleted');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to delete user');
+    }
+  };
+
+  const handleImpersonate = async (userId) => {
+    try {
+      setImpersonating(userId);
+      const response = await adminApi.impersonateUser(userId);
+      
+      // Store original admin info and new tokens
+      localStorage.setItem('original_admin_id', response.data.original_admin_id);
+      localStorage.setItem('access_token', response.data.access);
+      localStorage.setItem('refresh_token', response.data.refresh);
+      
+      toast.success(`Now impersonating ${response.data.impersonated_user.username}`);
+      
+      // Redirect to user dashboard
+      window.location.href = '/user/dashboard';
+    } catch (err) {
+      setImpersonating(null);
+      toast.error(err.response?.data?.detail || 'Failed to impersonate user');
     }
   };
 
@@ -178,6 +201,14 @@ export default function SuperAdminPanel() {
                       </a>
                       {!user.is_platform_admin && (
                         <>
+                          <button
+                            className="admin-btn admin-btn--edit"
+                            onClick={() => handleImpersonate(user.id)}
+                            disabled={impersonating === user.id}
+                            title="Impersonate User"
+                          >
+                            {impersonating === user.id ? '...' : <FaUserSecret />}
+                          </button>
                           <button
                             className="admin-btn admin-btn--edit"
                             onClick={() => handleToggleActive(user.id, user.is_active)}

@@ -19,6 +19,8 @@ urlpatterns = [
     path('admin/stats/', superadmin_views.SuperAdminStatsView.as_view(), name='admin-stats'),
     path('admin/users/', superadmin_views.SuperAdminUserListView.as_view(), name='admin-users'),
     path('admin/users/<int:user_id>/', superadmin_views.SuperAdminUserDetailView.as_view(), name='admin-user-detail'),
+    path('admin/impersonate/<int:user_id>/', superadmin_views.ImpersonateUserView.as_view(), name='admin-impersonate'),
+    path('admin/stop-impersonation/', superadmin_views.StopImpersonationView.as_view(), name='admin-stop-impersonation'),
 
     # ── Public Portfolio Endpoints (by username) ─────────────────────────
     path('u/<str:username>/profile/', views.PublicProfileView.as_view(), name='public-profile'),
