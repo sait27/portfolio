@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Profile, SkillCategory, Skill, Project, Experience, Message
+from .models import Profile, SkillCategory, Skill, Project, Experience, Message, BlogPost, Testimonial
 from .serializers import (
     ProfileSerializer,
     SkillCategorySerializer,
@@ -11,6 +11,9 @@ from .serializers import (
     ProjectDetailSerializer,
     ExperienceSerializer,
     MessageCreateSerializer,
+    BlogPostListSerializer,
+    BlogPostDetailSerializer,
+    TestimonialSerializer,
 )
 from .throttles import ContactRateThrottle
 
@@ -139,3 +142,54 @@ class PublicContactView(generics.CreateAPIView):
             {'detail': 'Message sent successfully!'},
             status=status.HTTP_201_CREATED
         )
+
+
+# ─── Blog ──────────────────────────────────────────────────────────────────
+
+class PublicBlogListView(generics.ListAPIView):
+    """
+    GET /api/u/{username}/blog/
+    Returns published blog posts for a user.
+    """
+    serializer_class = BlogPostListSerializer
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_user_by_username(username)
+        if not user:
+            return BlogPost.objects.none()
+        return BlogPost.objects.filter(user=user, is_published=True)
+
+
+class PublicBlogDetailView(generics.RetrieveAPIView):
+    """
+    GET /api/u/{username}/blog/{slug}/
+    Returns full detail for a single blog post by slug.
+    """
+    serializer_class = BlogPostDetailSerializer
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_user_by_username(username)
+        if not user:
+            return BlogPost.objects.none()
+        return BlogPost.objects.filter(user=user, is_published=True)
+
+
+# ─── Testimonials ──────────────────────────────────────────────────────────
+
+class PublicTestimonialListView(generics.ListAPIView):
+    """
+    GET /api/u/{username}/testimonials/
+    Returns testimonials for a user.
+    """
+    serializer_class = TestimonialSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_user_by_username(username)
+        if not user:
+            return Testimonial.objects.none()
+        return Testimonial.objects.filter(user=user)

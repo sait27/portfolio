@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaArrowDown,
-  FaBriefcase, FaCalendarAlt, FaExternalLinkAlt, FaPaperPlane, FaTachometerAlt,
+  FaBriefcase, FaCalendarAlt, FaExternalLinkAlt, FaPaperPlane, FaTachometerAlt, FaStar,
 } from 'react-icons/fa';
 import { HiDownload } from 'react-icons/hi';
 import toast from 'react-hot-toast';
@@ -35,19 +35,24 @@ export default function PublicPortfolio() {
   const [skills, setSkills] = useState([]);
   const [projects, setProjects] = useState([]);
   const [experience, setExperience] = useState([]);
+  const [blogs, setBlogs] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    console.log('Starting data fetch for:', username);
     setLoading(true);
     setNotFound(false);
 
     Promise.all([
-      publicApi.getProfile(username).catch(() => null),
-      publicApi.getSkills(username).catch(() => ({ data: [] })),
-      publicApi.getProjects(username).catch(() => ({ data: [] })),
-      publicApi.getExperience(username).catch(() => ({ data: [] })),
-    ]).then(([profileRes, skillsRes, projectsRes, expRes]) => {
+      publicApi.getProfile(username).catch((e) => { console.error('Profile error:', e); return null; }),
+      publicApi.getSkills(username).catch((e) => { console.error('Skills error:', e); return { data: [] }; }),
+      publicApi.getProjects(username).catch((e) => { console.error('Projects error:', e); return { data: [] }; }),
+      publicApi.getExperience(username).catch((e) => { console.error('Experience error:', e); return { data: [] }; }),
+      publicApi.getBlogs(username).catch((e) => { console.error('Blogs error:', e); return { data: [] }; }),
+      publicApi.getTestimonials(username).catch((e) => { console.error('Testimonials error:', e); return { data: [] }; }),
+    ]).then(([profileRes, skillsRes, projectsRes, expRes, blogsRes, testimonialsRes]) => {
       if (!profileRes) {
         setNotFound(true);
         setLoading(false);
@@ -64,6 +69,14 @@ export default function PublicPortfolio() {
 
       const expData = expRes.data?.results || expRes.data;
       setExperience(Array.isArray(expData) ? expData : []);
+
+      const blogsData = blogsRes.data?.results || blogsRes.data || [];
+      console.log('Blogs data:', blogsData);
+      setBlogs(Array.isArray(blogsData) ? blogsData : []);
+
+      const testimonialsData = testimonialsRes.data?.results || testimonialsRes.data || [];
+      console.log('Testimonials data:', testimonialsData);
+      setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : []);
 
       setLoading(false);
     });
@@ -111,6 +124,8 @@ export default function PublicPortfolio() {
           <a href="#skills">Skills</a>
           <a href="#projects">Projects</a>
           <a href="#experience">Experience</a>
+          <a href="#blog">Blog</a>
+          <a href="#testimonials">Testimonials</a>
           <a href="#contact">Contact</a>
           {isAuthenticated && (
             <Link to="/user/dashboard" className="btn btn-primary btn-sm">
@@ -318,6 +333,72 @@ export default function PublicPortfolio() {
                     <ul className="exp-home__highlights">
                       {exp.highlights.map((h, j) => <li key={j}>{h}</li>)}
                     </ul>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </SectionWrapper>
+      )}
+
+      {/* ─── Blog ─────────────────────────────────────── */}
+      {blogs.length > 0 && (
+        <SectionWrapper id="blog">
+          <div className="featured__header">
+            <h2 className="section-title">Latest <span className="gradient-text">Articles</span></h2>
+          </div>
+          <div className="featured__grid">
+            {blogs.slice(0, 3).map((blog, i) => (
+              <motion.article key={blog.id} className="featured__card glass" initial="hidden" whileInView="visible" variants={fadeUp} custom={i} viewport={{ once: true }} whileHover={{ y: -8 }}>
+                <div className="featured__card-img">
+                  <img src={blog.thumbnail || `https://via.placeholder.com/600x400/16161f/7c3aed?text=${encodeURIComponent(blog.title)}`} alt={blog.title} />
+                </div>
+                <div className="featured__card-body">
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <span><FaCalendarAlt /> {new Date(blog.published_at || blog.created_at).toLocaleDateString()}</span>
+                    <span>• {blog.read_time}</span>
+                  </div>
+                  <h3 className="featured__card-title">{blog.title}</h3>
+                  <p className="featured__card-desc">{blog.excerpt}</p>
+                  {blog.tags && blog.tags.length > 0 && (
+                    <div className="featured__card-tech">
+                      {blog.tags.slice(0, 3).map((tag, idx) => (
+                        <span key={idx} className="chip">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </SectionWrapper>
+      )}
+
+      {/* ─── Testimonials ─────────────────────────────────── */}
+      {testimonials.length > 0 && (
+        <SectionWrapper id="testimonials">
+          <div className="featured__header">
+            <h2 className="section-title">Client <span className="gradient-text">Testimonials</span></h2>
+          </div>
+          <div className="featured__grid">
+            {testimonials.slice(0, 3).map((testimonial, i) => (
+              <motion.div key={testimonial.id} className="featured__card glass" initial="hidden" whileInView="visible" variants={fadeUp} custom={i} viewport={{ once: true }}>
+                <div className="featured__card-body" style={{ padding: '2rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <img src={testimonial.client_avatar || `https://via.placeholder.com/60x60/7c3aed/ffffff?text=${testimonial.client_name.charAt(0)}`} alt={testimonial.client_name} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1rem' }}>{testimonial.client_name}</h4>
+                      <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>{testimonial.client_role} at {testimonial.client_company}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem' }}>
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <FaStar key={idx} style={{ color: idx < testimonial.rating ? 'var(--accent-primary)' : 'var(--border-primary)', fontSize: '0.875rem' }} />
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>"{testimonial.content}"</p>
+                  {testimonial.project_name && (
+                    <span className="chip" style={{ marginTop: '1rem' }}>Project: {testimonial.project_name}</span>
                   )}
                 </div>
               </motion.div>

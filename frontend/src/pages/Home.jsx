@@ -444,7 +444,183 @@ function ExperiencePreview() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   6. RESUME SECTION
+   6. FEATURED BLOGS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function FeaturedBlogs() {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    publicApi.getBlogs({ is_published: true, is_featured: true })
+      .then(res => {
+        const data = res.data.results || res.data;
+        setBlogs(Array.isArray(data) ? data.slice(0, 3) : []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (!loading && blogs.length === 0) return null;
+
+  return (
+    <SectionWrapper id="blogs">
+      <div className="blogs__header">
+        <h2 className="section-title">
+          Latest <span className="gradient-text">Articles</span>
+        </h2>
+        <p className="section-subtitle">
+          Insights and tutorials from my development journey.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="blogs__grid">
+          {[1, 2, 3].map(i => <CardSkeleton key={i} />)}
+        </div>
+      ) : (
+        <div className="blogs__grid">
+          {blogs.map((blog, i) => (
+            <motion.article
+              key={blog.id}
+              className="blogs__card glass"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.15 }}
+              whileHover={{ y: -8 }}
+            >
+              <div className="blogs__card-img">
+                <img
+                  src={blog.thumbnail || 'https://via.placeholder.com/600x300/16161f/7c3aed?text=Blog'}
+                  alt={blog.title}
+                />
+              </div>
+              <div className="blogs__card-body">
+                <div className="blogs__card-meta">
+                  <span className="chip">
+                    <FaCalendarAlt style={{ fontSize: '0.6rem' }} />
+                    {new Date(blog.published_at).toLocaleDateString()}
+                  </span>
+                  <span className="chip">{blog.read_time}</span>
+                </div>
+                <h3 className="blogs__card-title">{blog.title}</h3>
+                <p className="blogs__card-excerpt">{blog.excerpt}</p>
+                {blog.tags && blog.tags.length > 0 && (
+                  <div className="blogs__card-tags">
+                    {blog.tags.slice(0, 3).map(tag => (
+                      <span key={tag} className="chip">{tag}</span>
+                    ))}
+                  </div>
+                )}
+                <Link to="/blog" className="btn btn-outline btn-sm">
+                  Read More <FaArrowRight />
+                </Link>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+      )}
+
+      <div className="blogs__cta">
+        <Link to="/blog" className="btn btn-outline">
+          View All Articles <FaArrowRight />
+        </Link>
+      </div>
+    </SectionWrapper>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. TESTIMONIALS SECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function TestimonialsSection() {
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    publicApi.getTestimonials({ is_featured: true })
+      .then(res => {
+        const data = res.data.results || res.data;
+        setTestimonials(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (!loading && testimonials.length === 0) return null;
+
+  return (
+    <SectionWrapper id="testimonials">
+      <div className="testimonials-home__header">
+        <h2 className="section-title">
+          What People <span className="gradient-text">Say</span>
+        </h2>
+        <p className="section-subtitle">
+          Feedback from clients and colleagues I've worked with.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="testimonials-home__grid">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="testimonials-home__card glass">
+              <LoadingSkeleton variant="text" count={3} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="testimonials-home__grid">
+          {testimonials.map((testimonial, i) => (
+            <motion.div
+              key={testimonial.id}
+              className="testimonials-home__card glass"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.12 }}
+              whileHover={{ y: -4 }}
+            >
+              <div className="testimonials-home__rating">
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <span key={j} className={`star ${j < testimonial.rating ? 'active' : ''}`}>★</span>
+                ))}
+              </div>
+              <p className="testimonials-home__text">
+                "{testimonial.content}"
+              </p>
+              <div className="testimonials-home__author">
+                {testimonial.client_avatar && (
+                  <img
+                    src={testimonial.client_avatar}
+                    alt={testimonial.client_name}
+                    className="testimonials-home__avatar"
+                  />
+                )}
+                <div className="testimonials-home__author-info">
+                  <h4 className="testimonials-home__name">{testimonial.client_name}</h4>
+                  <p className="testimonials-home__role">
+                    {testimonial.client_role} at {testimonial.client_company}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      <div className="testimonials-home__cta">
+        <Link to="/testimonials" className="btn btn-outline">
+          View All Testimonials <FaArrowRight />
+        </Link>
+      </div>
+    </SectionWrapper>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. RESUME SECTION
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function ResumeSection() {
@@ -488,7 +664,7 @@ function ResumeSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   7. CTA SECTION
+   9. CTA SECTION
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function CTASection() {
@@ -530,6 +706,8 @@ export default function Home() {
       <SkillsShowcase />
       <FeaturedProjects />
       <ExperiencePreview />
+      <FeaturedBlogs />
+      <TestimonialsSection />
       <ResumeSection />
       <CTASection />
     </PageTransition>

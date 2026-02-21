@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaEdit, FaTrash, FaBriefcase, FaCalendarAlt } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaBriefcase, FaCalendarAlt, FaBuilding, FaExternalLinkAlt, FaSort } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import FormField from '../../components/FormField';
 
 const EMPTY_EXPERIENCE = {
   role: '', company: '', company_url: '',
@@ -140,35 +141,65 @@ export default function AdminExperience() {
               <h2 style={{ marginBottom: '1.5rem' }}>{editing ? 'Edit Experience' : 'New Experience'}</h2>
               <form onSubmit={handleSubmit} className="admin-form">
                 <div className="admin-form__row">
-                  <div className="form-group">
-                    <label className="form-label">Role / Title *</label>
-                    <input name="role" className="form-input" value={formData.role} onChange={handleChange} placeholder="e.g., Full Stack Developer" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Company *</label>
-                    <input name="company" className="form-input" value={formData.company} onChange={handleChange} placeholder="e.g., Google" />
-                  </div>
+                  <FormField
+                    label="Role / Title"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    icon={FaBriefcase}
+                    placeholder="e.g., Full Stack Developer"
+                    required
+                  />
+                  <FormField
+                    label="Company"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    icon={FaBuilding}
+                    placeholder="e.g., Google"
+                    required
+                  />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Company URL</label>
-                  <input name="company_url" className="form-input" value={formData.company_url} onChange={handleChange} placeholder="https://..." />
-                </div>
+                
+                <FormField
+                  label="Company URL"
+                  name="company_url"
+                  value={formData.company_url}
+                  onChange={handleChange}
+                  icon={FaExternalLinkAlt}
+                  placeholder="https://..."
+                  hint="Optional company website"
+                />
+                
                 <div className="admin-form__row">
-                  <div className="form-group">
-                    <label className="form-label">Start Date *</label>
-                    <input name="start_date" type="date" className="form-input" value={formData.start_date} onChange={handleChange} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">End Date</label>
-                    <input name="end_date" type="date" className="form-input" value={formData.end_date || ''} onChange={handleChange} disabled={formData.is_current} />
-                  </div>
+                  <FormField
+                    label="Start Date"
+                    name="start_date"
+                    type="date"
+                    value={formData.start_date}
+                    onChange={handleChange}
+                    icon={FaCalendarAlt}
+                    required
+                  />
+                  <FormField
+                    label="End Date"
+                    name="end_date"
+                    type="date"
+                    value={formData.end_date || ''}
+                    onChange={handleChange}
+                    icon={FaCalendarAlt}
+                    disabled={formData.is_current}
+                    hint={formData.is_current ? "Disabled for current role" : "Leave empty if current"}
+                  />
                 </div>
-                <div className="admin-form__checks">
-                  <label className="admin-form__check">
-                    <input type="checkbox" name="is_current" checked={formData.is_current} onChange={handleChange} />
-                    <span>I currently work here</span>
-                  </label>
-                </div>
+                
+                <FormField
+                  label="I currently work here"
+                  name="is_current"
+                  type="checkbox"
+                  value={formData.is_current}
+                  onChange={handleChange}
+                />
 
                 {/* Highlights */}
                 <div className="form-group">
@@ -189,10 +220,15 @@ export default function AdminExperience() {
                   )}
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Order</label>
-                  <input name="order" type="number" className="form-input" value={formData.order} onChange={handleChange} />
-                </div>
+                <FormField
+                  label="Order"
+                  name="order"
+                  type="number"
+                  value={formData.order}
+                  onChange={handleChange}
+                  icon={FaSort}
+                  hint="Lower numbers appear first"
+                />
 
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
                   <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowForm(false)}>Cancel</button>

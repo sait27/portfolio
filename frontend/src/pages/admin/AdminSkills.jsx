@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaEdit, FaTrash, FaFolderOpen } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaFolderOpen, FaTag, FaSort, FaCode, FaImage } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import FormField from '../../components/FormField';
 
 const EMPTY_CATEGORY = { name: '', order: 0 };
 const EMPTY_SKILL = { name: '', icon: '', category: '', order: 0 };
@@ -176,14 +177,24 @@ export default function AdminSkills() {
             <motion.div className="admin-form-modal glass" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} onClick={e => e.stopPropagation()}>
               <h2 style={{ marginBottom: '1.5rem' }}>{editingCat ? 'Edit Category' : 'New Category'}</h2>
               <form onSubmit={handleCatSubmit} className="admin-form">
-                <div className="form-group">
-                  <label className="form-label">Category Name *</label>
-                  <input className="form-input" value={catForm.name} onChange={e => setCatForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g., Backend, Frontend, AI Models" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Order</label>
-                  <input type="number" className="form-input" value={catForm.order} onChange={e => setCatForm(p => ({ ...p, order: parseInt(e.target.value) || 0 }))} />
-                </div>
+                <FormField
+                  label="Category Name"
+                  name="name"
+                  value={catForm.name}
+                  onChange={e => setCatForm(p => ({ ...p, name: e.target.value }))}
+                  icon={FaTag}
+                  placeholder="e.g., Backend, Frontend, AI Models"
+                  required
+                />
+                <FormField
+                  label="Order"
+                  name="order"
+                  type="number"
+                  value={catForm.order}
+                  onChange={e => setCatForm(p => ({ ...p, order: parseInt(e.target.value) || 0 }))}
+                  icon={FaSort}
+                  hint="Lower numbers appear first"
+                />
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
                   <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowCatForm(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting}>
@@ -204,27 +215,46 @@ export default function AdminSkills() {
               <h2 style={{ marginBottom: '1.5rem' }}>{editingSkill ? 'Edit Skill' : 'New Skill'}</h2>
               <form onSubmit={handleSkillSubmit} className="admin-form">
                 <div className="admin-form__row">
-                  <div className="form-group">
-                    <label className="form-label">Skill Name *</label>
-                    <input className="form-input" value={skillForm.name} onChange={e => setSkillForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g., Python, React, Docker" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Category *</label>
-                    <select className="form-input" value={skillForm.category} onChange={e => setSkillForm(p => ({ ...p, category: e.target.value }))}>
-                      <option value="">Select category...</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
+                  <FormField
+                    label="Skill Name"
+                    name="name"
+                    value={skillForm.name}
+                    onChange={e => setSkillForm(p => ({ ...p, name: e.target.value }))}
+                    icon={FaCode}
+                    placeholder="e.g., Python, React, Docker"
+                    required
+                  />
+                  <FormField
+                    label="Category"
+                    name="category"
+                    type="select"
+                    value={skillForm.category}
+                    onChange={e => setSkillForm(p => ({ ...p, category: e.target.value }))}
+                    icon={FaTag}
+                    placeholder="Select category..."
+                    options={categories.map(c => ({ value: c.id, label: c.name }))}
+                    required
+                  />
                 </div>
                 <div className="admin-form__row">
-                  <div className="form-group">
-                    <label className="form-label">Icon URL</label>
-                    <input className="form-input" value={skillForm.icon} onChange={e => setSkillForm(p => ({ ...p, icon: e.target.value }))} placeholder="SVG or image URL" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Order</label>
-                    <input type="number" className="form-input" value={skillForm.order} onChange={e => setSkillForm(p => ({ ...p, order: parseInt(e.target.value) || 0 }))} />
-                  </div>
+                  <FormField
+                    label="Icon URL"
+                    name="icon"
+                    value={skillForm.icon}
+                    onChange={e => setSkillForm(p => ({ ...p, icon: e.target.value }))}
+                    icon={FaImage}
+                    placeholder="SVG or image URL"
+                    hint="Optional skill icon"
+                  />
+                  <FormField
+                    label="Order"
+                    name="order"
+                    type="number"
+                    value={skillForm.order}
+                    onChange={e => setSkillForm(p => ({ ...p, order: parseInt(e.target.value) || 0 }))}
+                    icon={FaSort}
+                    hint="Lower numbers appear first"
+                  />
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
                   <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowSkillForm(false)}>Cancel</button>

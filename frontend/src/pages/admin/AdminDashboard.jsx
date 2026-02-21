@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaProjectDiagram, FaEnvelope, FaCode, FaBriefcase } from 'react-icons/fa';
+import { FaProjectDiagram, FaEnvelope, FaCode, FaBriefcase, FaBlog, FaQuoteLeft } from 'react-icons/fa';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
@@ -22,6 +22,9 @@ export default function AdminDashboard() {
     { label: 'Total Skills', value: stats.skills, color: 'accent', icon: <FaCode /> },
     { label: 'Categories', value: stats.categories, color: 'cyan', icon: <FaCode /> },
     { label: 'Experience', value: stats.experience, color: 'pink', icon: <FaBriefcase /> },
+    { label: 'Blog Posts', value: stats.blog_posts, color: 'accent', icon: <FaBlog /> },
+    { label: 'Published Posts', value: stats.published_posts, color: 'cyan', icon: <FaBlog /> },
+    { label: 'Testimonials', value: stats.testimonials, color: 'pink', icon: <FaQuoteLeft /> },
     { label: 'Total Messages', value: stats.messages, color: 'accent', icon: <FaEnvelope /> },
     { label: 'Unread Messages', value: stats.unread_messages, color: 'pink', icon: <FaEnvelope /> },
   ] : [];
@@ -68,6 +71,12 @@ export default function AdminDashboard() {
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <Link to="/user/projects" className="btn btn-primary btn-sm">
           <FaProjectDiagram /> Manage Projects
+        </Link>
+        <Link to="/user/blog" className="btn btn-primary btn-sm">
+          <FaBlog /> Manage Blog
+        </Link>
+        <Link to="/user/testimonials" className="btn btn-primary btn-sm">
+          <FaQuoteLeft /> Manage Testimonials
         </Link>
         <Link to="/user/messages" className="btn btn-outline btn-sm">
           <FaEnvelope /> View Messages

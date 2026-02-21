@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaStar } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaStar, FaProjectDiagram, FaTag, FaFileAlt, FaImage, FaCalendar, FaExternalLinkAlt, FaGithub } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import FormField from '../../components/FormField';
 
 const CATEGORY_CHOICES = [
   { value: 'fullstack', label: 'Full Stack' },
@@ -148,54 +149,104 @@ export default function AdminProjects() {
               </h2>
               <form onSubmit={handleSubmit} className="admin-form">
                 <div className="admin-form__row">
-                  <div className="form-group">
-                    <label className="form-label">Title *</label>
-                    <input name="title" className="form-input" value={formData.title} onChange={handleChange} placeholder="Project title" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Category</label>
-                    <select name="category" className="form-input" value={formData.category} onChange={handleChange}>
-                      {CATEGORY_CHOICES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                  </div>
+                  <FormField
+                    label="Title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    icon={FaProjectDiagram}
+                    placeholder="Project title"
+                    required
+                  />
+                  <FormField
+                    label="Category"
+                    name="category"
+                    type="select"
+                    value={formData.category}
+                    onChange={handleChange}
+                    icon={FaTag}
+                    options={CATEGORY_CHOICES}
+                  />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Short Description</label>
-                  <input name="short_description" className="form-input" value={formData.short_description} onChange={handleChange} placeholder="One-liner for card view" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Full Description</label>
-                  <textarea name="description" className="form-textarea" value={formData.description} onChange={handleChange} placeholder="Detailed description (supports markdown)" rows={4} />
-                </div>
+                
+                <FormField
+                  label="Short Description"
+                  name="short_description"
+                  value={formData.short_description}
+                  onChange={handleChange}
+                  icon={FaFileAlt}
+                  placeholder="One-liner for card view"
+                  hint="Brief description shown on project cards"
+                />
+                
+                <FormField
+                  label="Full Description"
+                  name="description"
+                  type="textarea"
+                  value={formData.description}
+                  onChange={handleChange}
+                  icon={FaFileAlt}
+                  placeholder="Detailed description (supports markdown)"
+                  rows={4}
+                  hint="Detailed project description with markdown support"
+                />
+                
                 <div className="admin-form__row">
-                  <div className="form-group">
-                    <label className="form-label">Thumbnail URL</label>
-                    <input name="thumbnail" className="form-input" value={formData.thumbnail} onChange={handleChange} placeholder="Image URL" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Date Built</label>
-                    <input name="date_built" type="date" className="form-input" value={formData.date_built} onChange={handleChange} />
-                  </div>
+                  <FormField
+                    label="Thumbnail URL"
+                    name="thumbnail"
+                    value={formData.thumbnail}
+                    onChange={handleChange}
+                    icon={FaImage}
+                    placeholder="Image URL"
+                    hint="Project thumbnail image"
+                  />
+                  <FormField
+                    label="Date Built"
+                    name="date_built"
+                    type="date"
+                    value={formData.date_built}
+                    onChange={handleChange}
+                    icon={FaCalendar}
+                  />
                 </div>
+                
                 <div className="admin-form__row">
-                  <div className="form-group">
-                    <label className="form-label">Live URL</label>
-                    <input name="live_url" className="form-input" value={formData.live_url} onChange={handleChange} placeholder="https://..." />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Repo URL</label>
-                    <input name="repo_url" className="form-input" value={formData.repo_url} onChange={handleChange} placeholder="https://github.com/..." />
-                  </div>
+                  <FormField
+                    label="Live URL"
+                    name="live_url"
+                    value={formData.live_url}
+                    onChange={handleChange}
+                    icon={FaExternalLinkAlt}
+                    placeholder="https://..."
+                    hint="Live demo or production URL"
+                  />
+                  <FormField
+                    label="Repository URL"
+                    name="repo_url"
+                    value={formData.repo_url}
+                    onChange={handleChange}
+                    icon={FaGithub}
+                    placeholder="https://github.com/..."
+                    hint="Source code repository"
+                  />
                 </div>
-                <div className="admin-form__checks">
-                  <label className="admin-form__check">
-                    <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} />
-                    <span>Featured</span>
-                  </label>
-                  <label className="admin-form__check">
-                    <input type="checkbox" name="is_visible" checked={formData.is_visible} onChange={handleChange} />
-                    <span>Visible</span>
-                  </label>
+                
+                <div className="admin-form__row">
+                  <FormField
+                    label="Featured Project"
+                    name="is_featured"
+                    type="checkbox"
+                    value={formData.is_featured}
+                    onChange={handleChange}
+                  />
+                  <FormField
+                    label="Visible to Public"
+                    name="is_visible"
+                    type="checkbox"
+                    value={formData.is_visible}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
                   <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowForm(false)}>Cancel</button>

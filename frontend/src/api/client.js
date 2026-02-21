@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API client configured for the Django backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -82,6 +82,8 @@ export const publicApi = {
   getProjectBySlug: (username, slug) => api.get(`/u/${username}/projects/${slug}/`),
   getSkills: (username) => api.get(`/u/${username}/skills/`),
   getExperience: (username) => api.get(`/u/${username}/experience/`),
+  getBlogs: (username) => api.get(`/u/${username}/blog/`),
+  getTestimonials: (username) => api.get(`/u/${username}/testimonials/`),
   sendMessage: (username, data) => api.post(`/u/${username}/contact/`, data),
 };
 
@@ -123,6 +125,18 @@ export const userApi = {
   getMessages: () => api.get('/user/messages/'),
   updateMessage: (id, data) => api.patch(`/user/messages/${id}/`, data),
   deleteMessage: (id) => api.delete(`/user/messages/${id}/`),
+
+  // Blog
+  getBlogs: () => api.get('/user/blog/'),
+  createBlog: (data) => api.post('/user/blog/', data),
+  updateBlog: (id, data) => api.put(`/user/blog/${id}/`, data),
+  deleteBlog: (id) => api.delete(`/user/blog/${id}/`),
+
+  // Testimonials
+  getTestimonials: () => api.get('/user/testimonials/'),
+  createTestimonial: (data) => api.post('/user/testimonials/', data),
+  updateTestimonial: (id, data) => api.put(`/user/testimonials/${id}/`, data),
+  deleteTestimonial: (id) => api.delete(`/user/testimonials/${id}/`),
 
   // Upload
   uploadFile: (file) => {

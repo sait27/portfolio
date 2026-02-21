@@ -4,12 +4,12 @@
 }
 
 /* Adjust layout when impersonation banner is active */
-body.impersonation-active .admin-sidebar {
+.admin-layout.impersonation-active .admin-sidebar {
   top: 48px;
   height: calc(100vh - 48px);
 }
 
-body.impersonation-active .admin-main {
+.admin-layout.impersonation-active .admin-main {
   padding-top: calc(2rem + 48px);
 }
 

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { FaEnvelope, FaMapMarkerAlt, FaPaperPlane } from 'react-icons/fa';
+import { FaEnvelope, FaMapMarkerAlt, FaPaperPlane, FaUser, FaFileAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import SectionWrapper from '../components/SectionWrapper';
 import PageTransition from '../components/PageTransition';
+import FormField from '../components/FormField';
 import { publicApi } from '../api/client';
 import './Contact.css';
 
@@ -188,69 +189,52 @@ export default function Contact() {
                     autoComplete="off"
                   />
 
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="sender_name">Name *</label>
-                    <input
-                      id="sender_name"
-                      name="sender_name"
-                      type="text"
-                      className={`form-input ${errors.sender_name ? 'form-input--error' : ''}`}
-                      placeholder="Your name"
-                      value={formData.sender_name}
-                      onChange={handleChange}
-                      onBlur={(e) => validateField('sender_name', e.target.value)}
-                      aria-invalid={!!errors.sender_name}
-                      aria-describedby={errors.sender_name ? 'name-error' : undefined}
-                    />
-                    {errors.sender_name && <span id="name-error" className="form-error" role="alert">{errors.sender_name}</span>}
-                  </div>
+                  <FormField
+                    label="Name"
+                    name="sender_name"
+                    value={formData.sender_name}
+                    onChange={handleChange}
+                    error={errors.sender_name}
+                    icon={FaUser}
+                    placeholder="Your name"
+                    required
+                  />
 
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="sender_email">Email *</label>
-                    <input
-                      id="sender_email"
-                      name="sender_email"
-                      type="email"
-                      className={`form-input ${errors.sender_email ? 'form-input--error' : ''}`}
-                      placeholder="your@email.com"
-                      value={formData.sender_email}
-                      onChange={handleChange}
-                      onBlur={(e) => validateField('sender_email', e.target.value)}
-                      aria-invalid={!!errors.sender_email}
-                      aria-describedby={errors.sender_email ? 'email-error' : undefined}
-                    />
-                    {errors.sender_email && <span id="email-error" className="form-error" role="alert">{errors.sender_email}</span>}
-                  </div>
+                  <FormField
+                    label="Email"
+                    name="sender_email"
+                    type="email"
+                    value={formData.sender_email}
+                    onChange={handleChange}
+                    error={errors.sender_email}
+                    icon={FaEnvelope}
+                    placeholder="your@email.com"
+                    required
+                  />
 
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="subject">Subject</label>
-                    <input
-                      id="subject"
-                      name="subject"
-                      type="text"
-                      className="form-input"
-                      placeholder="What's this about?"
-                      value={formData.subject}
-                      onChange={handleChange}
-                    />
-                  </div>
+                  <FormField
+                    label="Subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    icon={FaFileAlt}
+                    placeholder="What's this about?"
+                    hint="Optional but helpful"
+                  />
 
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="content">Message *</label>
-                    <textarea
-                      id="content"
-                      name="content"
-                      className={`form-textarea ${errors.content ? 'form-input--error' : ''}`}
-                      placeholder="Tell me about your project..."
-                      rows={5}
-                      value={formData.content}
-                      onChange={handleChange}
-                      onBlur={(e) => validateField('content', e.target.value)}
-                      aria-invalid={!!errors.content}
-                      aria-describedby={errors.content ? 'content-error' : undefined}
-                    />
-                    {errors.content && <span id="content-error" className="form-error" role="alert">{errors.content}</span>}
-                  </div>
+                  <FormField
+                    label="Message"
+                    name="content"
+                    type="textarea"
+                    value={formData.content}
+                    onChange={handleChange}
+                    error={errors.content}
+                    icon={FaFileAlt}
+                    placeholder="Tell me about your project..."
+                    rows={5}
+                    hint="At least 10 characters"
+                    required
+                  />
 
                   <button
                     type="submit"

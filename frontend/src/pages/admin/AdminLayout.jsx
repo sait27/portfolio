@@ -1,11 +1,14 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { FaExternalLinkAlt, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase, FaUserShield } from 'react-icons/fa';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { FaExternalLinkAlt, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase, FaUserShield, FaBlog, FaQuoteLeft } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { useImpersonation } from '../../hooks/useImpersonation';
 import './AdminLayout.css';
 
 const SIDEBAR_LINKS = [
   { label: 'Dashboard', path: '/user/dashboard', icon: <FaTachometerAlt /> },
   { label: 'Projects', path: '/user/projects', icon: <FaProjectDiagram /> },
+  { label: 'Blog', path: '/user/blog', icon: <FaBlog /> },
+  { label: 'Testimonials', path: '/user/testimonials', icon: <FaQuoteLeft /> },
   { label: 'Skills', path: '/user/skills', icon: <FaCode /> },
   { label: 'Experience', path: '/user/experience', icon: <FaBriefcase /> },
   { label: 'Messages', path: '/user/messages', icon: <FaEnvelope /> },
@@ -18,8 +21,10 @@ const ADMIN_ONLY_LINKS = [
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const { isImpersonating } = useImpersonation();
   const navigate = useNavigate();
-  const isAdminPortal = window.location.pathname.startsWith('/admin');
+  const location = useLocation();
+  const isAdminPortal = location.pathname.startsWith('/admin');
 
   const handleLogout = () => {
     logout();
@@ -33,7 +38,7 @@ export default function AdminLayout() {
   const showAdminLinks = !isAdminPortal && user?.is_platform_admin;
 
   return (
-    <div className="admin-layout">
+    <div className={`admin-layout ${isImpersonating ? 'impersonation-active' : ''}`}>
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar__logo">

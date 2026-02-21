@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .models import Profile, SkillCategory, Skill, Project, Experience, Message
+from .models import Profile, SkillCategory, Skill, Project, Experience, Message, BlogPost, Testimonial
 from .serializers import (
     ProfileSerializer,
     SkillCategorySerializer,
@@ -13,6 +13,9 @@ from .serializers import (
     ProjectDetailSerializer,
     ExperienceSerializer,
     MessageListSerializer,
+    BlogPostListSerializer,
+    BlogPostDetailSerializer,
+    TestimonialSerializer,
 )
 
 
@@ -35,6 +38,9 @@ class DashboardStatsView(APIView):
             'experience': Experience.objects.filter(user=user).count(),
             'messages': Message.objects.filter(recipient=user).count(),
             'unread_messages': Message.objects.filter(recipient=user, is_read=False).count(),
+            'blog_posts': BlogPost.objects.filter(user=user).count(),
+            'published_posts': BlogPost.objects.filter(user=user, is_published=True).count(),
+            'testimonials': Testimonial.objects.filter(user=user).count(),
         })
 
 
@@ -245,3 +251,68 @@ class DashboardUploadView(APIView):
             })
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ─── Dashboard Blog Posts CRUD ────────────────────────────────────────────
+
+class DashboardBlogListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/dashboard/blog/  — List own blog posts
+    POST /api/dashboard/blog/  — Create a new blog post
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return BlogPost.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return BlogPostDetailSerializer
+        return BlogPostListSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardBlogDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/dashboard/blog/{id}/  — Read own blog post
+    PUT    /api/dashboard/blog/{id}/  — Update own blog post
+    DELETE /api/dashboard/blog/{id}/  — Delete own blog post
+    """
+    serializer_class = BlogPostDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return BlogPost.objects.filter(user=self.request.user)
+
+
+# ─── Dashboard Testimonials CRUD ──────────────────────────────────────────
+
+class DashboardTestimonialListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/dashboard/testimonials/  — List own testimonials
+    POST /api/dashboard/testimonials/  — Create a new testimonial
+    """
+    serializer_class = TestimonialSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Testimonial.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardTestimonialDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/dashboard/testimonials/{id}/  — Read own testimonial
+    PUT    /api/dashboard/testimonials/{id}/  — Update own testimonial
+    DELETE /api/dashboard/testimonials/{id}/  — Delete own testimonial
+    """
+    serializer_class = TestimonialSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Testimonial.objects.filter(user=self.request.user)

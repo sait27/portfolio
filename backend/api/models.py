@@ -152,6 +152,61 @@ class Experience(models.Model):
         return f"{self.role} at {self.company}"
 
 
+# ─── Blog Post ─────────────────────────────────────────────────────────────
+
+class BlogPost(models.Model):
+    """Blog posts — scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(blank=True)
+    excerpt = models.TextField(max_length=500, help_text="Brief description for cards")
+    content = models.TextField(help_text="Full article content (supports markdown)")
+    thumbnail = models.URLField(blank=True, help_text="Cloudinary URL for cover image")
+    tags = models.JSONField(default=list, blank=True, help_text='List of tags, e.g. ["React", "Django"]')
+    read_time = models.CharField(max_length=20, default="5 min read")
+    is_published = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False)
+    published_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-published_at', '-created_at']
+        unique_together = ['user', 'slug']
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+
+# ─── Testimonial ───────────────────────────────────────────────────────────
+
+class Testimonial(models.Model):
+    """Client testimonials — scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='testimonials')
+    client_name = models.CharField(max_length=100)
+    client_role = models.CharField(max_length=100)
+    client_company = models.CharField(max_length=100)
+    client_avatar = models.URLField(blank=True, help_text="Cloudinary URL for client photo")
+    content = models.TextField(help_text="Testimonial text")
+    rating = models.IntegerField(default=5, help_text="Rating out of 5")
+    project_name = models.CharField(max_length=100, blank=True)
+    is_featured = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+
+    def __str__(self):
+        return f"{self.client_name} - {self.client_company}"
+
+
 # ─── Message (Contact Form) ────────────────────────────────────────────────
 
 class Message(models.Model):

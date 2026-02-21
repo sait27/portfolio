@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Profile, SkillCategory, Skill, Project, Experience, Message
+from .models import Profile, SkillCategory, Skill, Project, Experience, Message, BlogPost, Testimonial
 
 
 # ─── Skill Serializers ──────────────────────────────────────────────────────
@@ -114,3 +114,42 @@ class MessageListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'sender_name', 'sender_email', 'subject', 'content', 'is_read', 'created_at']
+
+
+# ─── Blog Post Serializers ──────────────────────────────────────────────────
+
+class BlogPostListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for blog post cards."""
+    
+    class Meta:
+        model = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'thumbnail', 'tags',
+            'read_time', 'is_published', 'is_featured', 'published_at'
+        ]
+
+
+class BlogPostDetailSerializer(serializers.ModelSerializer):
+    """Full serializer for single blog post view."""
+    
+    class Meta:
+        model = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'content', 'thumbnail',
+            'tags', 'read_time', 'is_published', 'is_featured',
+            'published_at', 'created_at', 'updated_at'
+        ]
+
+
+# ─── Testimonial Serializer ─────────────────────────────────────────────────
+
+class TestimonialSerializer(serializers.ModelSerializer):
+    """Serializer for testimonials."""
+    
+    class Meta:
+        model = Testimonial
+        fields = [
+            'id', 'client_name', 'client_role', 'client_company',
+            'client_avatar', 'content', 'rating', 'project_name',
+            'is_featured', 'order'
+        ]

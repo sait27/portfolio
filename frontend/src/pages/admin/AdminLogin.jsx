@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { FaLock, FaUser, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaLock, FaUser } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import FormField from '../../components/FormField';
 import './AdminLogin.css';
 
 export default function AdminLogin() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -21,16 +20,21 @@ export default function AdminLogin() {
     return null;
   }
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
+    if (!formData.username.trim() || !formData.password.trim()) {
       toast.error('Please enter both username and password');
       return;
     }
 
     setIsLoading(true);
     try {
-      await login(username, password);
+      await login(formData.username, formData.password);
       toast.success('Welcome back!');
       navigate('/user/dashboard', { replace: true });
     } catch (err) {
@@ -62,44 +66,26 @@ export default function AdminLogin() {
           </div>
 
           <form onSubmit={handleSubmit} className="admin-login__form">
-            <div className="form-group">
-              <label className="form-label" htmlFor="username">Username</label>
-              <div className="admin-login__input-wrapper">
-                <FaUser className="admin-login__input-icon" />
-                <input
-                  id="username"
-                  type="text"
-                  className="form-input admin-login__input"
-                  placeholder="Enter username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoFocus
-                />
-              </div>
-            </div>
+            <FormField
+              label="Username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              icon={FaUser}
+              placeholder="Enter username"
+              required
+            />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">Password</label>
-              <div className="admin-login__input-wrapper">
-                <FaLock className="admin-login__input-icon" />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  className="form-input admin-login__input"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="admin-login__toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label="Toggle password"
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-            </div>
+            <FormField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              icon={FaLock}
+              placeholder="Enter password"
+              required
+            />
 
             <button
               type="submit"

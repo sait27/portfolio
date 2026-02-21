@@ -29,6 +29,9 @@ urlpatterns = [
     path('u/<str:username>/projects/<slug:slug>/', views.PublicProjectDetailView.as_view(), name='public-project-detail'),
     path('u/<str:username>/experience/', views.PublicExperienceListView.as_view(), name='public-experience'),
     path('u/<str:username>/contact/', views.PublicContactView.as_view(), name='public-contact'),
+    path('u/<str:username>/blog/', views.PublicBlogListView.as_view(), name='public-blog'),
+    path('u/<str:username>/blog/<slug:slug>/', views.PublicBlogDetailView.as_view(), name='public-blog-detail'),
+    path('u/<str:username>/testimonials/', views.PublicTestimonialListView.as_view(), name='public-testimonials'),
 
     # ── User Dashboard (authenticated user's own data) ────────────────────────
     path('user/stats/', admin_views.DashboardStatsView.as_view(), name='user-stats'),
@@ -51,6 +54,12 @@ urlpatterns = [
 
     path('user/upload/', admin_views.DashboardUploadView.as_view(), name='user-upload'),
 
+    path('user/blog/', admin_views.DashboardBlogListCreateView.as_view(), name='user-blog'),
+    path('user/blog/<int:pk>/', admin_views.DashboardBlogDetailView.as_view(), name='user-blog-detail'),
+
+    path('user/testimonials/', admin_views.DashboardTestimonialListCreateView.as_view(), name='user-testimonials'),
+    path('user/testimonials/<int:pk>/', admin_views.DashboardTestimonialDetailView.as_view(), name='user-testimonial-detail'),
+
     # ── Dashboard (backward compatibility) ────────────────────────────
     path('dashboard/stats/', admin_views.DashboardStatsView.as_view(), name='dashboard-stats'),
     path('dashboard/profile/', admin_views.DashboardProfileView.as_view(), name='dashboard-profile'),
@@ -71,4 +80,10 @@ urlpatterns = [
     path('dashboard/messages/<int:pk>/', admin_views.DashboardMessageDetailView.as_view(), name='dashboard-message-detail'),
 
     path('dashboard/upload/', admin_views.DashboardUploadView.as_view(), name='dashboard-upload'),
+
+    path('dashboard/blog/', admin_views.DashboardBlogListCreateView.as_view(), name='dashboard-blog'),
+    path('dashboard/blog/<int:pk>/', admin_views.DashboardBlogDetailView.as_view(), name='dashboard-blog-detail'),
+
+    path('dashboard/testimonials/', admin_views.DashboardTestimonialListCreateView.as_view(), name='dashboard-testimonials'),
+    path('dashboard/testimonials/<int:pk>/', admin_views.DashboardTestimonialDetailView.as_view(), name='dashboard-testimonial-detail'),
 ]

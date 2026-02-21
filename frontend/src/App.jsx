@@ -20,6 +20,8 @@ import ResetPassword from './pages/auth/ResetPassword';
 import UserLayout from './pages/admin/AdminLayout';
 import UserDashboard from './pages/admin/AdminDashboard';
 import UserProjects from './pages/admin/AdminProjects';
+import AdminBlog from './pages/admin/AdminBlog';
+import AdminTestimonials from './pages/admin/AdminTestimonials';
 import UserSkills from './pages/admin/AdminSkills';
 import UserExperience from './pages/admin/AdminExperience';
 import UserMessages from './pages/admin/AdminMessages';
@@ -32,6 +34,8 @@ import './pages/admin/AdminComponents.css';
 
 // Public Portfolio
 import PublicPortfolio from './pages/PublicPortfolio';
+import Blog from './pages/Blog';
+import Testimonials from './pages/Testimonials';
 
 export default function App() {
   return (
@@ -45,6 +49,8 @@ export default function App() {
             <Routes>
               {/* ─── Marketing Landing Page ──────────────── */}
               <Route path="/" element={<Landing />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/testimonials" element={<Testimonials />} />
 
               {/* ─── Auth Routes ─────────────────────────── */}
               <Route path="/login" element={<Login />} />
@@ -64,6 +70,8 @@ export default function App() {
               >
                 <Route path="dashboard" element={<UserDashboard />} />
                 <Route path="projects" element={<UserProjects />} />
+                <Route path="blog" element={<AdminBlog />} />
+                <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="skills" element={<UserSkills />} />
                 <Route path="experience" element={<UserExperience />} />
                 <Route path="messages" element={<UserMessages />} />

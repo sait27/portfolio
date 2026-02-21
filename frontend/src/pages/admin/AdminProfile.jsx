@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaSave } from 'react-icons/fa';
+import { FaSave, FaUser, FaEnvelope, FaBriefcase, FaFileAlt, FaImage, FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import FormField from '../../components/FormField';
 
 export default function AdminProfile() {
   const [profile, setProfile] = useState(null);
@@ -62,59 +63,102 @@ export default function AdminProfile() {
         onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ padding: '2rem', maxWidth: '700px' }}
+        style={{ padding: '2.5rem', maxWidth: '800px' }}
       >
         <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Full Name</label>
-            <input name="full_name" className="form-input" value={profile?.full_name || ''} onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input name="email" type="email" className="form-input" value={profile?.email || ''} onChange={handleChange} />
-          </div>
+          <FormField
+            label="Full Name"
+            name="full_name"
+            value={profile?.full_name || ''}
+            onChange={handleChange}
+            icon={FaUser}
+            required
+          />
+          <FormField
+            label="Email"
+            name="email"
+            type="email"
+            value={profile?.email || ''}
+            onChange={handleChange}
+            icon={FaEnvelope}
+            required
+          />
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Tagline</label>
-          <input name="tagline" className="form-input" value={profile?.tagline || ''} onChange={handleChange} placeholder="e.g., Full-Stack Python Developer" />
-        </div>
+        <FormField
+          label="Tagline"
+          name="tagline"
+          value={profile?.tagline || ''}
+          onChange={handleChange}
+          icon={FaBriefcase}
+          hint="e.g., Full-Stack Python Developer"
+        />
 
-        <div className="form-group">
-          <label className="form-label">Bio</label>
-          <textarea name="bio" className="form-textarea" value={profile?.bio || ''} onChange={handleChange} rows={5} placeholder="Tell the world about yourself..." />
+        <FormField
+          label="Bio"
+          name="bio"
+          type="textarea"
+          value={profile?.bio || ''}
+          onChange={handleChange}
+          icon={FaFileAlt}
+          rows={5}
+          hint="Tell the world about yourself..."
+        />
+
+        <div className="admin-form__row">
+          <FormField
+            label="Avatar URL"
+            name="avatar"
+            value={profile?.avatar || ''}
+            onChange={handleChange}
+            icon={FaImage}
+            hint="Cloudinary URL"
+          />
+          <FormField
+            label="Resume URL"
+            name="resume"
+            value={profile?.resume || ''}
+            onChange={handleChange}
+            icon={FaFileAlt}
+            hint="Cloudinary URL"
+          />
         </div>
 
         <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Avatar URL</label>
-            <input name="avatar" className="form-input" value={profile?.avatar || ''} onChange={handleChange} placeholder="Cloudinary URL" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Resume URL</label>
-            <input name="resume" className="form-input" value={profile?.resume || ''} onChange={handleChange} placeholder="Cloudinary URL" />
-          </div>
+          <FormField
+            label="GitHub URL"
+            name="github_url"
+            value={profile?.github_url || ''}
+            onChange={handleChange}
+            icon={FaGithub}
+          />
+          <FormField
+            label="LinkedIn URL"
+            name="linkedin_url"
+            value={profile?.linkedin_url || ''}
+            onChange={handleChange}
+            icon={FaLinkedin}
+          />
         </div>
 
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">GitHub URL</label>
-            <input name="github_url" className="form-input" value={profile?.github_url || ''} onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">LinkedIn URL</label>
-            <input name="linkedin_url" className="form-input" value={profile?.linkedin_url || ''} onChange={handleChange} />
-          </div>
-        </div>
+        <FormField
+          label="Twitter URL"
+          name="twitter_url"
+          value={profile?.twitter_url || ''}
+          onChange={handleChange}
+          icon={FaTwitter}
+        />
 
-        <div className="form-group">
-          <label className="form-label">Twitter URL</label>
-          <input name="twitter_url" className="form-input" value={profile?.twitter_url || ''} onChange={handleChange} />
-        </div>
-
-        <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ marginTop: '1rem' }}>
+        <motion.button
+          type="submit"
+          className="btn btn-primary btn-lg"
+          disabled={isSubmitting}
+          style={{ marginTop: '1.5rem', width: '100%' }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
           <FaSave /> {isSubmitting ? 'Saving...' : 'Save Profile'}
-        </button>
+        </motion.button>
       </motion.form>
     </div>
   );

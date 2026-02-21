@@ -1,25 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FaUserSecret, FaSignOutAlt } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { adminApi } from '../api/client';
+import { useImpersonation } from '../hooks/useImpersonation';
 
 export default function ImpersonationBanner() {
   const [stopping, setStopping] = useState(false);
+  const { isImpersonating, setIsImpersonating } = useImpersonation();
+  const navigate = useNavigate();
   const originalAdminId = localStorage.getItem('original_admin_id');
 
-  useEffect(() => {
-    if (originalAdminId) {
-      document.body.classList.add('impersonation-active');
-    } else {
-      document.body.classList.remove('impersonation-active');
-    }
-    
-    return () => {
-      document.body.classList.remove('impersonation-active');
-    };
-  }, [originalAdminId]);
-
-  if (!originalAdminId) return null;
+  if (!isImpersonating) return null;
 
   const handleStopImpersonation = async () => {
     try {
@@ -30,10 +22,10 @@ export default function ImpersonationBanner() {
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
       localStorage.removeItem('original_admin_id');
-      document.body.classList.remove('impersonation-active');
+      setIsImpersonating(false);
       
       toast.success('Stopped impersonation');
-      window.location.href = '/admin/dashboard';
+      navigate('/admin/dashboard', { replace: true });
     } catch (err) {
       setStopping(false);
       toast.error('Failed to stop impersonation');
