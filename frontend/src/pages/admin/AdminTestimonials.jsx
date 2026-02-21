@@ -1,148 +1,265 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaEdit, FaTrash, FaStar, FaUser, FaBriefcase, FaBuilding, FaImage, FaFileAlt, FaProjectDiagram, FaSort } from 'react-icons/fa';
+import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
+import {
+  FaBuilding,
+  FaEdit,
+  FaFilter,
+  FaImage,
+  FaPlus,
+  FaProjectDiagram,
+  FaSearch,
+  FaSort,
+  FaStar,
+  FaTrash,
+  FaUser,
+  FaUserTie,
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import FormField from '../../components/FormField';
+
+const EMPTY_TESTIMONIAL = {
+  client_name: '',
+  client_role: '',
+  client_company: '',
+  client_avatar: '',
+  content: '',
+  rating: 5,
+  project_name: '',
+  is_featured: false,
+  order: 0,
+};
+
+const RATING_FILTERS = [
+  { value: 'all', label: 'All Ratings' },
+  { value: '5', label: '5 Stars' },
+  { value: '4', label: '4+ Stars' },
+  { value: '3', label: '3+ Stars' },
+];
+
+const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
 export default function AdminTestimonials() {
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState(null);
-  const [formData, setFormData] = useState({
-    client_name: '',
-    client_role: '',
-    client_company: '',
-    client_avatar: '',
-    content: '',
-    rating: 5,
-    project_name: '',
-    is_featured: false,
-    order: 0
-  });
-
-  useEffect(() => {
-    fetchTestimonials();
-  }, []);
+  const [formData, setFormData] = useState(EMPTY_TESTIMONIAL);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [ratingFilter, setRatingFilter] = useState('all');
 
   const fetchTestimonials = async () => {
+    setLoading(true);
     try {
       const response = await userApi.getTestimonials();
-      setTestimonials(response.data.results || response.data);
-    } catch (error) {
+      const data = response.data?.results || response.data || [];
+      setTestimonials(Array.isArray(data) ? data : []);
+    } catch {
       toast.error('Failed to load testimonials');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    fetchTestimonials();
+  }, []);
+
+  const sortedFilteredTestimonials = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    const ratingMin = ratingFilter === 'all' ? 0 : parseInt(ratingFilter, 10);
+    return testimonials
+      .filter((item) => {
+        const matchesSearch =
+          !term ||
+          [
+            item.client_name,
+            item.client_role,
+            item.client_company,
+            item.project_name,
+            item.content,
+          ]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(term));
+        const rating = Math.max(0, Math.min(5, Number(item.rating) || 0));
+        return matchesSearch && rating >= ratingMin;
+      })
+      .sort((a, b) => {
+        const leftOrder = Number(a.order) || 0;
+        const rightOrder = Number(b.order) || 0;
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        const leftDate = new Date(a.created_at || 0).getTime();
+        const rightDate = new Date(b.created_at || 0).getTime();
+        return rightDate - leftDate;
+      });
+  }, [testimonials, searchTerm, ratingFilter]);
+
+  const openCreate = () => {
+    setEditingTestimonial(null);
+    setFormData(EMPTY_TESTIMONIAL);
+    setShowForm(true);
+  };
+
+  const openEdit = (testimonial) => {
+    setEditingTestimonial(testimonial);
+    setFormData({
+      client_name: testimonial.client_name || '',
+      client_role: testimonial.client_role || '',
+      client_company: testimonial.client_company || '',
+      client_avatar: testimonial.client_avatar || '',
+      content: testimonial.content || '',
+      rating: Math.max(1, Math.min(5, Number(testimonial.rating) || 5)),
+      project_name: testimonial.project_name || '',
+      is_featured: Boolean(testimonial.is_featured),
+      order: Number(testimonial.order) || 0,
+    });
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingTestimonial(null);
+    setFormData(EMPTY_TESTIMONIAL);
+    setIsSubmitting(false);
+  };
+
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox'
+        ? checked
+        : name === 'order' || name === 'rating'
+          ? Number(value) || 0
+          : value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const payload = {
+      ...formData,
+      client_name: normalizeText(formData.client_name),
+      client_role: normalizeText(formData.client_role),
+      client_company: normalizeText(formData.client_company),
+      client_avatar: normalizeText(formData.client_avatar),
+      project_name: normalizeText(formData.project_name),
+      content: normalizeText(formData.content),
+      rating: Math.max(1, Math.min(5, Number(formData.rating) || 5)),
+      order: Number(formData.order) || 0,
+    };
+
+    if (!payload.client_name || !payload.client_role || !payload.client_company || !payload.content) {
+      toast.error('Name, role, company, and testimonial content are required');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       if (editingTestimonial) {
-        await userApi.updateTestimonial(editingTestimonial.id, formData);
-        toast.success('Testimonial updated!');
+        await userApi.updateTestimonial(editingTestimonial.id, payload);
+        toast.success('Testimonial updated');
       } else {
-        await userApi.createTestimonial(formData);
-        toast.success('Testimonial created!');
+        await userApi.createTestimonial(payload);
+        toast.success('Testimonial created');
       }
-      
-      fetchTestimonials();
-      resetForm();
+      await fetchTestimonials();
+      closeForm();
     } catch (error) {
-      toast.error('Failed to save testimonial');
+      const errors = error.response?.data;
+      const message = typeof errors === 'object'
+        ? Object.values(errors).flat().join(', ')
+        : 'Failed to save testimonial';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this testimonial?')) {
-      try {
-        await userApi.deleteTestimonial(id);
-        toast.success('Testimonial deleted');
-        fetchTestimonials();
-      } catch (error) {
-        toast.error('Failed to delete testimonial');
-      }
+    if (!window.confirm('Delete this testimonial?')) return;
+    try {
+      await userApi.deleteTestimonial(id);
+      toast.success('Testimonial deleted');
+      await fetchTestimonials();
+    } catch {
+      toast.error('Failed to delete testimonial');
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      client_name: '',
-      client_role: '',
-      client_company: '',
-      client_avatar: '',
-      content: '',
-      rating: 5,
-      project_name: '',
-      is_featured: false,
-      order: 0
-    });
-    setEditingTestimonial(null);
-    setShowForm(false);
-  };
-
-  const startEdit = (testimonial) => {
-    setFormData(testimonial);
-    setEditingTestimonial(testimonial);
-    setShowForm(true);
-  };
-
-  if (loading) return <LoadingSkeleton variant="text" count={5} />;
-
   return (
-    <div>
-      <div className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="admin-content-page">
+      <div className="admin-page-header admin-content-page__header">
         <div>
           <h1>Testimonials</h1>
-          <p>Manage client feedback and reviews</p>
+          <p>Show client feedback with clear ordering and quality.</p>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+        <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
           <FaPlus /> Add Testimonial
         </button>
       </div>
 
-      {/* Form Modal */}
+      <div className="admin-content-toolbar glass">
+        <label className="admin-panel__search">
+          <FaSearch />
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search by client, company, project or text"
+            aria-label="Search testimonials"
+          />
+        </label>
+        <label className="admin-content-filter">
+          <FaFilter />
+          <select
+            className="form-input"
+            value={ratingFilter}
+            onChange={(event) => setRatingFilter(event.target.value)}
+            aria-label="Filter by rating"
+          >
+            {RATING_FILTERS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <AnimatePresence>
         {showForm && (
-          <motion.div
+          <Motion.div
             className="modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={resetForm}
-            style={{ zIndex: 200 }}
+            onClick={closeForm}
           >
-            <motion.div
+            <Motion.div
               className="admin-form-modal glass"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 30 }}
-              onClick={e => e.stopPropagation()}
+              exit={{ opacity: 0, y: 26 }}
+              onClick={(event) => event.stopPropagation()}
             >
-              <h2 style={{ marginBottom: '1.5rem' }}>
-                {editingTestimonial ? 'Edit Testimonial' : 'New Testimonial'}
-              </h2>
+              <h2>{editingTestimonial ? 'Edit Testimonial' : 'New Testimonial'}</h2>
               <form onSubmit={handleSubmit} className="admin-form">
                 <div className="admin-form__row">
                   <FormField
                     label="Client Name"
                     name="client_name"
                     value={formData.client_name}
-                    onChange={(e) => setFormData({...formData, client_name: e.target.value})}
+                    onChange={handleChange}
                     icon={FaUser}
-                    placeholder="John Doe"
                     required
                   />
                   <FormField
                     label="Client Role"
                     name="client_role"
                     value={formData.client_role}
-                    onChange={(e) => setFormData({...formData, client_role: e.target.value})}
-                    icon={FaBriefcase}
-                    placeholder="CEO, CTO, etc."
+                    onChange={handleChange}
+                    icon={FaUserTie}
                     required
                   />
                 </div>
@@ -152,19 +269,17 @@ export default function AdminTestimonials() {
                     label="Company"
                     name="client_company"
                     value={formData.client_company}
-                    onChange={(e) => setFormData({...formData, client_company: e.target.value})}
+                    onChange={handleChange}
                     icon={FaBuilding}
-                    placeholder="Company name"
                     required
                   />
                   <FormField
                     label="Project Name"
                     name="project_name"
                     value={formData.project_name}
-                    onChange={(e) => setFormData({...formData, project_name: e.target.value})}
+                    onChange={handleChange}
                     icon={FaProjectDiagram}
-                    placeholder="Optional project name"
-                    hint="Related project (optional)"
+                    hint="Optional"
                   />
                 </div>
 
@@ -172,20 +287,14 @@ export default function AdminTestimonials() {
                   label="Avatar URL"
                   name="client_avatar"
                   value={formData.client_avatar}
-                  onChange={(e) => setFormData({...formData, client_avatar: e.target.value})}
+                  onChange={handleChange}
                   icon={FaImage}
                   placeholder="https://example.com/avatar.jpg"
-                  hint="Client profile picture"
                 />
-                
+
                 {formData.client_avatar && (
-                  <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
-                    <img 
-                      src={formData.client_avatar} 
-                      alt="Avatar preview" 
-                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent-primary)' }} 
-                      onError={(e) => e.target.style.display = 'none'}
-                    />
+                  <div className="admin-avatar-preview">
+                    <img src={formData.client_avatar} alt="Client avatar preview" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
                   </div>
                 )}
 
@@ -194,35 +303,38 @@ export default function AdminTestimonials() {
                   name="content"
                   type="textarea"
                   value={formData.content}
-                  onChange={(e) => setFormData({...formData, content: e.target.value})}
-                  icon={FaFileAlt}
-                  placeholder="Share the client's feedback and experience..."
+                  onChange={handleChange}
                   rows={6}
-                  hint={`${formData.content.length}/500 characters`}
+                  maxLength={520}
+                  hint={`${formData.content.length}/520 characters`}
                   required
                 />
 
                 <div className="admin-form__row">
+                  <div className="admin-rating-picker">
+                    <p className="form-label">Rating</p>
+                    <div className="admin-rating-picker__stars">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={`admin-rating-picker__star ${value <= formData.rating ? 'active' : ''}`}
+                          onClick={() => setFormData((prev) => ({ ...prev, rating: value }))}
+                          aria-label={`Set rating to ${value}`}
+                        >
+                          <FaStar />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <FormField
-                    label="Rating"
-                    name="rating"
-                    type="select"
-                    value={formData.rating}
-                    onChange={(e) => setFormData({...formData, rating: parseInt(e.target.value)})}
-                    icon={FaStar}
-                    options={[1, 2, 3, 4, 5].map(rating => ({ 
-                      value: rating, 
-                      label: `${rating} Star${rating > 1 ? 's' : ''}` 
-                    }))}
-                  />
-                  <FormField
-                    label="Order"
+                    label="Display Order"
                     name="order"
                     type="number"
                     value={formData.order}
-                    onChange={(e) => setFormData({...formData, order: parseInt(e.target.value)})}
+                    onChange={handleChange}
                     icon={FaSort}
-                    hint="Lower numbers appear first"
+                    hint="Lower appears first"
                   />
                 </div>
 
@@ -231,71 +343,82 @@ export default function AdminTestimonials() {
                   name="is_featured"
                   type="checkbox"
                   value={formData.is_featured}
-                  onChange={(e) => setFormData({...formData, is_featured: e.target.checked})}
+                  onChange={handleChange}
                 />
 
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                  <button type="button" className="btn btn-outline btn-sm" onClick={resetForm}>
+                <div className="form-actions">
+                  <button type="button" className="btn btn-outline btn-sm" onClick={closeForm}>
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    {editingTestimonial ? 'Update' : 'Create'} Testimonial
+                  <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : editingTestimonial ? 'Update Testimonial' : 'Create Testimonial'}
                   </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
-      <div className="admin-grid">
-        {testimonials.map((testimonial) => (
-          <div key={testimonial.id} className="admin-card glass">
-            <div className="admin-card__content">
-              <div className="testimonial-header">
-                {testimonial.client_avatar && (
-                  <img src={testimonial.client_avatar} alt={testimonial.client_name} className="avatar" />
-                )}
-                <div>
-                  <h3>{testimonial.client_name}</h3>
-                  <p>{testimonial.client_role} at {testimonial.client_company}</p>
+      {loading ? (
+        <LoadingSkeleton variant="text" count={7} />
+      ) : sortedFilteredTestimonials.length === 0 ? (
+        <div className="admin-panel__empty glass">
+          <p>No testimonials match the current filter.</p>
+        </div>
+      ) : (
+        <div className="admin-content-grid">
+          {sortedFilteredTestimonials.map((item, index) => {
+            const rating = Math.max(0, Math.min(5, Number(item.rating) || 0));
+            const displayName = item.client_name || 'Client';
+            return (
+              <Motion.article
+                key={item.id}
+                className="admin-content-card admin-content-card--testimonial glass"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <div className="admin-testimonial__head">
+                  <div className="admin-testimonial__avatar">
+                    {item.client_avatar ? (
+                      <img src={item.client_avatar} alt={displayName} />
+                    ) : (
+                      <span>{displayName.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div>
+                    <h3>{displayName}</h3>
+                    <p>{item.client_role || 'Client'} at {item.client_company || 'Company'}</p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="rating">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <FaStar key={i} className={i < testimonial.rating ? 'active' : ''} />
-                ))}
-              </div>
-              
-              <p className="testimonial-content">"{testimonial.content}"</p>
-              
-              {testimonial.project_name && (
-                <p className="project-name">Project: {testimonial.project_name}</p>
-              )}
-              
-              <div className="admin-card__meta">
-                {testimonial.is_featured && <span className="featured">Featured</span>}
-                <span className="order">Order: {testimonial.order}</span>
-              </div>
-              
-              <div className="admin-card__actions">
-                <button className="btn btn-sm btn-secondary" onClick={() => startEdit(testimonial)}>
-                  <FaEdit />
-                </button>
-                <button className="btn btn-sm btn-danger" onClick={() => handleDelete(testimonial.id)}>
-                  <FaTrash />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {testimonials.length === 0 && (
-        <div className="empty-state">
-          <h3>No testimonials yet</h3>
-          <p>Add your first testimonial to showcase client feedback.</p>
+                <div className="admin-testimonial__rating">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <FaStar key={`${item.id}-${i}`} className={i < rating ? 'active' : ''} />
+                  ))}
+                  <span>{rating}.0</span>
+                </div>
+
+                <p className="admin-testimonial__content">{item.content || 'No testimonial content.'}</p>
+
+                <div className="admin-content-card__chips">
+                  {item.project_name && <span className="chip">Project: {item.project_name}</span>}
+                  {item.is_featured && <span className="chip chip-status-admin">Featured</span>}
+                  <span className="chip">Order: {Number(item.order) || 0}</span>
+                </div>
+
+                <div className="admin-content-card__actions">
+                  <button type="button" className="admin-btn admin-btn--edit" onClick={() => openEdit(item)}>
+                    <FaEdit /> Edit
+                  </button>
+                  <button type="button" className="admin-btn admin-btn--delete" onClick={() => handleDelete(item.id)}>
+                    <FaTrash /> Delete
+                  </button>
+                </div>
+              </Motion.article>
+            );
+          })}
         </div>
       )}
     </div>

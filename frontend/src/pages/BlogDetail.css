@@ -1,0 +1,109 @@
+.blog-detail {
+  padding-top: clamp(5.4rem, 10vw, 7.2rem);
+}
+
+.blog-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.15rem;
+  padding: 0.45rem 0.78rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+}
+
+.blog-detail__back:hover {
+  border-color: var(--border-glass-hover);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.blog-detail__state {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(1.8rem, 4vw, 2.8rem);
+  text-align: center;
+}
+
+.blog-detail__state h3 {
+  margin-bottom: 0.5rem;
+}
+
+.blog-detail__state p {
+  color: var(--text-secondary);
+}
+
+.blog-detail__article {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(1.15rem, 3vw, 2.4rem);
+}
+
+.blog-detail__header {
+  margin-bottom: 0.75rem;
+}
+
+.blog-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  color: var(--text-muted);
+  margin-bottom: 1.2rem;
+  font-size: var(--font-size-sm);
+}
+
+.blog-detail__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.blog-detail__image {
+  margin-bottom: 1.35rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-glass);
+}
+
+.blog-detail__image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.blog-detail__content {
+  max-width: 74ch;
+}
+
+.blog-detail__content p {
+  color: var(--text-secondary);
+  line-height: 1.95;
+  margin-bottom: 1.05rem;
+}
+
+.blog-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1.1rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border-glass);
+}
+
+@media (max-width: 768px) {
+  .blog-detail__article {
+    padding: 1rem;
+  }
+
+  .blog-detail__content p {
+    line-height: 1.8;
+  }
+}

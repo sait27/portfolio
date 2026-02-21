@@ -5,6 +5,8 @@ import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope } from 'react-icons/fa';
 import SectionWrapper from '../components/SectionWrapper';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import PageTransition from '../components/PageTransition';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { publicApi } from '../api/client';
 import './About.css';
 
@@ -232,11 +234,13 @@ export default function About() {
         <title>About | Portfolio</title>
         <meta name="description" content="Learn about my skills, experience, and what drives me as a developer." />
       </Helmet>
+      <Navbar />
       <div style={{ paddingTop: '5rem' }}>
         <ProfileSection />
         <SkillsSection />
         <ExperienceTimeline />
       </div>
+      <Footer />
     </PageTransition>
   );
 }

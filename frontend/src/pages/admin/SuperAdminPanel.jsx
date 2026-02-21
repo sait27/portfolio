@@ -1,6 +1,20 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FaUsers, FaProjectDiagram, FaCode, FaEnvelope, FaUserShield, FaToggleOn, FaToggleOff, FaTrash, FaExternalLinkAlt, FaChartLine, FaUserSecret, FaSignOutAlt } from 'react-icons/fa';
+import { useState, useEffect, useMemo } from 'react';
+import { motion as Motion } from 'framer-motion';
+import {
+  FaUsers,
+  FaProjectDiagram,
+  FaCode,
+  FaEnvelope,
+  FaUserShield,
+  FaToggleOn,
+  FaToggleOff,
+  FaTrash,
+  FaExternalLinkAlt,
+  FaChartLine,
+  FaUserSecret,
+  FaSearch,
+  FaBriefcase,
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -12,6 +26,8 @@ export default function SuperAdminPanel() {
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [impersonating, setImpersonating] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const { user: currentUser } = useAuth();
 
   const fetchData = async () => {
@@ -23,7 +39,7 @@ export default function SuperAdminPanel() {
       setStats(statsRes.data);
       const userData = usersRes.data.results || usersRes.data;
       setUsers(Array.isArray(userData) ? userData : []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load admin data');
     } finally {
       setLoading(false);
@@ -31,6 +47,28 @@ export default function SuperAdminPanel() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const filteredUsers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return users.filter((user) => {
+      const matchesSearch = !term || [
+        user.username,
+        user.email,
+        user.full_name,
+      ].filter(Boolean).some((value) => value.toLowerCase().includes(term));
+
+      const isPlatformAdmin = Boolean(user.is_platform_admin);
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && user.is_active) ||
+        (statusFilter === 'inactive' && !user.is_active) ||
+        (statusFilter === 'admin' && isPlatformAdmin);
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [users, searchTerm, statusFilter]);
+
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
 
   const handleToggleActive = async (userId, currentActive) => {
     try {
@@ -73,11 +111,60 @@ export default function SuperAdminPanel() {
     }
   };
 
+  const totalUsers = stats?.total_users || users.length || 0;
+  const activeUsers = stats?.active_users || users.filter((item) => item.is_active).length;
+  const activeRate = totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0;
+
+  const overviewCards = [
+    {
+      label: 'Total Users',
+      value: totalUsers,
+      hint: `${activeUsers} active accounts`,
+      icon: <FaUsers />,
+      color: 'accent',
+    },
+    {
+      label: 'Recent Signups',
+      value: stats?.recent_signups || 0,
+      hint: 'Last 30 days',
+      icon: <FaChartLine />,
+      color: 'cyan',
+    },
+    {
+      label: 'Portfolio Projects',
+      value: stats?.total_projects || 0,
+      hint: 'Across all users',
+      icon: <FaProjectDiagram />,
+      color: 'pink',
+    },
+    {
+      label: 'Skills Added',
+      value: stats?.total_skills || 0,
+      hint: `${stats?.total_categories || 0} categories`,
+      icon: <FaCode />,
+      color: 'accent',
+    },
+    {
+      label: 'Experience Entries',
+      value: stats?.total_experience || 0,
+      hint: 'Career timelines tracked',
+      icon: <FaBriefcase />,
+      color: 'cyan',
+    },
+    {
+      label: 'Contact Messages',
+      value: stats?.total_messages || 0,
+      hint: 'Lead pipeline',
+      icon: <FaEnvelope />,
+      color: 'pink',
+    },
+  ];
+
   if (loading) {
     return (
-      <div style={{ padding: '2rem' }}>
+      <div className="admin-panel">
         <div className="admin-page-header">
-          <h1><FaUserShield style={{ marginRight: '0.5rem' }} /> Admin Panel</h1>
+          <h1><FaUserShield /> Admin Panel</h1>
           <p>Loading platform data...</p>
         </div>
       </div>
@@ -85,60 +172,87 @@ export default function SuperAdminPanel() {
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div className="admin-page-header">
-        <h1><FaUserShield style={{ marginRight: '0.5rem', color: 'var(--accent-primary)' }} /> Admin Panel</h1>
-        <p>Platform overview and user management</p>
+    <div className="admin-panel">
+      <div className="admin-page-header admin-panel__header">
+        <h1><FaUserShield /> Admin Panel</h1>
+        <p>Platform overview, user lifecycle, and account controls.</p>
       </div>
 
-      {/* Stats Grid */}
+      <div className="admin-panel__summary glass">
+        <div>
+          <p className="admin-dashboard__eyebrow">Platform Health</p>
+          <h2 className="admin-dashboard__headline">{activeRate}% of users are active</h2>
+          <p className="admin-dashboard__subtext">
+            {activeUsers} active out of {totalUsers} total accounts.
+          </p>
+        </div>
+        <div className="admin-panel__summary-chips">
+          <span className="chip">Filtered Users: {filteredUsers.length}</span>
+          <span className="chip">Platform Admins: {users.filter((u) => u.is_platform_admin).length}</span>
+          <span className="chip">Your Role: {currentUser?.is_platform_admin ? 'Super Admin' : 'User'}</span>
+        </div>
+      </div>
+
       {stats && (
-        <motion.div
-          className="admin-stats"
-          initial={{ opacity: 0, y: 20 }}
+        <Motion.div
+          className="admin-stats admin-panel__stats"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
         >
-          <div className="admin-stat">
-            <div className="admin-stat__label"><FaUsers style={{ marginRight: '0.35rem' }} /> Total Users</div>
-            <div className="admin-stat__value admin-stat__value--accent">{stats.total_users}</div>
-          </div>
-          <div className="admin-stat">
-            <div className="admin-stat__label"><FaChartLine style={{ marginRight: '0.35rem' }} /> Recent Signups</div>
-            <div className="admin-stat__value admin-stat__value--cyan">{stats.recent_signups}</div>
-            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Last 30 days</div>
-          </div>
-          <div className="admin-stat">
-            <div className="admin-stat__label"><FaProjectDiagram style={{ marginRight: '0.35rem' }} /> Projects</div>
-            <div className="admin-stat__value admin-stat__value--pink">{stats.total_projects}</div>
-          </div>
-          <div className="admin-stat">
-            <div className="admin-stat__label"><FaCode style={{ marginRight: '0.35rem' }} /> Skills</div>
-            <div className="admin-stat__value">{stats.total_skills}</div>
-          </div>
-          <div className="admin-stat">
-            <div className="admin-stat__label"><FaEnvelope style={{ marginRight: '0.35rem' }} /> Messages</div>
-            <div className="admin-stat__value">{stats.total_messages}</div>
-          </div>
-        </motion.div>
+          {overviewCards.map((card, index) => (
+            <Motion.div
+              key={card.label}
+              className="admin-stat"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04 }}
+            >
+              <div className="admin-stat__label">
+                <span className={`admin-stat__icon admin-stat__icon--${card.color}`}>{card.icon}</span>
+                {card.label}
+              </div>
+              <div className={`admin-stat__value admin-stat__value--${card.color}`}>{card.value}</div>
+              <div className="admin-panel__stat-hint">{card.hint}</div>
+            </Motion.div>
+          ))}
+        </Motion.div>
       )}
 
-      {/* Users Table */}
-      <motion.div
-        className="glass"
-        style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}
+      <Motion.div
+        className="admin-panel__table-card glass"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-glass)' }}>
-          <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
-            All Users <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({users.length})</span>
+        <div className="admin-panel__table-header">
+          <h2>
+            User Directory <span>({filteredUsers.length})</span>
           </h2>
+          <div className="admin-panel__controls">
+            <label className="admin-panel__search">
+              <FaSearch />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name, username, or email"
+                aria-label="Search users"
+              />
+            </label>
+            <select
+              className="form-input admin-panel__filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter by status"
+            >
+              <option value="all">All Users</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="admin">Admins</option>
+            </select>
+          </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        <div className="admin-panel__table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
@@ -152,41 +266,34 @@ export default function SuperAdminPanel() {
               </tr>
             </thead>
             <tbody>
-              {users.map(user => (
+              {filteredUsers.map(user => (
                 <tr key={user.id}>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 'var(--font-size-sm)', fontWeight: 700, color: '#fff', flexShrink: 0,
-                      }}>
+                    <div className="admin-user-cell">
+                      <div className="admin-user-cell__avatar">
                         {user.full_name?.charAt(0) || user.username.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{user.full_name || user.username}</div>
-                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>@{user.username}</div>
+                        <div className="admin-user-cell__name">{user.full_name || user.username}</div>
+                        <div className="admin-user-cell__username">@{user.username}</div>
                       </div>
                     </div>
                   </td>
                   <td>{user.email}</td>
-                  <td>{new Date(user.date_joined).toLocaleDateString()}</td>
+                  <td>{formatDate(user.date_joined)}</td>
                   <td><span className="chip">{user.projects_count}</span></td>
                   <td><span className="chip">{user.skills_count}</span></td>
                   <td>
-                    <span className="chip" style={{
-                      background: user.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                      color: user.is_active ? '#22c55e' : '#ef4444',
-                      border: `1px solid ${user.is_active ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                    }}>
-                      {user.is_active ? 'Active' : 'Disabled'}
-                    </span>
-                    {user.is_platform_admin && (
-                      <span className="chip" style={{ marginLeft: '0.35rem', background: 'rgba(124,58,237,0.15)', color: 'var(--accent-primary)', border: '1px solid rgba(124,58,237,0.3)' }}>
-                        Admin
+                    <div className="admin-status-chips">
+                      <span className={`chip ${user.is_active ? 'chip-status-active' : 'chip-status-inactive'}`}>
+                        {user.is_active ? 'Active' : 'Disabled'}
                       </span>
-                    )}
+                      {user.is_platform_admin && (
+                        <span className="chip chip-status-admin">
+                          Admin
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <div className="admin-actions">
@@ -205,6 +312,7 @@ export default function SuperAdminPanel() {
                             className="admin-btn admin-btn--edit"
                             onClick={() => handleImpersonate(user.id)}
                             disabled={impersonating === user.id}
+                            type="button"
                             title="Impersonate User"
                           >
                             {impersonating === user.id ? '...' : <FaUserSecret />}
@@ -212,16 +320,17 @@ export default function SuperAdminPanel() {
                           <button
                             className="admin-btn admin-btn--edit"
                             onClick={() => handleToggleActive(user.id, user.is_active)}
+                            type="button"
                             title={user.is_active ? 'Deactivate' : 'Activate'}
                           >
                             {user.is_active ? <FaToggleOn /> : <FaToggleOff />}
                           </button>
                           {confirmDelete === user.id ? (
-                            <div style={{ display: 'flex', gap: '0.25rem' }}>
-                              <button className="admin-btn admin-btn--delete" onClick={() => handleDelete(user.id)} style={{ fontSize: 'var(--font-size-xs)' }}>
+                            <div className="admin-actions admin-actions--confirm">
+                              <button className="admin-btn admin-btn--delete" onClick={() => handleDelete(user.id)} type="button">
                                 Confirm
                               </button>
-                              <button className="admin-btn admin-btn--edit" onClick={() => setConfirmDelete(null)} style={{ fontSize: 'var(--font-size-xs)' }}>
+                              <button className="admin-btn admin-btn--edit" onClick={() => setConfirmDelete(null)} type="button">
                                 Cancel
                               </button>
                             </div>
@@ -229,6 +338,7 @@ export default function SuperAdminPanel() {
                             <button
                               className="admin-btn admin-btn--delete"
                               onClick={() => setConfirmDelete(user.id)}
+                              type="button"
                               title="Delete User"
                             >
                               <FaTrash />
@@ -242,8 +352,13 @@ export default function SuperAdminPanel() {
               ))}
             </tbody>
           </table>
+          {filteredUsers.length === 0 && (
+            <div className="admin-panel__empty">
+              <p>No users found for the current search/filter.</p>
+            </div>
+          )}
         </div>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 }

@@ -1,16 +1,39 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaEdit, FaTrash, FaBriefcase, FaCalendarAlt, FaBuilding, FaExternalLinkAlt, FaSort } from 'react-icons/fa';
+import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
+import {
+  FaBriefcase,
+  FaBuilding,
+  FaCalendarAlt,
+  FaEdit,
+  FaExternalLinkAlt,
+  FaPlus,
+  FaSort,
+  FaTrash,
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import FormField from '../../components/FormField';
 
 const EMPTY_EXPERIENCE = {
-  role: '', company: '', company_url: '',
-  start_date: '', end_date: '', is_current: false,
-  highlights: [], order: 0,
+  role: '',
+  company: '',
+  company_url: '',
+  start_date: '',
+  end_date: '',
+  is_current: false,
+  highlights: [],
+  order: 0,
 };
+
+const formatMonthYear = (value) => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+};
+
+const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
 export default function AdminExperience() {
   const [experiences, setExperiences] = useState([]);
@@ -21,18 +44,35 @@ export default function AdminExperience() {
   const [highlightInput, setHighlightInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    userApi.getExperience()
-      .then(res => {
-        const data = res.data.results || res.data;
-        setExperiences(Array.isArray(data) ? data : []);
-      })
-      .catch(() => toast.error('Failed to load experience'))
-      .finally(() => setLoading(false));
+    try {
+      const response = await userApi.getExperience();
+      const data = response.data?.results || response.data || [];
+      setExperiences(Array.isArray(data) ? data : []);
+    } catch {
+      toast.error('Failed to load experience');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const sortedExperiences = useMemo(
+    () =>
+      [...experiences].sort((a, b) => {
+        const leftOrder = Number(a.order) || 0;
+        const rightOrder = Number(b.order) || 0;
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        const leftDate = new Date(a.start_date || 0).getTime();
+        const rightDate = new Date(b.start_date || 0).getTime();
+        return rightDate - leftDate;
+      }),
+    [experiences]
+  );
 
   const openCreate = () => {
     setEditing(null);
@@ -41,62 +81,94 @@ export default function AdminExperience() {
     setShowForm(true);
   };
 
-  const openEdit = (exp) => {
-    setEditing(exp);
+  const openEdit = (experience) => {
+    setEditing(experience);
     setFormData({
-      role: exp.role || '',
-      company: exp.company || '',
-      company_url: exp.company_url || '',
-      start_date: exp.start_date || '',
-      end_date: exp.end_date || '',
-      is_current: exp.is_current || false,
-      highlights: Array.isArray(exp.highlights) ? exp.highlights : [],
-      order: exp.order || 0,
+      role: experience.role || '',
+      company: experience.company || '',
+      company_url: experience.company_url || '',
+      start_date: experience.start_date || '',
+      end_date: experience.end_date || '',
+      is_current: Boolean(experience.is_current),
+      highlights: Array.isArray(experience.highlights) ? experience.highlights : [],
+      order: Number(experience.order) || 0,
     });
     setHighlightInput('');
     setShowForm(true);
   };
 
-  const addHighlight = () => {
-    if (!highlightInput.trim()) return;
-    setFormData(p => ({ ...p, highlights: [...p.highlights, highlightInput.trim()] }));
+  const closeForm = () => {
+    setShowForm(false);
+    setEditing(null);
+    setFormData(EMPTY_EXPERIENCE);
     setHighlightInput('');
+    setIsSubmitting(false);
   };
 
-  const removeHighlight = (idx) => {
-    setFormData(p => ({
-      ...p,
-      highlights: p.highlights.filter((_, i) => i !== idx),
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.role.trim() || !formData.company.trim()) {
-      return toast.error('Role and company are required');
+  const addHighlight = () => {
+    const value = normalizeText(highlightInput);
+    if (!value) return;
+    setFormData((prev) => ({
+      ...prev,
+      highlights: [...prev.highlights, value],
+    }));
+    setHighlightInput('');
+  };
+
+  const removeHighlight = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      highlights: prev.highlights.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const payload = {
+      ...formData,
+      role: normalizeText(formData.role),
+      company: normalizeText(formData.company),
+      company_url: normalizeText(formData.company_url),
+      order: Number(formData.order) || 0,
+      highlights: formData.highlights.map((item) => normalizeText(item)).filter(Boolean),
+    };
+
+    if (!payload.role || !payload.company || !payload.start_date) {
+      toast.error('Role, company, and start date are required');
+      return;
     }
-    if (!formData.start_date) return toast.error('Start date is required');
+
+    if (payload.is_current) {
+      payload.end_date = null;
+    } else if (!payload.end_date) {
+      payload.end_date = null;
+    }
 
     setIsSubmitting(true);
-    const payload = { ...formData };
-    if (payload.is_current) payload.end_date = null;
-    if (!payload.end_date) payload.end_date = null;
-
     try {
       if (editing) {
         await userApi.updateExperience(editing.id, payload);
-        toast.success('Experience updated!');
+        toast.success('Experience updated');
       } else {
         await userApi.createExperience(payload);
-        toast.success('Experience created!');
+        toast.success('Experience created');
       }
-      setShowForm(false);
-      fetchData();
-    } catch (err) {
-      const msg = typeof err.response?.data === 'object'
-        ? Object.values(err.response.data).flat().join(', ')
-        : 'Failed to save';
-      toast.error(msg);
+      await fetchData();
+      closeForm();
+    } catch (error) {
+      const errors = error.response?.data;
+      const message = typeof errors === 'object'
+        ? Object.values(errors).flat().join(', ')
+        : 'Failed to save experience';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -106,39 +178,42 @@ export default function AdminExperience() {
     if (!window.confirm('Delete this experience entry?')) return;
     try {
       await userApi.deleteExperience(id);
-      toast.success('Deleted');
-      fetchData();
+      toast.success('Experience deleted');
+      await fetchData();
     } catch {
-      toast.error('Failed to delete');
+      toast.error('Failed to delete experience');
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
   return (
-    <div>
-      <div className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="admin-content-page">
+      <div className="admin-page-header admin-content-page__header">
         <div>
           <h1>Experience</h1>
-          <p>Manage your professional timeline</p>
+          <p>Maintain your timeline with clear highlights and ordering.</p>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={openCreate}>
+        <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
           <FaPlus /> Add Experience
         </button>
       </div>
 
-      {/* ── Form Modal ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {showForm && (
-          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(false)} style={{ zIndex: 200 }}>
-            <motion.div className="admin-form-modal glass" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} onClick={e => e.stopPropagation()}>
-              <h2 style={{ marginBottom: '1.5rem' }}>{editing ? 'Edit Experience' : 'New Experience'}</h2>
+          <Motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeForm}
+          >
+            <Motion.div
+              className="admin-form-modal glass"
+              initial={{ opacity: 0, y: 26 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 26 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <h2>{editing ? 'Edit Experience' : 'New Experience'}</h2>
               <form onSubmit={handleSubmit} className="admin-form">
                 <div className="admin-form__row">
                   <FormField
@@ -147,7 +222,6 @@ export default function AdminExperience() {
                     value={formData.role}
                     onChange={handleChange}
                     icon={FaBriefcase}
-                    placeholder="e.g., Full Stack Developer"
                     required
                   />
                   <FormField
@@ -156,21 +230,18 @@ export default function AdminExperience() {
                     value={formData.company}
                     onChange={handleChange}
                     icon={FaBuilding}
-                    placeholder="e.g., Google"
                     required
                   />
                 </div>
-                
+
                 <FormField
                   label="Company URL"
                   name="company_url"
                   value={formData.company_url}
                   onChange={handleChange}
                   icon={FaExternalLinkAlt}
-                  placeholder="https://..."
-                  hint="Optional company website"
                 />
-                
+
                 <div className="admin-form__row">
                   <FormField
                     label="Start Date"
@@ -189,10 +260,10 @@ export default function AdminExperience() {
                     onChange={handleChange}
                     icon={FaCalendarAlt}
                     disabled={formData.is_current}
-                    hint={formData.is_current ? "Disabled for current role" : "Leave empty if current"}
+                    hint={formData.is_current ? 'Disabled for current role' : 'Leave empty if current'}
                   />
                 </div>
-                
+
                 <FormField
                   label="I currently work here"
                   name="is_current"
@@ -201,19 +272,35 @@ export default function AdminExperience() {
                   onChange={handleChange}
                 />
 
-                {/* Highlights */}
-                <div className="form-group">
-                  <label className="form-label">Key Achievements / Highlights</label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input className="form-input" value={highlightInput} onChange={e => setHighlightInput(e.target.value)} placeholder="e.g., Built a real-time dashboard" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addHighlight(); }}} />
-                    <button type="button" className="btn btn-outline btn-sm" onClick={addHighlight}>Add</button>
+                <div className="admin-highlight-block">
+                  <label className="form-label" htmlFor="highlight-input">Key Highlights</label>
+                  <div className="admin-highlight-input">
+                    <input
+                      id="highlight-input"
+                      className="form-input"
+                      value={highlightInput}
+                      onChange={(event) => setHighlightInput(event.target.value)}
+                      placeholder="Example: Reduced API response time by 35%"
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          addHighlight();
+                        }
+                      }}
+                    />
+                    <button type="button" className="btn btn-outline btn-sm" onClick={addHighlight}>
+                      Add
+                    </button>
                   </div>
+
                   {formData.highlights.length > 0 && (
-                    <ul style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {formData.highlights.map((h, i) => (
-                        <li key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-                          <span>▹ {h}</span>
-                          <button type="button" onClick={() => removeHighlight(i)} style={{ color: '#ef4444', fontSize: '0.7rem', padding: '0.25rem' }}>✕</button>
+                    <ul className="admin-highlight-list">
+                      {formData.highlights.map((item, index) => (
+                        <li key={`${item}-${index}`} className="admin-highlight-list__item">
+                          <span>{item}</span>
+                          <button type="button" onClick={() => removeHighlight(index)} aria-label="Remove highlight">
+                            Remove
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -221,74 +308,77 @@ export default function AdminExperience() {
                 </div>
 
                 <FormField
-                  label="Order"
+                  label="Display Order"
                   name="order"
                   type="number"
                   value={formData.order}
                   onChange={handleChange}
                   icon={FaSort}
-                  hint="Lower numbers appear first"
+                  hint="Lower appears first"
                 />
 
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
+                <div className="form-actions">
+                  <button type="button" className="btn btn-outline btn-sm" onClick={closeForm}>
+                    Cancel
+                  </button>
                   <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting}>
-                    {isSubmitting ? 'Saving...' : (editing ? 'Update' : 'Create')}
+                    {isSubmitting ? 'Saving...' : editing ? 'Update Experience' : 'Create Experience'}
                   </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Experience List ──────────────────────────────────────────── */}
       {loading ? (
-        <LoadingSkeleton variant="text" count={4} />
-      ) : experiences.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-          <FaBriefcase style={{ fontSize: '2rem', marginBottom: '1rem' }} />
-          <p>No experience entries yet. Add your first role!</p>
+        <LoadingSkeleton variant="text" count={6} />
+      ) : sortedExperiences.length === 0 ? (
+        <div className="admin-panel__empty glass">
+          <p>No experience entries yet. Add your first role.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {experiences.map((exp, i) => (
-            <motion.div
-              key={exp.id}
-              className="admin-exp-card glass"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                <div>
-                  <h3 style={{ fontSize: 'var(--font-size-base)', fontWeight: 700, marginBottom: '0.25rem' }}>
-                    {exp.role}
-                  </h3>
-                  <p style={{ color: 'var(--accent-secondary)', fontSize: 'var(--font-size-sm)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <FaBriefcase style={{ fontSize: '0.7rem' }} /> {exp.company}
-                  </p>
-                  <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <FaCalendarAlt style={{ fontSize: '0.6rem' }} />
-                    {exp.start_date} — {exp.is_current ? <span className="chip chip-active" style={{ fontSize: '0.6rem' }}>Present</span> : exp.end_date}
-                  </p>
-                  {exp.highlights && exp.highlights.length > 0 && (
-                    <ul style={{ marginTop: '0.75rem', paddingLeft: '0.75rem' }}>
-                      {exp.highlights.map((h, j) => (
-                        <li key={j} style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                          ▹ {h}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+        <div className="admin-experience-list">
+          {sortedExperiences.map((experience, index) => {
+            const period = `${formatMonthYear(experience.start_date)} - ${experience.is_current ? 'Present' : formatMonthYear(experience.end_date)}`;
+            return (
+              <Motion.article
+                key={experience.id}
+                className="admin-exp-card glass"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+              >
+                <div className="admin-exp-card__header">
+                  <div>
+                    <h3>{experience.role}</h3>
+                    <p>{experience.company}</p>
+                    <div className="admin-exp-card__meta">
+                      <span><FaCalendarAlt /> {period}</span>
+                      <span>Order: {Number(experience.order) || 0}</span>
+                      {experience.is_current && <span className="chip chip-status-active">Current</span>}
+                    </div>
+                  </div>
+                  <div className="admin-actions">
+                    <button type="button" className="admin-btn admin-btn--edit" onClick={() => openEdit(experience)}>
+                      <FaEdit /> Edit
+                    </button>
+                    <button type="button" className="admin-btn admin-btn--delete" onClick={() => handleDelete(experience.id)}>
+                      <FaTrash /> Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="admin-actions">
-                  <button className="admin-btn admin-btn--edit" onClick={() => openEdit(exp)}><FaEdit /> Edit</button>
-                  <button className="admin-btn admin-btn--delete" onClick={() => handleDelete(exp.id)}><FaTrash /></button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+
+                {Array.isArray(experience.highlights) && experience.highlights.length > 0 && (
+                  <ul className="admin-exp-card__highlights">
+                    {experience.highlights.map((highlight, idx) => (
+                      <li key={`${highlight}-${idx}`}>{highlight}</li>
+                    ))}
+                  </ul>
+                )}
+              </Motion.article>
+            );
+          })}
         </div>
       )}
     </div>

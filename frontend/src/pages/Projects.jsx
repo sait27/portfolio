@@ -5,6 +5,9 @@ import { FaExternalLinkAlt, FaGithub, FaArrowRight } from 'react-icons/fa';
 import SectionWrapper from '../components/SectionWrapper';
 import { CardSkeleton } from '../components/LoadingSkeleton';
 import PageTransition from '../components/PageTransition';
+import PageHeader from '../components/PageHeader';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { publicApi } from '../api/client';
 import './Projects.css';
 
@@ -42,15 +45,17 @@ export default function Projects() {
         <meta name="description" content="Explore my portfolio of projects spanning full-stack, backend, frontend, and automation." />
       </Helmet>
 
+      <Navbar />
+
       <div style={{ paddingTop: '5rem' }}>
         <SectionWrapper>
           <div className="projects__header">
-            <h1 className="section-title">
-              My <span className="gradient-text">Projects</span>
-            </h1>
-            <p className="section-subtitle">
-              A collection of things I've built, from full-stack apps to automation tools.
-            </p>
+            <PageHeader
+              badge="Case Studies"
+              title="My"
+              highlight="Projects"
+              subtitle="A collection of things I've built, from full-stack apps to automation tools."
+            />
           </div>
 
           {/* Filter Tabs */}
@@ -165,6 +170,8 @@ export default function Projects() {
           />
         )}
       </AnimatePresence>
+
+      <Footer />
     </PageTransition>
   );
 }

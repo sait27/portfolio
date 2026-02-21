@@ -8,6 +8,8 @@ import SectionWrapper from '../components/SectionWrapper';
 import { CardSkeleton } from '../components/LoadingSkeleton';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import PageTransition from '../components/PageTransition';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { publicApi } from '../api/client';
 import './Home.css';
 
@@ -701,6 +703,7 @@ export default function Home() {
         <title>Portfolio | Creative Developer</title>
         <meta name="description" content="Full-stack developer portfolio showcasing projects, skills, and experience in Python, Django, React, and AI/ML." />
       </Helmet>
+      <Navbar />
       <HeroSection />
       <AboutPreview />
       <SkillsShowcase />
@@ -710,6 +713,7 @@ export default function Home() {
       <TestimonialsSection />
       <ResumeSection />
       <CTASection />
+      <Footer />
     </PageTransition>
   );
 }

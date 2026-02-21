@@ -9,6 +9,15 @@ import ImpersonationBanner from './components/ImpersonationBanner';
 
 // Public / Marketing
 import Landing from './pages/Landing';
+import Home from './pages/Home';
+import About from './pages/About';
+import Projects from './pages/Projects';
+import Contact from './pages/Contact';
+import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
+import Testimonials from './pages/Testimonials';
+import PublicPortfolio from './pages/PublicPortfolio';
+import NotFound from './pages/NotFound';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -32,11 +41,6 @@ import ProtectedRoute from './pages/admin/ProtectedRoute';
 // User Dashboard CSS
 import './pages/admin/AdminComponents.css';
 
-// Public Portfolio
-import PublicPortfolio from './pages/PublicPortfolio';
-import Blog from './pages/Blog';
-import Testimonials from './pages/Testimonials';
-
 export default function App() {
   return (
     <HelmetProvider>
@@ -46,19 +50,25 @@ export default function App() {
             <ImpersonationBanner />
             <ScrollToTop />
             <ScrollProgress />
+
             <Routes>
-              {/* ─── Marketing Landing Page ──────────────── */}
+              {/* Marketing */}
               <Route path="/" element={<Landing />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogDetail />} />
               <Route path="/testimonials" element={<Testimonials />} />
 
-              {/* ─── Auth Routes ─────────────────────────── */}
+              {/* Auth */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
-              {/* ─── User Dashboard Routes (protected) ────────── */}
+              {/* User Dashboard (protected) */}
               <Route path="/user/login" element={<Login />} />
               <Route
                 path="/user"
@@ -78,7 +88,7 @@ export default function App() {
                 <Route path="profile" element={<UserProfile />} />
               </Route>
 
-              {/* ─── Admin Routes (platform admin only) ────────── */}
+              {/* Platform admin */}
               <Route path="/admin/login" element={<Login />} />
               <Route
                 path="/admin"
@@ -91,8 +101,11 @@ export default function App() {
                 <Route path="dashboard" element={<AdminPanel />} />
               </Route>
 
-              {/* ─── Public Portfolio (must be near last) ── */}
+              {/* Public portfolio */}
               <Route path="/:username" element={<PublicPortfolio />} />
+
+              {/* Fallback */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
 
             <Toaster

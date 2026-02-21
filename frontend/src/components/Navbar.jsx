@@ -6,7 +6,7 @@ import { publicApi } from '../api/client';
 import './Navbar.css';
 
 const NAV_LINKS = [
-  { label: 'Home', path: '/' },
+  { label: 'Home', path: '/home' },
   { label: 'About', path: '/about' },
   { label: 'Projects', path: '/projects' },
   { label: 'Blog', path: '/blog' },
@@ -27,9 +27,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => { setIsOpen(false); }, [location]);
-
   // Fetch resume URL
   useEffect(() => {
     publicApi.getProfile()
@@ -46,7 +43,7 @@ export default function Navbar() {
     >
       <div className="navbar__container container">
         {/* Logo */}
-        <Link to="/" className="navbar__logo">
+        <Link to="/home" className="navbar__logo">
           <img src="/favicon.svg" alt="Logo" className="navbar__logo-icon" />
           <span className="gradient-text">Portfolio</span>
         </Link>
@@ -115,6 +112,7 @@ export default function Navbar() {
                   <Link
                     to={link.path}
                     className={`navbar__mobile-link ${location.pathname === link.path ? 'navbar__mobile-link--active' : ''}`}
+                    onClick={() => setIsOpen(false)}
                   >
                     {link.label}
                   </Link>
@@ -126,7 +124,13 @@ export default function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="navbar__mobile-link">
+                  <a
+                    href={resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="navbar__mobile-link"
+                    onClick={() => setIsOpen(false)}
+                  >
                     <HiDownload /> Resume
                   </a>
                 </motion.li>

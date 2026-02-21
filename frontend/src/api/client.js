@@ -2,6 +2,7 @@ import axios from 'axios';
 
 // Base API client configured for the Django backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002/api';
+const DEFAULT_PUBLIC_USERNAME = import.meta.env.VITE_DEFAULT_PUBLIC_USERNAME || 'demo';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,8 +10,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// ─── Request Interceptor: Attach JWT token ──────────────────────────────────
 
 api.interceptors.request.use(
   (config) => {
@@ -23,14 +22,11 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── Response Interceptor: Handle token refresh on 401 ──────────────────────
-
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // If 401 and we haven't tried refreshing yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -49,7 +45,6 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${data.access}`;
           return api(originalRequest);
         } catch (refreshError) {
-          // Refresh failed — clear tokens and redirect to login
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           window.location.href = '/login';
@@ -62,7 +57,25 @@ api.interceptors.response.use(
   }
 );
 
-// ─── Auth API ───────────────────────────────────────────────────────────────
+const resolveUsername = (username) => {
+  if (typeof username === 'string' && username.trim().length > 0) {
+    return username.trim();
+  }
+  return DEFAULT_PUBLIC_USERNAME;
+};
+
+const isPlainObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const resolveUsernameAndParams = (usernameOrParams, maybeParams = {}) => {
+  if (typeof usernameOrParams === 'string') {
+    return { username: resolveUsername(usernameOrParams), params: maybeParams };
+  }
+  if (isPlainObject(usernameOrParams)) {
+    return { username: DEFAULT_PUBLIC_USERNAME, params: usernameOrParams };
+  }
+  return { username: DEFAULT_PUBLIC_USERNAME, params: maybeParams };
+};
 
 export const authApi = {
   register: (data) => api.post('/auth/register/', data),
@@ -74,20 +87,41 @@ export const authApi = {
   changePassword: (data) => api.post('/auth/change-password/', data),
 };
 
-// ─── Public API (by username) ───────────────────────────────────────────────
-
 export const publicApi = {
-  getProfile: (username) => api.get(`/u/${username}/profile/`),
-  getProjects: (username, params = {}) => api.get(`/u/${username}/projects/`, { params }),
-  getProjectBySlug: (username, slug) => api.get(`/u/${username}/projects/${slug}/`),
-  getSkills: (username) => api.get(`/u/${username}/skills/`),
-  getExperience: (username) => api.get(`/u/${username}/experience/`),
-  getBlogs: (username) => api.get(`/u/${username}/blog/`),
-  getTestimonials: (username) => api.get(`/u/${username}/testimonials/`),
-  sendMessage: (username, data) => api.post(`/u/${username}/contact/`, data),
+  getProfile: (username) => api.get(`/u/${resolveUsername(username)}/profile/`),
+  getProjects: (usernameOrParams, maybeParams = {}) => {
+    const { username, params } = resolveUsernameAndParams(usernameOrParams, maybeParams);
+    return api.get(`/u/${username}/projects/`, { params });
+  },
+  getProjectBySlug: (usernameOrSlug, maybeSlug) => {
+    if (typeof maybeSlug === 'string') {
+      return api.get(`/u/${resolveUsername(usernameOrSlug)}/projects/${maybeSlug}/`);
+    }
+    return api.get(`/u/${DEFAULT_PUBLIC_USERNAME}/projects/${usernameOrSlug}/`);
+  },
+  getSkills: (username) => api.get(`/u/${resolveUsername(username)}/skills/`),
+  getExperience: (username) => api.get(`/u/${resolveUsername(username)}/experience/`),
+  getBlogs: (usernameOrParams, maybeParams = {}) => {
+    const { username, params } = resolveUsernameAndParams(usernameOrParams, maybeParams);
+    return api.get(`/u/${username}/blog/`, { params });
+  },
+  getBlogBySlug: (usernameOrSlug, maybeSlug) => {
+    if (typeof maybeSlug === 'string') {
+      return api.get(`/u/${resolveUsername(usernameOrSlug)}/blog/${maybeSlug}/`);
+    }
+    return api.get(`/u/${DEFAULT_PUBLIC_USERNAME}/blog/${usernameOrSlug}/`);
+  },
+  getTestimonials: (usernameOrParams, maybeParams = {}) => {
+    const { username, params } = resolveUsernameAndParams(usernameOrParams, maybeParams);
+    return api.get(`/u/${username}/testimonials/`, { params });
+  },
+  sendMessage: (usernameOrData, maybeData) => {
+    if (isPlainObject(usernameOrData) && maybeData === undefined) {
+      return api.post(`/u/${DEFAULT_PUBLIC_USERNAME}/contact/`, usernameOrData);
+    }
+    return api.post(`/u/${resolveUsername(usernameOrData)}/contact/`, maybeData);
+  },
 };
-
-// ─── User Dashboard API (authenticated user's own data) ──────────────────────────
 
 export const userApi = {
   // Stats
@@ -148,10 +182,8 @@ export const userApi = {
   },
 };
 
-// ─── Backward compatibility aliases ───────────────────────────────────────────
+// Backward compatibility aliases
 export const dashboardApi = userApi;
-
-// ─── Admin API (platform owner only) ──────────────────────────────────
 
 export const adminApi = {
   getStats: () => api.get('/admin/stats/'),
@@ -160,10 +192,11 @@ export const adminApi = {
   toggleUser: (id, isActive) => api.patch(`/admin/users/${id}/`, { is_active: isActive }),
   deleteUser: (id) => api.delete(`/admin/users/${id}/`),
   impersonateUser: (id) => api.post(`/admin/impersonate/${id}/`),
-  stopImpersonation: (originalAdminId) => api.post('/admin/stop-impersonation/', { original_admin_id: originalAdminId }),
+  stopImpersonation: (originalAdminId) =>
+    api.post('/admin/stop-impersonation/', { original_admin_id: originalAdminId }),
 };
 
-// ─── Backward compatibility alias ───────────────────────────────────────────
+// Backward compatibility alias
 export const superAdminApi = adminApi;
 
 export default api;

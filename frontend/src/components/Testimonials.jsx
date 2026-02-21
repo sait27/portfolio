@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { FaQuoteLeft, FaStar, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import SectionWrapper from './SectionWrapper';
 import { publicApi } from '../api/client';
@@ -57,7 +57,7 @@ export default function Testimonials() {
     setIsAutoPlaying(false);
   };
 
-  if (loading || testimonials.length === 0) {
+  if (loading) {
     return (
       <SectionWrapper className="testimonials">
         <div className="testimonials__header">
@@ -68,20 +68,37 @@ export default function Testimonials() {
             Feedback from clients and colleagues I've had the pleasure to work with
           </p>
         </div>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <p>Loading testimonials...</p>
-          </div>
-        ) : (
-          <div className="testimonials__empty glass" style={{ padding: '3rem', textAlign: 'center' }}>
-            <p>No testimonials yet.</p>
-          </div>
-        )}
+        <div className="testimonials__state">
+          <p>Loading testimonials...</p>
+        </div>
+      </SectionWrapper>
+    );
+  }
+
+  if (testimonials.length === 0) {
+    return (
+      <SectionWrapper className="testimonials">
+        <div className="testimonials__header">
+          <h2 className="section-title">
+            What People <span className="gradient-text">Say</span>
+          </h2>
+          <p className="section-subtitle">
+            Feedback from clients and colleagues I've had the pleasure to work with
+          </p>
+        </div>
+        <div className="testimonials__empty">
+          <p>No testimonials yet.</p>
+        </div>
       </SectionWrapper>
     );
   }
 
   const currentTestimonial = testimonials[currentIndex];
+  const rating = Math.min(5, Math.max(0, Math.round(Number(currentTestimonial.rating) || 0)));
+  const displayName = currentTestimonial.client_name || 'Client';
+  const roleAndCompany = [currentTestimonial.client_role, currentTestimonial.client_company].filter(Boolean);
+  const displayRole = roleAndCompany.length > 0 ? roleAndCompany.join(' at ') : 'Verified client';
+  const avatarFallback = `https://via.placeholder.com/80x80/ff7a32/ffffff?text=${displayName.charAt(0) || 'C'}`;
 
   return (
     <SectionWrapper className="testimonials">
@@ -98,6 +115,7 @@ export default function Testimonials() {
         <button 
           className="testimonials__nav testimonials__nav--prev"
           onClick={prevTestimonial}
+          type="button"
           aria-label="Previous testimonial"
         >
           <FaChevronLeft />
@@ -105,7 +123,7 @@ export default function Testimonials() {
 
         <div className="testimonials__content">
           <AnimatePresence mode="wait">
-            <motion.div
+            <Motion.div
               key={currentIndex}
               className="testimonials__card glass"
               initial={{ opacity: 0, x: 50 }}
@@ -121,7 +139,7 @@ export default function Testimonials() {
                 {Array.from({ length: 5 }).map((_, i) => (
                   <FaStar 
                     key={i} 
-                    className={`testimonials__star ${i < currentTestimonial.rating ? 'active' : ''}`}
+                    className={`testimonials__star ${i < rating ? 'active' : ''}`}
                   />
                 ))}
               </div>
@@ -132,15 +150,13 @@ export default function Testimonials() {
 
               <div className="testimonials__author">
                 <img 
-                  src={currentTestimonial.client_avatar || `https://via.placeholder.com/80x80/7c3aed/ffffff?text=${currentTestimonial.client_name?.charAt(0) || 'U'}`}
-                  alt={currentTestimonial.client_name}
+                  src={currentTestimonial.client_avatar || avatarFallback}
+                  alt={displayName}
                   className="testimonials__avatar"
                 />
                 <div className="testimonials__author-info">
-                  <h4 className="testimonials__name">{currentTestimonial.client_name}</h4>
-                  <p className="testimonials__role">
-                    {currentTestimonial.client_role} at {currentTestimonial.client_company}
-                  </p>
+                  <h4 className="testimonials__name">{displayName}</h4>
+                  <p className="testimonials__role">{displayRole}</p>
                   {currentTestimonial.project_name && (
                     <span className="testimonials__project">
                       Project: {currentTestimonial.project_name}
@@ -148,13 +164,14 @@ export default function Testimonials() {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </Motion.div>
           </AnimatePresence>
         </div>
 
         <button 
           className="testimonials__nav testimonials__nav--next"
           onClick={nextTestimonial}
+          type="button"
           aria-label="Next testimonial"
         >
           <FaChevronRight />
@@ -167,6 +184,7 @@ export default function Testimonials() {
             key={index}
             className={`testimonials__dot ${index === currentIndex ? 'active' : ''}`}
             onClick={() => goToTestimonial(index)}
+            type="button"
             aria-label={`Go to testimonial ${index + 1}`}
           />
         ))}

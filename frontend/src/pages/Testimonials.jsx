@@ -1,8 +1,10 @@
 import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import SectionWrapper from '../components/SectionWrapper';
 import PageTransition from '../components/PageTransition';
+import PageHeader from '../components/PageHeader';
 import TestimonialsComponent from '../components/Testimonials';
 import './Testimonials.css';
 
@@ -17,22 +19,22 @@ export default function Testimonials() {
       <Navbar />
 
       <SectionWrapper className="testimonials-hero">
-        <motion.div 
-          className="testimonials-hero__content"
+        <Motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="testimonials-hero__title">
-            Client <span className="gradient-text">Testimonials</span>
-          </h1>
-          <p className="testimonials-hero__subtitle">
-            Hear from the amazing clients and colleagues I've had the privilege to work with
-          </p>
-        </motion.div>
+          <PageHeader
+            badge="Social Proof"
+            title="Client"
+            highlight="Testimonials"
+            subtitle="Hear from the clients and colleagues I've had the privilege to work with."
+          />
+        </Motion.div>
       </SectionWrapper>
 
       <TestimonialsComponent />
+      <Footer />
     </PageTransition>
   );
 }

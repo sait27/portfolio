@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import './FormField.css';
 
 export default function FormField({
@@ -23,12 +23,16 @@ export default function FormField({
   const isTextarea = type === 'textarea';
   const isSelect = type === 'select';
   const isCheckbox = type === 'checkbox';
-  const hasValue = value && value.toString().length > 0;
+  const hasValue = value !== undefined && value !== null && String(value).length > 0;
+  const describedBy = [
+    error ? `${name}-error` : null,
+    hint ? `${name}-hint` : null,
+  ].filter(Boolean).join(' ') || undefined;
 
   const inputProps = {
     id: name,
     name,
-    value: isCheckbox ? undefined : value,
+    value: isCheckbox ? undefined : (value ?? ''),
     checked: isCheckbox ? value : undefined,
     onChange,
     onFocus: () => setIsFocused(true),
@@ -36,13 +40,13 @@ export default function FormField({
     disabled,
     className: `form-field__input ${error ? 'form-field__input--error' : ''} ${hasValue ? 'form-field__input--filled' : ''}`,
     'aria-invalid': !!error,
-    'aria-describedby': error ? `${name}-error` : hint ? `${name}-hint` : undefined,
+    'aria-describedby': describedBy,
     ...props,
   };
 
   if (isCheckbox) {
     return (
-      <motion.label
+      <Motion.label
         className={`form-field form-field--checkbox ${disabled ? 'form-field--disabled' : ''}`}
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -50,7 +54,7 @@ export default function FormField({
         <input type="checkbox" {...inputProps} />
         <span className="form-field__checkbox-custom">
           <svg viewBox="0 0 12 10" fill="none">
-            <motion.path
+            <Motion.path
               d="M1 5L4.5 8.5L11 1.5"
               stroke="currentColor"
               strokeWidth="2"
@@ -63,12 +67,12 @@ export default function FormField({
           </svg>
         </span>
         <span className="form-field__checkbox-label">{label}</span>
-      </motion.label>
+      </Motion.label>
     );
   }
 
   return (
-    <motion.div
+    <Motion.div
       className={`form-field ${isFocused ? 'form-field--focused' : ''} ${error ? 'form-field--error' : ''} ${disabled ? 'form-field--disabled' : ''}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -76,13 +80,13 @@ export default function FormField({
     >
       <div className="form-field__wrapper">
         {Icon && (
-          <motion.div
+          <Motion.div
             className="form-field__icon"
             animate={{ scale: isFocused ? 1.1 : 1, color: isFocused ? 'var(--accent-primary)' : 'var(--text-muted)' }}
             transition={{ duration: 0.2 }}
           >
             <Icon />
-          </motion.div>
+          </Motion.div>
         )}
 
         {isTextarea ? (
@@ -102,7 +106,7 @@ export default function FormField({
           />
         )}
 
-        <motion.label
+        <Motion.label
           htmlFor={name}
           className="form-field__label"
           animate={{
@@ -113,7 +117,7 @@ export default function FormField({
           transition={{ duration: 0.2 }}
         >
           {label} {required && <span className="form-field__required">*</span>}
-        </motion.label>
+        </Motion.label>
 
         {type === 'password' && (
           <button
@@ -136,7 +140,7 @@ export default function FormField({
           </button>
         )}
 
-        <motion.div
+        <Motion.div
           className="form-field__border"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: isFocused ? 1 : 0 }}
@@ -146,7 +150,7 @@ export default function FormField({
 
       <AnimatePresence mode="wait">
         {error && (
-          <motion.span
+          <Motion.span
             id={`${name}-error`}
             className="form-field__error"
             initial={{ opacity: 0, y: -5 }}
@@ -159,19 +163,19 @@ export default function FormField({
               <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z" />
             </svg>
             {error}
-          </motion.span>
+          </Motion.span>
         )}
         {hint && !error && (
-          <motion.span
+          <Motion.span
             id={`${name}-hint`}
             className="form-field__hint"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
             {hint}
-          </motion.span>
+          </Motion.span>
         )}
       </AnimatePresence>
-    </motion.div>
+    </Motion.div>
   );
 }

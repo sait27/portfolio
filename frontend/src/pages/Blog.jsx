@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaCalendarAlt, FaClock, FaArrowRight, FaTag } from 'react-icons/fa';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import SectionWrapper from '../components/SectionWrapper';
 import PageTransition from '../components/PageTransition';
+import PageHeader from '../components/PageHeader';
 import { publicApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './Blog.css';
@@ -58,18 +60,17 @@ export default function Blog() {
       <Navbar />
 
       <SectionWrapper className="blog-hero">
-        <motion.div 
-          className="blog-hero__content"
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="blog-hero__title">
-            Technical <span className="gradient-text">Blog</span>
-          </h1>
-          <p className="blog-hero__subtitle">
-            Sharing insights, tutorials, and lessons learned from my development journey
-          </p>
+          <PageHeader
+            badge="Writing"
+            title="Technical"
+            highlight="Blog"
+            subtitle="Sharing insights, tutorials, and lessons learned from my development journey."
+          />
         </motion.div>
       </SectionWrapper>
 
@@ -122,7 +123,7 @@ export default function Blog() {
                 <div className="blog-card__image">
                   <img src={article.thumbnail || `https://via.placeholder.com/600x300/16161f/7c3aed?text=${encodeURIComponent(article.title)}`} alt={article.title} />
                   <div className="blog-card__overlay">
-                    <Link to={`/blog/${article.id}`} className="btn btn-primary btn-sm">
+                    <Link to={`/blog/${article.slug || article.id}`} className="btn btn-primary btn-sm">
                       Read Article <FaArrowRight />
                     </Link>
                   </div>
@@ -139,7 +140,7 @@ export default function Blog() {
                   </div>
                   
                   <h2 className="blog-card__title">
-                    <Link to={`/blog/${article.id}`}>{article.title}</Link>
+                    <Link to={`/blog/${article.slug || article.id}`}>{article.title}</Link>
                   </h2>
                   
                   <p className="blog-card__excerpt">{article.excerpt}</p>
@@ -162,6 +163,8 @@ export default function Blog() {
           </div>
         )}
       </SectionWrapper>
+
+      <Footer />
     </PageTransition>
   );
 }

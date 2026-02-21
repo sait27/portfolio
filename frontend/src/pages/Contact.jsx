@@ -6,6 +6,9 @@ import toast from 'react-hot-toast';
 import SectionWrapper from '../components/SectionWrapper';
 import PageTransition from '../components/PageTransition';
 import FormField from '../components/FormField';
+import PageHeader from '../components/PageHeader';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { publicApi } from '../api/client';
 import './Contact.css';
 
@@ -103,6 +106,8 @@ export default function Contact() {
         <meta name="description" content="Get in touch — let's discuss your project or just say hello." />
       </Helmet>
 
+      <Navbar />
+
       <div style={{ paddingTop: '5rem' }}>
         <SectionWrapper>
           <div className="contact__grid">
@@ -113,13 +118,13 @@ export default function Contact() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h1 className="section-title">
-                Let's <span className="gradient-text">Connect</span>
-              </h1>
-              <p className="contact__intro">
-                Have a project in mind, a question, or just want to say hello?
-                Fill out the form and I'll get back to you as soon as possible.
-              </p>
+              <PageHeader
+                align="left"
+                badge="Open to Work"
+                title="Let's"
+                highlight="Connect"
+                subtitle="Have a project in mind, a question, or just want to say hello? Fill out the form and I'll get back to you as soon as possible."
+              />
 
               <div className="contact__details">
                 <div className="contact__detail">
@@ -257,6 +262,8 @@ export default function Contact() {
           </div>
         </SectionWrapper>
       </div>
+
+      <Footer />
     </PageTransition>
   );
 }

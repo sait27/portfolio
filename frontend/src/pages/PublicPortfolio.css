@@ -1,10 +1,7 @@
-/* ─── Public Portfolio Page ───────────────────────────────────── */
-
 .portfolio-not-found {
   min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   text-align: center;
   position: relative;
 }
@@ -12,158 +9,121 @@
 .portfolio-not-found::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
-  pointer-events: none;
-  animation: pulse-glow 4s ease-in-out infinite;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(46, 211, 183, 0.15) 0%, transparent 70%);
 }
 
 .portfolio-not-found h1 {
   font-size: var(--font-size-3xl);
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.55rem;
 }
 
 .portfolio-not-found p {
   color: var(--text-secondary);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 }
 
-/* Portfolio Navbar */
 .portfolio-nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  padding: 1.25rem 3rem;
+  z-index: var(--z-navbar);
+  padding: 0.85rem 1.4rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(13, 13, 23, 0.85);
-  backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-glass);
-  transition: all var(--transition-base);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-}
-
-.portfolio-nav:hover {
-  background: rgba(13, 13, 23, 0.95);
-  box-shadow: 0 4px 32px rgba(139, 92, 246, 0.15);
+  background: rgba(8, 14, 24, 0.86);
+  backdrop-filter: blur(14px);
 }
 
 .portfolio-nav__name {
   font-size: var(--font-size-xl);
   font-weight: 800;
-  letter-spacing: -0.5px;
 }
 
 .portfolio-nav__links {
   display: flex;
-  gap: 2rem;
   align-items: center;
+  gap: 1.2rem;
 }
 
 .portfolio-nav__links a {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
   color: var(--text-secondary);
-  transition: all var(--transition-base);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
   position: relative;
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
 }
 
 .portfolio-nav__links a::after {
   content: '';
   position: absolute;
-  bottom: 0;
   left: 0;
+  bottom: 0;
   width: 0;
   height: 2px;
   background: var(--accent-gradient);
   transition: width var(--transition-base);
-  border-radius: 2px;
 }
 
 .portfolio-nav__links a:hover {
   color: var(--text-primary);
-  transform: translateY(-2px);
 }
 
 .portfolio-nav__links a:hover::after {
   width: 100%;
 }
 
-/* Contact Section */
 .portfolio-contact {
-  max-width: 700px;
+  max-width: 740px;
   margin: 0 auto;
 }
 
 .portfolio-contact__form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 2.5rem;
-  background: var(--bg-glass);
+  gap: 1.3rem;
+  padding: 2rem;
   border: 1px solid var(--border-glass);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-
-.portfolio-contact__form:hover {
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 12px 48px rgba(139, 92, 246, 0.15);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .portfolio-contact__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .portfolio-contact textarea.form-input {
   min-height: 150px;
   resize: vertical;
-  line-height: 1.6;
-}
-
-.portfolio-contact .form-group {
-  margin-bottom: 0;
 }
 
 .portfolio-contact .form-label {
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
-  display: block;
+  font-weight: 700;
 }
 
 .portfolio-contact .form-input {
   width: 100%;
-  padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
-  transition: all var(--transition-base);
 }
 
-.portfolio-contact .form-input:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
-}
+@media (max-width: 900px) {
+  .portfolio-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 
-.portfolio-contact .btn {
-  margin-top: 0.5rem;
+  .portfolio-nav__links {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.3rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -171,7 +131,7 @@
     grid-template-columns: 1fr;
   }
 
-  .portfolio-nav {
-    padding: 0.75rem 1rem;
+  .portfolio-contact__form {
+    padding: 1.4rem;
   }
 }
