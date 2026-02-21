@@ -261,10 +261,17 @@
 }
 
 .skills-home__cat-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   font-size: var(--font-size-base);
   font-weight: 800;
   margin-bottom: 0.9rem;
   color: #9deedf;
+}
+
+.skills-home__cat-name svg {
+  color: #ffd6c0;
 }
 
 .skills-home__list {
@@ -277,6 +284,10 @@
   width: 16px;
   height: 16px;
   object-fit: contain;
+}
+
+.skills-home__icon--fallback {
+  color: #9ff1e3;
 }
 
 .featured__grid,

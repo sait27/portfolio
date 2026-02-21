@@ -5,9 +5,37 @@ import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import FormField from '../../components/FormField';
+import SkillIcon from '../../components/SkillIcon';
 
 const EMPTY_CATEGORY = { name: '', order: 0 };
 const EMPTY_SKILL = { name: '', icon: '', category: '', order: 0 };
+const COMMON_SKILL_NAMES = [
+  'React',
+  'Next.js',
+  'TypeScript',
+  'JavaScript',
+  'Node.js',
+  'Express',
+  'Django',
+  'Flask',
+  'FastAPI',
+  'Python',
+  'HTML',
+  'CSS',
+  'Tailwind CSS',
+  'Redux',
+  'PostgreSQL',
+  'MySQL',
+  'MongoDB',
+  'Redis',
+  'GraphQL',
+  'Docker',
+  'Kubernetes',
+  'AWS',
+  'Git',
+  'GitHub',
+  'Linux',
+];
 
 export default function AdminSkills() {
   const [categories, setCategories] = useState([]);
@@ -65,6 +93,22 @@ export default function AdminSkills() {
       })
       .filter(Boolean);
   }, [categories, skills, searchTerm]);
+
+  const skillNameSuggestions = useMemo(() => {
+    const existingSkillNames = skills
+      .map((item) => item?.name)
+      .filter((name) => typeof name === 'string' && name.trim().length > 0)
+      .map((name) => name.trim());
+    const uniqueNames = Array.from(new Set([...COMMON_SKILL_NAMES, ...existingSkillNames]));
+    const term = skillForm.name.trim().toLowerCase();
+    if (term.length < 2) return [];
+    return uniqueNames
+      .filter((name) => name.toLowerCase().includes(term))
+      .filter((name) => name.toLowerCase() !== term)
+      .slice(0, 8);
+  }, [skillForm.name, skills]);
+
+  const shouldShowSkillSuggestions = skillForm.name.trim().length >= 2;
 
   const openCatCreate = () => {
     setEditingCat(null);
@@ -297,14 +341,41 @@ export default function AdminSkills() {
               <h2>{editingSkill ? 'Edit Skill' : 'New Skill'}</h2>
               <form onSubmit={handleSkillSubmit} className="admin-form">
                 <div className="admin-form__row">
-                  <FormField
-                    label="Skill Name"
-                    name="name"
-                    value={skillForm.name}
-                    onChange={(event) => setSkillForm((prev) => ({ ...prev, name: event.target.value }))}
-                    icon={FaCode}
-                    required
-                  />
+                  <div className="admin-skill-name-picker">
+                    <FormField
+                      label="Skill Name"
+                      name="name"
+                      value={skillForm.name}
+                      onChange={(event) => setSkillForm((prev) => ({ ...prev, name: event.target.value }))}
+                      icon={FaCode}
+                      hint="Type at least 2 letters to see suggestions"
+                      autoComplete="off"
+                      required
+                    />
+                    {shouldShowSkillSuggestions && (
+                      <div className="admin-skill-suggestions glass" role="listbox" aria-label="Skill suggestions">
+                        {skillNameSuggestions.length > 0 ? (
+                          skillNameSuggestions.map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              className="admin-skill-suggestions__item"
+                              onClick={() => setSkillForm((prev) => ({ ...prev, name: suggestion }))}
+                            >
+                              <SkillIcon
+                                name={suggestion}
+                                className="admin-skill-suggestions__icon"
+                                fallbackClassName="admin-skill-suggestions__icon--fallback"
+                              />
+                              <span>{suggestion}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="admin-skill-suggestions__empty">No suggestions found</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <FormField
                     label="Category"
                     name="category"
@@ -371,10 +442,16 @@ export default function AdminSkills() {
             >
               <div className="admin-skill-category__header">
                 <div>
-                  <h3>{category.name}</h3>
+                  <h3 className="admin-skill-category__title">
+                    <FaFolderOpen /> {category.name}
+                  </h3>
                   <div className="admin-skill-category__meta">
-                    <span className="chip">{category.skills.length} skill{category.skills.length === 1 ? '' : 's'}</span>
-                    <span className="chip">Order: {Number(category.order) || 0}</span>
+                    <span className="chip">
+                      <FaCode /> {category.skills.length} skill{category.skills.length === 1 ? '' : 's'}
+                    </span>
+                    <span className="chip">
+                      <FaSort /> Order: {Number(category.order) || 0}
+                    </span>
                   </div>
                 </div>
                 <div className="admin-actions">
@@ -395,14 +472,14 @@ export default function AdminSkills() {
                   {category.skills.map((skill) => (
                     <div key={skill.id} className="admin-skill-item">
                       <div className="admin-skill-item__info">
-                        {skill.icon ? (
-                          <img src={skill.icon} alt="" />
-                        ) : (
-                          <span className="admin-skill-item__icon-fallback"><FaCode /></span>
-                        )}
+                        <SkillIcon
+                          name={skill.name}
+                          iconUrl={skill.icon}
+                          className="admin-skill-item__icon-fallback"
+                        />
                         <div>
                           <p>{skill.name}</p>
-                          <small>Order: {Number(skill.order) || 0}</small>
+                          <small><FaSort /> Order: {Number(skill.order) || 0}</small>
                         </div>
                       </div>
                       <div className="admin-actions">
@@ -417,7 +494,9 @@ export default function AdminSkills() {
                   ))}
                 </div>
               ) : (
-                <p className="admin-skill-category__empty">No skills in this category yet.</p>
+                <p className="admin-skill-category__empty">
+                  <FaCode /> No skills in this category yet.
+                </p>
               )}
             </Motion.article>
           ))}

@@ -312,6 +312,24 @@ select {
   min-height: 120px;
 }
 
+select.form-input {
+  color-scheme: dark;
+}
+
+select.form-input option {
+  background: #122030;
+  color: #eaf1ff;
+}
+
+select.form-input option:checked {
+  background: #1e384d;
+  color: #78f2da;
+}
+
+select.form-input option[value=""] {
+  color: #a4b2c6;
+}
+
 .form-error {
   font-size: var(--font-size-xs);
   color: #ff5f6d;

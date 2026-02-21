@@ -237,13 +237,20 @@ export default function AdminTestimonials() {
             onClick={closeForm}
           >
             <Motion.div
-              className="admin-form-modal glass"
+              className="admin-form-modal admin-form-modal--testimonial glass"
               initial={{ opacity: 0, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 26 }}
               onClick={(event) => event.stopPropagation()}
             >
-              <h2>{editingTestimonial ? 'Edit Testimonial' : 'New Testimonial'}</h2>
+              <div className="admin-form-modal__header">
+                <h2>{editingTestimonial ? 'Edit Testimonial' : 'New Testimonial'}</h2>
+                <p>
+                  {editingTestimonial
+                    ? 'Update the client details and refine the testimonial copy.'
+                    : 'Add client details and write clear, concise testimonial feedback.'}
+                </p>
+              </div>
               <form onSubmit={handleSubmit} className="admin-form">
                 <div className="admin-form__row">
                   <FormField
@@ -379,42 +386,44 @@ export default function AdminTestimonials() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
               >
-                <div className="admin-testimonial__head">
-                  <div className="admin-testimonial__avatar">
-                    {item.client_avatar ? (
-                      <img src={item.client_avatar} alt={displayName} />
-                    ) : (
-                      <span>{displayName.charAt(0).toUpperCase()}</span>
-                    )}
+                <div className="admin-content-card__body admin-content-card__body--testimonial">
+                  <div className="admin-testimonial__head">
+                    <div className="admin-testimonial__avatar">
+                      {item.client_avatar ? (
+                        <img src={item.client_avatar} alt={displayName} />
+                      ) : (
+                        <span>{displayName.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div>
+                      <h3>{displayName}</h3>
+                      <p>{item.client_role || 'Client'} at {item.client_company || 'Company'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3>{displayName}</h3>
-                    <p>{item.client_role || 'Client'} at {item.client_company || 'Company'}</p>
+
+                  <div className="admin-testimonial__rating">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <FaStar key={`${item.id}-${i}`} className={i < rating ? 'active' : ''} />
+                    ))}
+                    <span>{rating}.0</span>
                   </div>
-                </div>
 
-                <div className="admin-testimonial__rating">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <FaStar key={`${item.id}-${i}`} className={i < rating ? 'active' : ''} />
-                  ))}
-                  <span>{rating}.0</span>
-                </div>
+                  <p className="admin-testimonial__content">{item.content || 'No testimonial content.'}</p>
 
-                <p className="admin-testimonial__content">{item.content || 'No testimonial content.'}</p>
+                  <div className="admin-content-card__chips">
+                    {item.project_name && <span className="chip">Project: {item.project_name}</span>}
+                    {item.is_featured && <span className="chip chip-status-admin">Featured</span>}
+                    <span className="chip">Order: {Number(item.order) || 0}</span>
+                  </div>
 
-                <div className="admin-content-card__chips">
-                  {item.project_name && <span className="chip">Project: {item.project_name}</span>}
-                  {item.is_featured && <span className="chip chip-status-admin">Featured</span>}
-                  <span className="chip">Order: {Number(item.order) || 0}</span>
-                </div>
-
-                <div className="admin-content-card__actions">
-                  <button type="button" className="admin-btn admin-btn--edit" onClick={() => openEdit(item)}>
-                    <FaEdit /> Edit
-                  </button>
-                  <button type="button" className="admin-btn admin-btn--delete" onClick={() => handleDelete(item.id)}>
-                    <FaTrash /> Delete
-                  </button>
+                  <div className="admin-content-card__actions">
+                    <button type="button" className="admin-btn admin-btn--edit" onClick={() => openEdit(item)}>
+                      <FaEdit /> Edit
+                    </button>
+                    <button type="button" className="admin-btn admin-btn--delete" onClick={() => handleDelete(item.id)}>
+                      <FaTrash /> Delete
+                    </button>
+                  </div>
                 </div>
               </Motion.article>
             );

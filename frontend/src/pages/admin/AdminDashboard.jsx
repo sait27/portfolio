@@ -12,6 +12,10 @@ import {
   FaExclamationCircle,
   FaChartLine,
   FaPaperPlane,
+  FaCertificate,
+  FaGraduationCap,
+  FaTrophy,
+  FaUsers,
 } from 'react-icons/fa';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
@@ -33,6 +37,10 @@ export default function AdminDashboard() {
     skills: stats?.skills || 0,
     categories: stats?.categories || 0,
     experience: stats?.experience || 0,
+    education: stats?.education || 0,
+    activities: stats?.activities || 0,
+    achievements: stats?.achievements || 0,
+    certifications: stats?.certifications || 0,
     blog_posts: stats?.blog_posts || 0,
     published_posts: stats?.published_posts || 0,
     testimonials: stats?.testimonials || 0,
@@ -44,6 +52,10 @@ export default function AdminDashboard() {
     normalizedStats.projects +
     normalizedStats.skills +
     normalizedStats.experience +
+    normalizedStats.education +
+    normalizedStats.activities +
+    normalizedStats.achievements +
+    normalizedStats.certifications +
     normalizedStats.blog_posts +
     normalizedStats.testimonials;
 
@@ -55,7 +67,7 @@ export default function AdminDashboard() {
     {
       label: 'Content Inventory',
       value: totalContentItems,
-      hint: 'Projects, skills, experience, posts and testimonials',
+      hint: 'Projects, skills, experience, milestones, posts and testimonials',
       icon: <FaChartLine />,
       color: 'accent',
     },
@@ -81,6 +93,10 @@ export default function AdminDashboard() {
     { label: 'Skills', value: normalizedStats.skills, icon: <FaCode />, color: 'accent' },
     { label: 'Skill Categories', value: normalizedStats.categories, icon: <FaCode />, color: 'cyan' },
     { label: 'Experience Entries', value: normalizedStats.experience, icon: <FaBriefcase />, color: 'pink' },
+    { label: 'Education Entries', value: normalizedStats.education, icon: <FaGraduationCap />, color: 'cyan' },
+    { label: 'Activities', value: normalizedStats.activities, icon: <FaUsers />, color: 'accent' },
+    { label: 'Achievements', value: normalizedStats.achievements, icon: <FaTrophy />, color: 'pink' },
+    { label: 'Certifications', value: normalizedStats.certifications, icon: <FaCertificate />, color: 'cyan' },
     { label: 'Blog Posts', value: normalizedStats.blog_posts, icon: <FaBlog />, color: 'accent' },
     { label: 'Published Posts', value: normalizedStats.published_posts, icon: <FaBlog />, color: 'cyan' },
     { label: 'Testimonials', value: normalizedStats.testimonials, icon: <FaQuoteLeft />, color: 'pink' },
@@ -109,6 +125,34 @@ export default function AdminDashboard() {
       path: '/user/testimonials',
       icon: <FaQuoteLeft />,
       tone: 'pink',
+    },
+    {
+      title: 'Edit Education',
+      text: 'Manage institutions, degrees, grades, and academic timeline.',
+      path: '/user/milestones?section=education',
+      icon: <FaGraduationCap />,
+      tone: 'cyan',
+    },
+    {
+      title: 'Edit Activities',
+      text: 'Update extracurricular leadership, clubs, and community work.',
+      path: '/user/milestones?section=activities',
+      icon: <FaUsers />,
+      tone: 'accent',
+    },
+    {
+      title: 'Edit Achievements',
+      text: 'Maintain awards, accomplishments, and proof links.',
+      path: '/user/milestones?section=achievements',
+      icon: <FaTrophy />,
+      tone: 'pink',
+    },
+    {
+      title: 'Edit Certifications',
+      text: 'Keep credentials, IDs, validity dates, and verification links current.',
+      path: '/user/milestones?section=certifications',
+      icon: <FaCertificate />,
+      tone: 'cyan',
     },
     {
       title: 'Review Messages',
@@ -146,6 +190,18 @@ export default function AdminDashboard() {
       text: 'No projects added yet. Portfolio visitors will see an empty section.',
       path: '/user/projects',
       action: 'Add project',
+    });
+  }
+  if (
+    normalizedStats.education === 0 &&
+    normalizedStats.activities === 0 &&
+    normalizedStats.achievements === 0 &&
+    normalizedStats.certifications === 0
+  ) {
+    attentionItems.push({
+      text: 'Milestone sections are empty. Add education, achievements, and certifications for stronger trust signals.',
+      path: '/user/milestones?section=education',
+      action: 'Add milestones',
     });
   }
   if (attentionItems.length === 0) {

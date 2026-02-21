@@ -24,6 +24,9 @@ export default function FormField({
   const isSelect = type === 'select';
   const isCheckbox = type === 'checkbox';
   const hasValue = value !== undefined && value !== null && String(value).length > 0;
+  const shouldFloat = isFocused || hasValue;
+  const floatedLabelY = isTextarea ? -18 : -26;
+  const floatedLabelScale = 0.84;
   const describedBy = [
     error ? `${name}-error` : null,
     hint ? `${name}-hint` : null,
@@ -66,14 +69,21 @@ export default function FormField({
             />
           </svg>
         </span>
-        <span className="form-field__checkbox-label">{label}</span>
+        <span className="form-field__checkbox-label">
+          {Icon && (
+            <span className="form-field__checkbox-icon" aria-hidden="true">
+              <Icon />
+            </span>
+          )}
+          {label}
+        </span>
       </Motion.label>
     );
   }
 
   return (
     <Motion.div
-      className={`form-field ${isFocused ? 'form-field--focused' : ''} ${error ? 'form-field--error' : ''} ${disabled ? 'form-field--disabled' : ''}`}
+      className={`form-field ${isFocused ? 'form-field--focused' : ''} ${error ? 'form-field--error' : ''} ${disabled ? 'form-field--disabled' : ''} ${isTextarea ? 'form-field--textarea' : ''} ${isSelect ? 'form-field--select' : ''}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -110,8 +120,8 @@ export default function FormField({
           htmlFor={name}
           className="form-field__label"
           animate={{
-            y: isFocused || hasValue ? -24 : 0,
-            scale: isFocused || hasValue ? 0.85 : 1,
+            y: shouldFloat ? floatedLabelY : 0,
+            scale: shouldFloat ? floatedLabelScale : 1,
             color: isFocused ? 'var(--accent-primary)' : error ? '#ef4444' : 'var(--text-muted)',
           }}
           transition={{ duration: 0.2 }}

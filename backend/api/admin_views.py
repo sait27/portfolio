@@ -4,7 +4,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .models import Profile, SkillCategory, Skill, Project, Experience, Message, BlogPost, Testimonial
+from .models import (
+    Profile,
+    SkillCategory,
+    Skill,
+    Project,
+    Experience,
+    Education,
+    Activity,
+    Achievement,
+    Certification,
+    Message,
+    BlogPost,
+    Testimonial,
+)
 from .serializers import (
     ProfileSerializer,
     SkillCategorySerializer,
@@ -12,6 +25,10 @@ from .serializers import (
     ProjectListSerializer,
     ProjectDetailSerializer,
     ExperienceSerializer,
+    EducationSerializer,
+    ActivitySerializer,
+    AchievementSerializer,
+    CertificationSerializer,
     MessageListSerializer,
     BlogPostListSerializer,
     BlogPostDetailSerializer,
@@ -41,6 +58,10 @@ class DashboardStatsView(APIView):
             'blog_posts': BlogPost.objects.filter(user=user).count(),
             'published_posts': BlogPost.objects.filter(user=user, is_published=True).count(),
             'testimonials': Testimonial.objects.filter(user=user).count(),
+            'education': Education.objects.filter(user=user).count(),
+            'activities': Activity.objects.filter(user=user).count(),
+            'achievements': Achievement.objects.filter(user=user).count(),
+            'certifications': Certification.objects.filter(user=user).count(),
         })
 
 
@@ -194,6 +215,122 @@ class DashboardExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # ─── Dashboard Messages ───────────────────────────────────────────────────
+
+class DashboardEducationListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/dashboard/education/  — List own education entries
+    POST /api/dashboard/education/  — Create a new education entry
+    """
+    serializer_class = EducationSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Education.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardEducationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/dashboard/education/{id}/  — Read own education entry
+    PUT    /api/dashboard/education/{id}/  — Update own education entry
+    DELETE /api/dashboard/education/{id}/  — Delete own education entry
+    """
+    serializer_class = EducationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Education.objects.filter(user=self.request.user)
+
+
+class DashboardActivityListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/dashboard/activities/  — List own extracurricular activities
+    POST /api/dashboard/activities/  — Create a new extracurricular activity
+    """
+    serializer_class = ActivitySerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Activity.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardActivityDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/dashboard/activities/{id}/  — Read own extracurricular activity
+    PUT    /api/dashboard/activities/{id}/  — Update own extracurricular activity
+    DELETE /api/dashboard/activities/{id}/  — Delete own extracurricular activity
+    """
+    serializer_class = ActivitySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Activity.objects.filter(user=self.request.user)
+
+
+class DashboardAchievementListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/dashboard/achievements/  — List own achievements
+    POST /api/dashboard/achievements/  — Create a new achievement
+    """
+    serializer_class = AchievementSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Achievement.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardAchievementDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/dashboard/achievements/{id}/  — Read own achievement
+    PUT    /api/dashboard/achievements/{id}/  — Update own achievement
+    DELETE /api/dashboard/achievements/{id}/  — Delete own achievement
+    """
+    serializer_class = AchievementSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Achievement.objects.filter(user=self.request.user)
+
+
+class DashboardCertificationListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/dashboard/certifications/  — List own certifications
+    POST /api/dashboard/certifications/  — Create a new certification
+    """
+    serializer_class = CertificationSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Certification.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DashboardCertificationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/dashboard/certifications/{id}/  — Read own certification
+    PUT    /api/dashboard/certifications/{id}/  — Update own certification
+    DELETE /api/dashboard/certifications/{id}/  — Delete own certification
+    """
+    serializer_class = CertificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Certification.objects.filter(user=self.request.user)
+
 
 class DashboardMessageListView(generics.ListAPIView):
     """

@@ -1,104 +1,386 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
-  FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaArrowDown,
-  FaBriefcase, FaCalendarAlt, FaExternalLinkAlt, FaPaperPlane, FaTachometerAlt, FaStar,
+  FaArrowDown,
+  FaArrowRight,
+  FaBriefcase,
+  FaCalendarAlt,
+  FaCertificate,
+  FaClock,
+  FaEnvelope,
+  FaExternalLinkAlt,
+  FaGithub,
+  FaGraduationCap,
+  FaLayerGroup,
+  FaLinkedin,
+  FaPaperPlane,
+  FaQuoteLeft,
+  FaStar,
+  FaTachometerAlt,
+  FaTimes,
+  FaTrophy,
+  FaTwitter,
+  FaUsers,
 } from 'react-icons/fa';
 import { HiDownload } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 import SectionWrapper from '../components/SectionWrapper';
-import LoadingSkeleton, { CardSkeleton } from '../components/LoadingSkeleton';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import SkillIcon from '../components/SkillIcon';
 import { publicApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './PublicPortfolio.css';
-import '../pages/Home.css';
+import './PortfolioShared.css';
 
-// ─── Animations ────────────────────────────────────────────────
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 24 },
   visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.5 },
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.45 },
   }),
 };
 
-// ═══════════════════════════════════════════════════════════════
-// PUBLIC PORTFOLIO PAGE
-// ═══════════════════════════════════════════════════════════════
+const toArray = (value) => {
+  if (Array.isArray(value?.results)) return value.results;
+  if (Array.isArray(value)) return value;
+  return [];
+};
+
+const formatDate = (value) => {
+  if (!value) return 'Not specified';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Not specified';
+  return parsed.toLocaleDateString();
+};
+
+const formatPeriod = (startDate, endDate, isCurrent) => {
+  if (!startDate && !endDate && !isCurrent) return 'Not specified';
+  const start = startDate ? formatDate(startDate) : 'N/A';
+  const end = isCurrent ? 'Present' : endDate ? formatDate(endDate) : 'N/A';
+  return `${start} - ${end}`;
+};
+
+const getItemKey = (item) => item?.slug || item?.id;
 
 export default function PublicPortfolio() {
   const { username } = useParams();
   const { isAuthenticated } = useAuth();
+
   const [profile, setProfile] = useState(null);
   const [skills, setSkills] = useState([]);
   const [projects, setProjects] = useState([]);
   const [experience, setExperience] = useState([]);
+  const [education, setEducation] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  const [showAllBlogs, setShowAllBlogs] = useState(false);
+  const [showAllTestimonials, setShowAllTestimonials] = useState(false);
+
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedBlog, setSelectedBlog] = useState(null);
+  const [selectedTestimonial, setSelectedTestimonial] = useState(null);
+  const [projectDetailsById, setProjectDetailsById] = useState({});
+  const [blogDetailsById, setBlogDetailsById] = useState({});
+  const [loadingProjectDetails, setLoadingProjectDetails] = useState(false);
+  const [loadingBlogDetails, setLoadingBlogDetails] = useState(false);
+
   useEffect(() => {
-    console.log('Starting data fetch for:', username);
-    setLoading(true);
-    setNotFound(false);
+    let cancelled = false;
 
-    Promise.all([
-      publicApi.getProfile(username).catch((e) => { console.error('Profile error:', e); return null; }),
-      publicApi.getSkills(username).catch((e) => { console.error('Skills error:', e); return { data: [] }; }),
-      publicApi.getProjects(username).catch((e) => { console.error('Projects error:', e); return { data: [] }; }),
-      publicApi.getExperience(username).catch((e) => { console.error('Experience error:', e); return { data: [] }; }),
-      publicApi.getBlogs(username).catch((e) => { console.error('Blogs error:', e); return { data: [] }; }),
-      publicApi.getTestimonials(username).catch((e) => { console.error('Testimonials error:', e); return { data: [] }; }),
-    ]).then(([profileRes, skillsRes, projectsRes, expRes, blogsRes, testimonialsRes]) => {
-      if (!profileRes) {
-        setNotFound(true);
-        setLoading(false);
-        return;
+    const fetchPortfolioData = async () => {
+      setLoading(true);
+      setNotFound(false);
+      setShowAllProjects(false);
+      setShowAllBlogs(false);
+      setShowAllTestimonials(false);
+      setSelectedProject(null);
+      setSelectedBlog(null);
+      setSelectedTestimonial(null);
+      setProjectDetailsById({});
+      setBlogDetailsById({});
+      setEducation([]);
+      setActivities([]);
+      setAchievements([]);
+      setCertifications([]);
+
+      try {
+        const [
+          profileRes,
+          skillsRes,
+          projectsRes,
+          expRes,
+          eduRes,
+          activitiesRes,
+          achievementsRes,
+          certificationsRes,
+          blogsRes,
+          testimonialsRes,
+        ] = await Promise.all([
+          publicApi.getProfile(username),
+          publicApi.getSkills(username).catch(() => ({ data: [] })),
+          publicApi.getProjects(username).catch(() => ({ data: [] })),
+          publicApi.getExperience(username).catch(() => ({ data: [] })),
+          publicApi.getEducation(username).catch(() => ({ data: [] })),
+          publicApi.getActivities(username).catch(() => ({ data: [] })),
+          publicApi.getAchievements(username).catch(() => ({ data: [] })),
+          publicApi.getCertifications(username).catch(() => ({ data: [] })),
+          publicApi.getBlogs(username).catch(() => ({ data: [] })),
+          publicApi.getTestimonials(username).catch(() => ({ data: [] })),
+        ]);
+
+        if (cancelled) return;
+
+        setProfile(profileRes.data);
+        setSkills(toArray(skillsRes?.data));
+
+        const projectsList = toArray(projectsRes?.data).sort((a, b) => {
+          const leftOrder = Number(a.order) || 0;
+          const rightOrder = Number(b.order) || 0;
+          if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+          return new Date(b.date_built || b.created_at || 0) - new Date(a.date_built || a.created_at || 0);
+        });
+        setProjects(projectsList);
+
+        const experienceList = toArray(expRes?.data).sort((a, b) => {
+          return new Date(b.start_date || 0) - new Date(a.start_date || 0);
+        });
+        setExperience(experienceList);
+
+        const educationList = toArray(eduRes?.data).sort((a, b) => {
+          const leftOrder = Number(a.order) || 0;
+          const rightOrder = Number(b.order) || 0;
+          if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+          return new Date(b.start_date || 0) - new Date(a.start_date || 0);
+        });
+        setEducation(educationList);
+
+        const activityList = toArray(activitiesRes?.data).sort((a, b) => {
+          const leftOrder = Number(a.order) || 0;
+          const rightOrder = Number(b.order) || 0;
+          if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+          return new Date(b.start_date || 0) - new Date(a.start_date || 0);
+        });
+        setActivities(activityList);
+
+        const achievementList = toArray(achievementsRes?.data).sort((a, b) => {
+          const leftOrder = Number(a.order) || 0;
+          const rightOrder = Number(b.order) || 0;
+          if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+          return new Date(b.achieved_on || 0) - new Date(a.achieved_on || 0);
+        });
+        setAchievements(achievementList);
+
+        const certificationList = toArray(certificationsRes?.data).sort((a, b) => {
+          const leftOrder = Number(a.order) || 0;
+          const rightOrder = Number(b.order) || 0;
+          if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+          return new Date(b.issue_date || 0) - new Date(a.issue_date || 0);
+        });
+        setCertifications(certificationList);
+
+        const blogList = toArray(blogsRes?.data).sort((a, b) => {
+          return new Date(b.published_at || b.created_at || 0) - new Date(a.published_at || a.created_at || 0);
+        });
+        setBlogs(blogList);
+
+        const testimonialsList = toArray(testimonialsRes?.data).sort((a, b) => {
+          const leftOrder = Number(a.order) || 0;
+          const rightOrder = Number(b.order) || 0;
+          if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
+        setTestimonials(testimonialsList);
+      } catch {
+        if (!cancelled) {
+          setNotFound(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
+    };
 
-      setProfile(profileRes.data);
+    fetchPortfolioData();
 
-      const skillData = skillsRes.data?.results || skillsRes.data;
-      setSkills(Array.isArray(skillData) ? skillData : []);
-
-      const projData = projectsRes.data?.results || projectsRes.data;
-      setProjects(Array.isArray(projData) ? projData : []);
-
-      const expData = expRes.data?.results || expRes.data;
-      setExperience(Array.isArray(expData) ? expData : []);
-
-      const blogsData = blogsRes.data?.results || blogsRes.data || [];
-      console.log('Blogs data:', blogsData);
-      setBlogs(Array.isArray(blogsData) ? blogsData : []);
-
-      const testimonialsData = testimonialsRes.data?.results || testimonialsRes.data || [];
-      console.log('Testimonials data:', testimonialsData);
-      setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : []);
-
-      setLoading(false);
-    });
+    return () => {
+      cancelled = true;
+    };
   }, [username]);
 
-  // ─── Not Found ─────────────────────────────────────────────
+  const isModalOpen = Boolean(selectedProject || selectedBlog || selectedTestimonial);
+
+  useEffect(() => {
+    if (!isModalOpen) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedProject(null);
+        setSelectedBlog(null);
+        setSelectedTestimonial(null);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [isModalOpen]);
+
+  const latestProject = projects[0] || null;
+  const latestBlog = blogs[0] || null;
+  const averageRating = testimonials.length
+    ? (testimonials.reduce((sum, item) => sum + (Number(item.rating) || 0), 0) / testimonials.length).toFixed(1)
+    : '0.0';
+  const skillCount = skills.reduce((total, category) => total + (category.skills?.length || 0), 0);
+  const isSectionVisible = (key) => profile?.[key] !== false;
+  const showHero = isSectionVisible('show_hero');
+  const showAbout = isSectionVisible('show_about');
+  const showHighlights = isSectionVisible('show_highlights');
+  const showSkills = isSectionVisible('show_skills');
+  const showProjects = isSectionVisible('show_projects');
+  const showExperience = isSectionVisible('show_experience');
+  const showEducation = isSectionVisible('show_education');
+  const showActivities = isSectionVisible('show_activities');
+  const showAchievements = isSectionVisible('show_achievements');
+  const showCertifications = isSectionVisible('show_certifications');
+  const showBlog = isSectionVisible('show_blog');
+  const showTestimonials = isSectionVisible('show_testimonials');
+  const showContact = isSectionVisible('show_contact');
+  const isNavVisible = (key) => profile?.[key] !== false;
+  const showNavAbout = isNavVisible('show_nav_about');
+  const showNavSkills = isNavVisible('show_nav_skills');
+  const showNavProjects = isNavVisible('show_nav_projects');
+  const showNavExperience = isNavVisible('show_nav_experience');
+  const showNavEducation = isNavVisible('show_nav_education');
+  const showNavActivities = isNavVisible('show_nav_activities');
+  const showNavAchievements = isNavVisible('show_nav_achievements');
+  const showNavCertifications = isNavVisible('show_nav_certifications');
+  const showNavBlog = isNavVisible('show_nav_blog');
+  const showNavTestimonials = isNavVisible('show_nav_testimonials');
+  const showNavContact = isNavVisible('show_nav_contact');
+
+  const visibleProjects = useMemo(
+    () => (showAllProjects ? projects : projects.slice(0, 3)),
+    [projects, showAllProjects]
+  );
+  const visibleBlogs = useMemo(
+    () => (showAllBlogs ? blogs : blogs.slice(0, 3)),
+    [blogs, showAllBlogs]
+  );
+  const visibleTestimonials = useMemo(
+    () => (showAllTestimonials ? testimonials : testimonials.slice(0, 3)),
+    [testimonials, showAllTestimonials]
+  );
+
+  const navSections = useMemo(() => ([
+    { key: 'about', label: 'About', show: showAbout && showNavAbout },
+    { key: 'skills', label: 'Skills', show: showSkills && skillCount > 0 && showNavSkills },
+    { key: 'projects', label: 'Projects', show: showProjects && projects.length > 0 && showNavProjects },
+    { key: 'experience', label: 'Experience', show: showExperience && experience.length > 0 && showNavExperience },
+    { key: 'education', label: 'Education', show: showEducation && education.length > 0 && showNavEducation },
+    { key: 'activities', label: 'Activities', show: showActivities && activities.length > 0 && showNavActivities },
+    { key: 'achievements', label: 'Achievements', show: showAchievements && achievements.length > 0 && showNavAchievements },
+    { key: 'certifications', label: 'Certifications', show: showCertifications && certifications.length > 0 && showNavCertifications },
+    { key: 'blog', label: 'Articles', show: showBlog && blogs.length > 0 && showNavBlog },
+    { key: 'testimonials', label: 'Testimonials', show: showTestimonials && testimonials.length > 0 && showNavTestimonials },
+    { key: 'contact', label: 'Contact', show: showContact && showNavContact },
+  ]).filter((item) => item.show), [
+    showAbout,
+    showSkills,
+    showProjects,
+    showExperience,
+    showEducation,
+    showActivities,
+    showAchievements,
+    showCertifications,
+    showBlog,
+    showTestimonials,
+    showContact,
+    showNavAbout,
+    showNavSkills,
+    showNavProjects,
+    showNavExperience,
+    showNavEducation,
+    showNavActivities,
+    showNavAchievements,
+    showNavCertifications,
+    showNavBlog,
+    showNavTestimonials,
+    showNavContact,
+    skillCount,
+    projects.length,
+    experience.length,
+    education.length,
+    activities.length,
+    achievements.length,
+    certifications.length,
+    blogs.length,
+    testimonials.length,
+  ]);
+
+  const openProjectDetails = async (project) => {
+    setSelectedProject(project);
+    const key = getItemKey(project);
+    if (!key || projectDetailsById[key]) return;
+
+    setLoadingProjectDetails(true);
+    try {
+      const response = await publicApi.getProjectBySlug(username, String(key));
+      setProjectDetailsById((prev) => ({ ...prev, [key]: response.data }));
+    } catch {
+      // Keep preview-only data when detail endpoint is unavailable.
+    } finally {
+      setLoadingProjectDetails(false);
+    }
+  };
+
+  const openBlogDetails = async (blog) => {
+    setSelectedBlog(blog);
+    const key = getItemKey(blog);
+    if (!key || blogDetailsById[key]) return;
+
+    setLoadingBlogDetails(true);
+    try {
+      const response = await publicApi.getBlogBySlug(username, String(key));
+      setBlogDetailsById((prev) => ({ ...prev, [key]: response.data }));
+    } catch {
+      // Keep preview-only data when detail endpoint is unavailable.
+    } finally {
+      setLoadingBlogDetails(false);
+    }
+  };
+
   if (notFound) {
     return (
       <div className="portfolio-not-found">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <Motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <h1>Portfolio Not Found</h1>
-          <p>No portfolio exists for <strong>@{username}</strong></p>
-          <Link to="/" className="btn btn-primary">Back to Home</Link>
-        </motion.div>
+          <p>
+            No portfolio exists for <strong>@{username}</strong>.
+          </p>
+          <Link to="/" className="btn btn-primary">
+            Back to Home
+          </Link>
+        </Motion.div>
       </div>
     );
   }
 
-  // ─── Loading ─────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="portfolio-loading">
         <LoadingSkeleton variant="title" />
       </div>
     );
@@ -108,25 +390,15 @@ export default function PublicPortfolio() {
     <>
       <Helmet>
         <title>{profile?.full_name || username} | Portfolio</title>
-        <meta
-          name="description"
-          content={profile?.tagline || `${profile?.full_name}'s developer portfolio`}
-        />
+        <meta name="description" content={profile?.tagline || `${profile?.full_name || username} portfolio`} />
       </Helmet>
 
-      {/* ─── Navbar ──────────────────────────────────── */}
       <nav className="portfolio-nav">
-        <span className="portfolio-nav__name gradient-text">
-          {profile?.full_name || username}
-        </span>
+        <span className="portfolio-nav__name gradient-text">{profile?.full_name || username}</span>
         <div className="portfolio-nav__links">
-          <a href="#about">About</a>
-          <a href="#skills">Skills</a>
-          <a href="#projects">Projects</a>
-          <a href="#experience">Experience</a>
-          <a href="#blog">Blog</a>
-          <a href="#testimonials">Testimonials</a>
-          <a href="#contact">Contact</a>
+          {navSections.map((section) => (
+            <a key={section.key} href={`#${section.key}`}>{section.label}</a>
+          ))}
           {isAuthenticated && (
             <Link to="/user/dashboard" className="btn btn-primary btn-sm">
               <FaTachometerAlt /> Dashboard
@@ -135,7 +407,7 @@ export default function PublicPortfolio() {
         </div>
       </nav>
 
-      {/* ─── Hero ─────────────────────────────────────── */}
+      {showHero && (
       <section className="hero" id="hero" style={{ paddingTop: '5rem' }}>
         <div className="hero__orbs">
           <div className="hero__orb hero__orb--1" />
@@ -143,87 +415,129 @@ export default function PublicPortfolio() {
           <div className="hero__orb hero__orb--3" />
         </div>
         <div className="container hero__content">
-          <motion.div
+          <Motion.div
             className="hero__text"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
-            <motion.p className="hero__greeting" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-              👋 Hello, I'm
-            </motion.p>
+            <Motion.p
+              className="hero__greeting"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              Hello, I&apos;m
+            </Motion.p>
             <h1 className="hero__name">
-              <span className="gradient-text">{profile?.full_name}</span>
+              <span className="gradient-text">{profile?.full_name || username}</span>
             </h1>
-            <motion.p className="hero__tagline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-              {profile?.tagline || 'Developer & Creator'}
-            </motion.p>
-            <motion.p className="hero__bio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-              {profile?.bio?.substring(0, 200)}{profile?.bio?.length > 200 ? '...' : ''}
-            </motion.p>
-            <motion.div className="hero__actions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-              <a href="#projects" className="btn btn-primary btn-lg">View My Work</a>
+            <Motion.p className="hero__tagline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+              {profile?.tagline || 'Developer and creator'}
+            </Motion.p>
+            <Motion.p className="hero__bio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+              {profile?.bio?.slice(0, 220) || 'Building reliable products with strong UX and clean engineering.'}
+              {profile?.bio && profile.bio.length > 220 ? '...' : ''}
+            </Motion.p>
+            <Motion.div
+              className="hero__actions"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <a href="#projects" className="btn btn-primary btn-lg">
+                Explore Work
+              </a>
               {profile?.resume && (
                 <a href={profile.resume} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-lg">
                   <HiDownload /> Resume
                 </a>
               )}
-              <a href="#contact" className="btn btn-outline btn-lg">Contact Me</a>
-            </motion.div>
-            <motion.div className="hero__socials" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-              {profile?.github_url && <a href={profile.github_url} target="_blank" rel="noopener noreferrer" aria-label="GitHub"><FaGithub size={22} /></a>}
-              {profile?.linkedin_url && <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><FaLinkedin size={22} /></a>}
-              {profile?.twitter_url && <a href={profile.twitter_url} target="_blank" rel="noopener noreferrer" aria-label="Twitter"><FaTwitter size={22} /></a>}
-            </motion.div>
-          </motion.div>
+              <a href="#contact" className="btn btn-outline btn-lg">
+                Contact
+              </a>
+            </Motion.div>
+            <Motion.div className="hero__socials" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
+              {profile?.github_url && (
+                <a href={profile.github_url} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                  <FaGithub size={22} />
+                </a>
+              )}
+              {profile?.linkedin_url && (
+                <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                  <FaLinkedin size={22} />
+                </a>
+              )}
+              {profile?.twitter_url && (
+                <a href={profile.twitter_url} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                  <FaTwitter size={22} />
+                </a>
+              )}
+              {profile?.email && (
+                <a href={`mailto:${profile.email}`} aria-label="Email">
+                  <FaEnvelope size={22} />
+                </a>
+              )}
+            </Motion.div>
+          </Motion.div>
 
-          <motion.div className="hero__visual" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, duration: 0.8 }}>
+          <Motion.div
+            className="hero__visual"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+          >
             <div className="hero__card glass">
-              <div className="hero__card-dots"><span /><span /><span /></div>
-              <pre className="hero__code">
-{`const developer = {
+              <div className="hero__card-dots">
+                <span />
+                <span />
+                <span />
+              </div>
+              <pre className="hero__code">{`const profile = {
   name: "${profile?.full_name || username}",
-  skills: [${skills.flatMap(c => c.skills?.slice(0, 2).map(s => `"${s.name}"`)).slice(0, 4).join(', ')}],
-  passion: "Building things
-           that matter",
-  coffee: Infinity ☕
-};`}
-              </pre>
+  projects: ${projects.length},
+  articles: ${blogs.length},
+  skills: ${skillCount},
+  credibility: ${averageRating}/5
+};`}</pre>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
 
-        <motion.a href="#about" className="hero__scroll" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
+        <Motion.a href="#about" className="hero__scroll" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
           <FaArrowDown className="hero__scroll-arrow" />
-        </motion.a>
+        </Motion.a>
       </section>
+      )}
 
-      {/* ─── About ─────────────────────────────────────── */}
+      {showAbout && (
       <SectionWrapper id="about" className="about-preview">
         <div className="about-preview__grid">
-          <motion.div className="about-preview__image" initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
+          <Motion.div className="about-preview__image" initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
             <div className="about-preview__img-wrapper glass">
               {profile?.avatar ? (
-                <img src={profile.avatar} alt={profile?.full_name} />
+                <img src={profile.avatar} alt={profile?.full_name || username} />
               ) : (
                 <div className="about-preview__placeholder">
-                  <span className="gradient-text" style={{ fontSize: '4rem', fontWeight: 900 }}>
-                    {profile?.full_name?.charAt(0) || '?'}
+                  <span className="gradient-text portfolio-avatar-fallback">
+                    {(profile?.full_name || username || '?').charAt(0).toUpperCase()}
                   </span>
                 </div>
               )}
             </div>
-          </motion.div>
-          <motion.div className="about-preview__content" initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-            <h2 className="section-title">About <span className="gradient-text">Me</span></h2>
-            <p className="about-preview__text">{profile?.bio || 'No bio yet.'}</p>
+          </Motion.div>
+          <Motion.div className="about-preview__content" initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+            <h2 className="section-title">
+              About <span className="gradient-text">Me</span>
+            </h2>
+            <p className="about-preview__text">{profile?.bio || 'No bio added yet.'}</p>
             <div className="about-preview__highlights">
               <div className="about-preview__stat glass">
                 <span className="about-preview__stat-value gradient-text">{projects.length}</span>
                 <span className="about-preview__stat-label">Projects</span>
               </div>
               <div className="about-preview__stat glass">
-                <span className="about-preview__stat-value gradient-text">{skills.reduce((a, c) => a + (c.skills?.length || 0), 0)}</span>
+                <span className="about-preview__stat-value gradient-text">{skillCount}</span>
                 <span className="about-preview__stat-label">Skills</span>
               </div>
               <div className="about-preview__stat glass">
@@ -231,217 +545,619 @@ export default function PublicPortfolio() {
                 <span className="about-preview__stat-label">Experience</span>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
       </SectionWrapper>
+      )}
 
-      {/* ─── Skills ─────────────────────────────────────── */}
-      {skills.length > 0 && (
+      {showHighlights && (
+      <SectionWrapper className="portfolio-insights" id="highlights">
+        <div className="portfolio-section__header">
+          <div>
+            <h2 className="section-title">
+              Important <span className="gradient-text">Now</span>
+            </h2>
+            <p className="section-subtitle">
+              Quick snapshot of latest public activity and portfolio depth.
+            </p>
+          </div>
+        </div>
+        <div className="portfolio-insights__grid">
+          <a href="#projects" className="portfolio-insight-card glass">
+            <span className="chip portfolio-chip-icon">
+              <FaBriefcase />
+              Latest Project
+            </span>
+            <h3>{latestProject?.title || 'No projects yet'}</h3>
+            <p>{latestProject?.short_description || latestProject?.description || 'Add projects to showcase your latest work.'}</p>
+          </a>
+          <a href="#blog" className="portfolio-insight-card glass">
+            <span className="chip portfolio-chip-icon">
+              <FaClock />
+              Latest Article
+            </span>
+            <h3>{latestBlog?.title || 'No articles yet'}</h3>
+            <p>{latestBlog?.excerpt || 'Publish articles to show your thought process and technical depth.'}</p>
+          </a>
+          <a href="#testimonials" className="portfolio-insight-card glass">
+            <span className="chip portfolio-chip-icon">
+              <FaStar />
+              Social Proof
+            </span>
+            <h3>{averageRating}/5 average rating</h3>
+            <p>{testimonials.length} testimonial{testimonials.length === 1 ? '' : 's'} published.</p>
+          </a>
+          <a href="#contact" className="portfolio-insight-card glass">
+            <span className="chip portfolio-chip-icon">
+              <FaArrowRight />
+              Portfolio Coverage
+            </span>
+            <h3>{projects.length + blogs.length + testimonials.length + education.length + activities.length + achievements.length + certifications.length} public items</h3>
+            <p>Projects, articles, and testimonials are now browsable in-page.</p>
+          </a>
+        </div>
+      </SectionWrapper>
+      )}
+
+      {showSkills && skills.length > 0 && (
         <SectionWrapper id="skills" className="skills-home">
           <div className="skills-home__header">
-            <h2 className="section-title">Skills & <span className="gradient-text">Technologies</span></h2>
+            <h2 className="section-title">
+              Skills and <span className="gradient-text">Technologies</span>
+            </h2>
           </div>
           <div className="skills-home__grid">
-            {skills.map((cat, i) => (
-              <motion.div key={cat.id} className="skills-home__category glass" initial="hidden" whileInView="visible" variants={fadeUp} custom={i} viewport={{ once: true }}>
-                <h3 className="skills-home__cat-name">{cat.name}</h3>
+            {skills.map((category, index) => (
+              <Motion.div
+                key={category.id || `${category.name}-${index}`}
+                className="skills-home__category glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+              >
+                <h3 className="skills-home__cat-name">
+                  <FaLayerGroup />
+                  {category.name}
+                </h3>
                 <div className="skills-home__list">
-                  {cat.skills?.map(skill => (
-                    <span key={skill.id} className="chip">
-                      {skill.icon && <img src={skill.icon} alt="" className="skills-home__icon" />}
+                  {category.skills?.map((skill) => (
+                    <span key={skill.id || skill.name} className="chip">
+                      <SkillIcon
+                        name={skill.name}
+                        iconUrl={skill.icon}
+                        className="skills-home__icon"
+                        fallbackClassName="skills-home__icon--fallback"
+                      />
                       {skill.name}
                     </span>
                   ))}
                 </div>
-              </motion.div>
+              </Motion.div>
             ))}
           </div>
         </SectionWrapper>
       )}
 
-      {/* ─── Projects ─────────────────────────────────── */}
+      {showProjects && (
       <SectionWrapper id="projects">
-        <div className="featured__header">
-          <h2 className="section-title">My <span className="gradient-text">Projects</span></h2>
+        <div className="portfolio-section__header">
+          <div>
+            <h2 className="section-title">
+              My <span className="gradient-text">Projects</span>
+            </h2>
+            <p className="section-subtitle">Open any card to view full project details without leaving this page.</p>
+          </div>
+          {projects.length > 3 && (
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowAllProjects((prev) => !prev)}>
+              {showAllProjects ? 'Show Less' : `View All (${projects.length})`}
+            </button>
+          )}
         </div>
         {projects.length > 0 ? (
           <div className="featured__grid">
-            {projects.map((project, i) => (
-              <motion.div key={project.id} className="featured__card glass" initial="hidden" whileInView="visible" variants={fadeUp} custom={i} viewport={{ once: true }} whileHover={{ y: -8 }}>
+            {visibleProjects.map((project, index) => (
+              <Motion.article
+                key={project.id || project.slug}
+                className="featured__card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+                whileHover={{ y: -6 }}
+              >
                 <div className="featured__card-img">
-                  <img src={project.thumbnail || `https://via.placeholder.com/600x400/16161f/7c3aed?text=${encodeURIComponent(project.title)}`} alt={project.title} />
-                  <div className="featured__card-overlay">
-                    {project.live_url && (
-                      <a href={project.live_url} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
-                        Live Demo <FaExternalLinkAlt />
-                      </a>
-                    )}
-                    {project.github_url && (
-                      <a href={project.github_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
-                        <FaGithub /> Code
-                      </a>
-                    )}
-                  </div>
+                  {project.thumbnail ? (
+                    <img src={project.thumbnail} alt={project.title} loading="lazy" />
+                  ) : (
+                    <div className="portfolio-empty-box">
+                      <span>{(project.title || 'P').charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="featured__card-body">
-                  {project.category && <span className="chip">{project.category}</span>}
+                  <div className="portfolio-meta-inline">
+                    {project.category && <span className="chip">{project.category}</span>}
+                    {project.date_built && (
+                      <span className="chip">
+                        <FaCalendarAlt />
+                        {formatDate(project.date_built)}
+                      </span>
+                    )}
+                  </div>
                   <h3 className="featured__card-title">{project.title}</h3>
-                  <p className="featured__card-desc">{project.short_description}</p>
-                  <div className="featured__card-tech">
-                    {project.tech_stack?.slice(0, 4).map(skill => (
-                      <span key={skill.id} className="chip">{skill.name}</span>
-                    ))}
+                  <p className="featured__card-desc">{project.short_description || project.description || 'No summary available.'}</p>
+                  {Array.isArray(project.tech_stack) && project.tech_stack.length > 0 && (
+                    <div className="featured__card-tech">
+                      {project.tech_stack.slice(0, 5).map((skill) => (
+                        <span key={skill.id || skill.name} className="chip">
+                          {skill.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="portfolio-card__details">
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => openProjectDetails(project)}>
+                      Read Details <FaArrowRight />
+                    </button>
+                    <div className="portfolio-card__links">
+                      {project.live_url && (
+                        <a href={project.live_url} target="_blank" rel="noopener noreferrer" className="chip">
+                          <FaExternalLinkAlt />
+                          Live
+                        </a>
+                      )}
+                      {project.repo_url && (
+                        <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="chip">
+                          <FaGithub />
+                          Code
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </motion.div>
+              </Motion.article>
             ))}
           </div>
         ) : (
-          <div className="featured__empty glass" style={{ padding: '3rem', textAlign: 'center' }}>
-            <p className="section-subtitle" style={{ maxWidth: '100%' }}>No projects to show yet.</p>
-          </div>
+          <div className="portfolio-empty-box">No public projects yet.</div>
         )}
       </SectionWrapper>
+      )}
 
-      {/* ─── Experience ─────────────────────────────────── */}
-      {experience.length > 0 && (
+      {showExperience && experience.length > 0 && (
         <SectionWrapper id="experience" className="exp-home">
           <div className="exp-home__header">
-            <h2 className="section-title">Work <span className="gradient-text">Experience</span></h2>
+            <h2 className="section-title">
+              Work <span className="gradient-text">Experience</span>
+            </h2>
           </div>
           <div className="exp-home__list">
-            {experience.map((exp, i) => (
-              <motion.div key={exp.id} className="exp-home__item glass" initial="hidden" whileInView="visible" variants={fadeUp} custom={i} viewport={{ once: true }}>
+            {experience.map((item, index) => (
+              <Motion.article
+                key={item.id || `${item.role}-${index}`}
+                className="exp-home__item glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+              >
                 <div className="exp-home__dot" />
                 <div className="exp-home__content">
                   <div className="exp-home__top">
                     <div>
-                      <h3 className="exp-home__role">{exp.role}</h3>
+                      <h3 className="exp-home__role">{item.role}</h3>
                       <span className="exp-home__company">
-                        <FaBriefcase className="exp-home__icon" /> {exp.company}
+                        <FaBriefcase className="exp-home__icon" /> {item.company}
                       </span>
                     </div>
                     <div className="exp-home__meta">
                       <span className="chip">
                         <FaCalendarAlt style={{ fontSize: '0.6rem' }} />
-                        {exp.start_date} — {exp.is_current ? 'Present' : exp.end_date}
+                        {item.start_date} - {item.is_current ? 'Present' : item.end_date}
                       </span>
-                      {exp.duration && <span className="chip chip-active">{exp.duration}</span>}
+                      {item.duration && <span className="chip chip-active">{item.duration}</span>}
                     </div>
                   </div>
-                  {exp.highlights && exp.highlights.length > 0 && (
+                  {Array.isArray(item.highlights) && item.highlights.length > 0 && (
                     <ul className="exp-home__highlights">
-                      {exp.highlights.map((h, j) => <li key={j}>{h}</li>)}
+                      {item.highlights.map((highlight) => (
+                        <li key={highlight}>{highlight}</li>
+                      ))}
                     </ul>
                   )}
                 </div>
-              </motion.div>
+              </Motion.article>
             ))}
           </div>
         </SectionWrapper>
       )}
 
-      {/* ─── Blog ─────────────────────────────────────── */}
-      {blogs.length > 0 && (
-        <SectionWrapper id="blog">
-          <div className="featured__header">
-            <h2 className="section-title">Latest <span className="gradient-text">Articles</span></h2>
+      {showEducation && education.length > 0 && (
+        <SectionWrapper id="education">
+          <div className="portfolio-section__header">
+            <div>
+              <h2 className="section-title">
+                Academic <span className="gradient-text">Education</span>
+              </h2>
+              <p className="section-subtitle">Degrees, institutions, and focused areas of study.</p>
+            </div>
           </div>
+          <div className="portfolio-cred-grid">
+            {education.map((item, index) => (
+              <Motion.article
+                key={item.id || `${item.institution}-${index}`}
+                className="portfolio-cred-card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+              >
+                <div className="portfolio-cred-card__icon"><FaGraduationCap /></div>
+                <h3>{item.degree}</h3>
+                <p className="portfolio-cred-card__subtitle">{item.institution}</p>
+                <div className="portfolio-cred-card__meta">
+                  <span className="chip"><FaCalendarAlt /> {item.duration || formatPeriod(item.start_date, item.end_date, item.is_current)}</span>
+                  {item.field_of_study && <span className="chip">{item.field_of_study}</span>}
+                  {item.grade && <span className="chip">Grade: {item.grade}</span>}
+                </div>
+                {item.description && <p className="portfolio-cred-card__text">{item.description}</p>}
+              </Motion.article>
+            ))}
+          </div>
+        </SectionWrapper>
+      )}
+
+      {showActivities && activities.length > 0 && (
+        <SectionWrapper id="activities">
+          <div className="portfolio-section__header">
+            <div>
+              <h2 className="section-title">
+                Extracurricular <span className="gradient-text">Activities</span>
+              </h2>
+              <p className="section-subtitle">Community, leadership, and collaborative initiatives beyond work.</p>
+            </div>
+          </div>
+          <div className="portfolio-cred-grid">
+            {activities.map((item, index) => (
+              <Motion.article
+                key={item.id || `${item.title}-${index}`}
+                className="portfolio-cred-card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+              >
+                <div className="portfolio-cred-card__icon"><FaUsers /></div>
+                <h3>{item.title}</h3>
+                <p className="portfolio-cred-card__subtitle">
+                  {[item.role, item.organization].filter(Boolean).join(' at ') || 'Extracurricular'}
+                </p>
+                <div className="portfolio-cred-card__meta">
+                  <span className="chip"><FaCalendarAlt /> {item.duration || formatPeriod(item.start_date, item.end_date, item.is_current)}</span>
+                </div>
+                {Array.isArray(item.highlights) && item.highlights.length > 0 && (
+                  <div className="portfolio-cred-card__chips">
+                    {item.highlights.slice(0, 4).map((highlight, i) => (
+                      <span key={`${highlight}-${i}`} className="chip">{highlight}</span>
+                    ))}
+                  </div>
+                )}
+                {item.description && <p className="portfolio-cred-card__text">{item.description}</p>}
+              </Motion.article>
+            ))}
+          </div>
+        </SectionWrapper>
+      )}
+
+      {showAchievements && achievements.length > 0 && (
+        <SectionWrapper id="achievements">
+          <div className="portfolio-section__header">
+            <div>
+              <h2 className="section-title">
+                Notable <span className="gradient-text">Achievements</span>
+              </h2>
+              <p className="section-subtitle">Awards, milestones, and outcomes delivered over time.</p>
+            </div>
+          </div>
+          <div className="portfolio-cred-grid">
+            {achievements.map((item, index) => (
+              <Motion.article
+                key={item.id || `${item.title}-${index}`}
+                className="portfolio-cred-card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+              >
+                <div className="portfolio-cred-card__icon"><FaTrophy /></div>
+                <h3>{item.title}</h3>
+                <p className="portfolio-cred-card__subtitle">{item.issuer || 'Achievement'}</p>
+                <div className="portfolio-cred-card__meta">
+                  {item.achieved_on && (
+                    <span className="chip"><FaCalendarAlt /> {formatDate(item.achieved_on)}</span>
+                  )}
+                </div>
+                {item.description && <p className="portfolio-cred-card__text">{item.description}</p>}
+                {item.proof_url && (
+                  <div className="portfolio-card__links">
+                    <a href={item.proof_url} target="_blank" rel="noopener noreferrer" className="chip">
+                      <FaExternalLinkAlt /> Proof
+                    </a>
+                  </div>
+                )}
+              </Motion.article>
+            ))}
+          </div>
+        </SectionWrapper>
+      )}
+
+      {showCertifications && certifications.length > 0 && (
+        <SectionWrapper id="certifications">
+          <div className="portfolio-section__header">
+            <div>
+              <h2 className="section-title">
+                Professional <span className="gradient-text">Certifications</span>
+              </h2>
+              <p className="section-subtitle">Verified credentials that support technical and domain expertise.</p>
+            </div>
+          </div>
+          <div className="portfolio-cred-grid">
+            {certifications.map((item, index) => (
+              <Motion.article
+                key={item.id || `${item.name}-${index}`}
+                className="portfolio-cred-card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+              >
+                <div className="portfolio-cred-card__icon"><FaCertificate /></div>
+                <h3>{item.name}</h3>
+                <p className="portfolio-cred-card__subtitle">{item.issuer || 'Certification'}</p>
+                <div className="portfolio-cred-card__meta">
+                  <span className="chip">
+                    <FaCalendarAlt /> {item.validity || formatPeriod(item.issue_date, item.expiry_date, false)}
+                  </span>
+                  {item.credential_id && <span className="chip">{item.credential_id}</span>}
+                </div>
+                {Array.isArray(item.skills) && item.skills.length > 0 && (
+                  <div className="portfolio-cred-card__chips">
+                    {item.skills.slice(0, 5).map((skill, i) => (
+                      <span key={`${skill}-${i}`} className="chip">{skill}</span>
+                    ))}
+                  </div>
+                )}
+                {item.credential_url && (
+                  <div className="portfolio-card__links">
+                    <a href={item.credential_url} target="_blank" rel="noopener noreferrer" className="chip">
+                      <FaExternalLinkAlt /> Verify
+                    </a>
+                  </div>
+                )}
+              </Motion.article>
+            ))}
+          </div>
+        </SectionWrapper>
+      )}
+
+      {showBlog && (
+      <SectionWrapper id="blog">
+        <div className="portfolio-section__header">
+          <div>
+            <h2 className="section-title">
+              Latest <span className="gradient-text">Articles</span>
+            </h2>
+            <p className="section-subtitle">Expanded article cards and modal reading view for better content discovery.</p>
+          </div>
+          {blogs.length > 3 && (
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowAllBlogs((prev) => !prev)}>
+              {showAllBlogs ? 'Show Less' : `View All (${blogs.length})`}
+            </button>
+          )}
+        </div>
+        {blogs.length > 0 ? (
           <div className="featured__grid">
-            {blogs.slice(0, 3).map((blog, i) => (
-              <motion.article key={blog.id} className="featured__card glass" initial="hidden" whileInView="visible" variants={fadeUp} custom={i} viewport={{ once: true }} whileHover={{ y: -8 }}>
+            {visibleBlogs.map((blog, index) => (
+              <Motion.article
+                key={blog.id || blog.slug}
+                className="featured__card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={index}
+                viewport={{ once: true }}
+                whileHover={{ y: -6 }}
+              >
                 <div className="featured__card-img">
-                  <img src={blog.thumbnail || `https://via.placeholder.com/600x400/16161f/7c3aed?text=${encodeURIComponent(blog.title)}`} alt={blog.title} />
+                  {blog.thumbnail ? (
+                    <img src={blog.thumbnail} alt={blog.title} loading="lazy" />
+                  ) : (
+                    <div className="portfolio-empty-box">
+                      <span>{(blog.title || 'A').charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="featured__card-body">
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span><FaCalendarAlt /> {new Date(blog.published_at || blog.created_at).toLocaleDateString()}</span>
-                    <span>• {blog.read_time}</span>
+                  <div className="portfolio-meta-inline">
+                    <span className="chip">
+                      <FaCalendarAlt />
+                      {formatDate(blog.published_at || blog.created_at)}
+                    </span>
+                    <span className="chip">
+                      <FaClock />
+                      {blog.read_time || '5 min read'}
+                    </span>
                   </div>
                   <h3 className="featured__card-title">{blog.title}</h3>
-                  <p className="featured__card-desc">{blog.excerpt}</p>
-                  {blog.tags && blog.tags.length > 0 && (
+                  <p className="featured__card-desc">{blog.excerpt || 'No excerpt available.'}</p>
+                  {Array.isArray(blog.tags) && blog.tags.length > 0 && (
                     <div className="featured__card-tech">
-                      {blog.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={idx} className="chip">{tag}</span>
+                      {blog.tags.slice(0, 4).map((tag) => (
+                        <span key={tag} className="chip">
+                          {tag}
+                        </span>
                       ))}
                     </div>
                   )}
+                  <div className="portfolio-card__details">
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => openBlogDetails(blog)}>
+                      Read Article <FaArrowRight />
+                    </button>
+                  </div>
                 </div>
-              </motion.article>
+              </Motion.article>
             ))}
           </div>
-        </SectionWrapper>
+        ) : (
+          <div className="portfolio-empty-box">No public articles yet.</div>
+        )}
+      </SectionWrapper>
       )}
 
-      {/* ─── Testimonials ─────────────────────────────────── */}
-      {testimonials.length > 0 && (
-        <SectionWrapper id="testimonials">
-          <div className="featured__header">
-            <h2 className="section-title">Client <span className="gradient-text">Testimonials</span></h2>
+      {showTestimonials && (
+      <SectionWrapper id="testimonials">
+        <div className="portfolio-section__header">
+          <div>
+            <h2 className="section-title">
+              Client <span className="gradient-text">Testimonials</span>
+            </h2>
+            <p className="section-subtitle">Readable cards and full-story modal view for social proof.</p>
           </div>
+          {testimonials.length > 3 && (
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => setShowAllTestimonials((prev) => !prev)}
+            >
+              {showAllTestimonials ? 'Show Less' : `View All (${testimonials.length})`}
+            </button>
+          )}
+        </div>
+        {testimonials.length > 0 ? (
           <div className="featured__grid">
-            {testimonials.slice(0, 3).map((testimonial, i) => (
-              <motion.div key={testimonial.id} className="featured__card glass" initial="hidden" whileInView="visible" variants={fadeUp} custom={i} viewport={{ once: true }}>
-                <div className="featured__card-body" style={{ padding: '2rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                    <img src={testimonial.client_avatar || `https://via.placeholder.com/60x60/7c3aed/ffffff?text=${testimonial.client_name.charAt(0)}`} alt={testimonial.client_name} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
+            {visibleTestimonials.map((item, index) => {
+              const rating = Math.max(0, Math.min(5, Number(item.rating) || 0));
+              const name = item.client_name || 'Client';
+              return (
+                <Motion.article
+                  key={item.id || `${name}-${index}`}
+                  className="portfolio-testimonial-card glass"
+                  initial="hidden"
+                  whileInView="visible"
+                  variants={fadeUp}
+                  custom={index}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -6 }}
+                >
+                  <div className="portfolio-testimonial-card__head">
+                    <div className="portfolio-testimonial-card__avatar">
+                      {item.client_avatar ? (
+                        <img src={item.client_avatar} alt={name} />
+                      ) : (
+                        <span>{name.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
                     <div>
-                      <h4 style={{ margin: 0, fontSize: '1rem' }}>{testimonial.client_name}</h4>
-                      <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>{testimonial.client_role} at {testimonial.client_company}</p>
+                      <h3>{name}</h3>
+                      <p>
+                        {[item.client_role, item.client_company].filter(Boolean).join(' at ') || 'Verified client'}
+                      </p>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem' }}>
-                    {Array.from({ length: 5 }).map((_, idx) => (
-                      <FaStar key={idx} style={{ color: idx < testimonial.rating ? 'var(--accent-primary)' : 'var(--border-primary)', fontSize: '0.875rem' }} />
+                  <div className="portfolio-testimonial-card__rating">
+                    {Array.from({ length: 5 }).map((_, starIndex) => (
+                      <FaStar key={`${name}-${starIndex}`} className={starIndex < rating ? 'active' : ''} />
                     ))}
+                    <span>{rating.toFixed(1)}</span>
                   </div>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>"{testimonial.content}"</p>
-                  {testimonial.project_name && (
-                    <span className="chip" style={{ marginTop: '1rem' }}>Project: {testimonial.project_name}</span>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                  <p className="portfolio-testimonial-card__content">{item.content || 'No testimonial content.'}</p>
+                  <div className="portfolio-card__details">
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelectedTestimonial(item)}>
+                      Read Story <FaArrowRight />
+                    </button>
+                    {item.project_name && <span className="chip">Project: {item.project_name}</span>}
+                  </div>
+                </Motion.article>
+              );
+            })}
           </div>
-        </SectionWrapper>
+        ) : (
+          <div className="portfolio-empty-box">No public testimonials yet.</div>
+        )}
+      </SectionWrapper>
       )}
 
-      {/* ─── Contact ────────────────────────────────────── */}
-      <ContactSection username={username} profileName={profile?.full_name} />
+      {showContact && <ContactSection username={username} profileName={profile?.full_name} />}
 
-      {/* ─── Footer ─────────────────────────────────────── */}
-      <footer style={{ textAlign: 'center', padding: '2rem', borderTop: '1px solid var(--border-primary)', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-        Built with <span className="gradient-text">PortfolioHub</span> · © {new Date().getFullYear()} {profile?.full_name}
+      <footer className="portfolio-footer">
+        Built with <span className="gradient-text">PortfolioHub</span> | {new Date().getFullYear()} {profile?.full_name || username}
       </footer>
+
+      <AnimatePresence>
+        {selectedProject && (
+          <ProjectDetailsModal
+            project={projectDetailsById[getItemKey(selectedProject)] || selectedProject}
+            loading={loadingProjectDetails}
+            onClose={() => setSelectedProject(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedBlog && (
+          <BlogDetailsModal
+            blog={blogDetailsById[getItemKey(selectedBlog)] || selectedBlog}
+            loading={loadingBlogDetails}
+            onClose={() => setSelectedBlog(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedTestimonial && (
+          <TestimonialDetailsModal testimonial={selectedTestimonial} onClose={() => setSelectedTestimonial(null)} />
+        )}
+      </AnimatePresence>
     </>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// CONTACT SECTION
-// ═══════════════════════════════════════════════════════════════
-
 function ContactSection({ username, profileName }) {
-  const [form, setForm] = useState({ sender_name: '', sender_email: '', subject: '', content: '' });
+  const [form, setForm] = useState({
+    sender_name: '',
+    sender_email: '',
+    subject: '',
+    content: '',
+  });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+  const updateField = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (!form.sender_name || !form.sender_email || !form.content) {
-      toast.error('Please fill in all required fields');
+      toast.error('Please fill in all required fields.');
       return;
     }
     setSending(true);
     try {
       await publicApi.sendMessage(username, form);
       setSent(true);
-      toast.success('Message sent!');
+      setForm({ sender_name: '', sender_email: '', subject: '', content: '' });
+      toast.success('Message sent successfully.');
     } catch {
-      toast.error('Failed to send message. Please try again.');
+      toast.error('Message failed. Please try again.');
     } finally {
       setSending(false);
     }
@@ -449,43 +1165,86 @@ function ContactSection({ username, profileName }) {
 
   return (
     <SectionWrapper id="contact">
-      <h2 className="section-title" style={{ textAlign: 'center' }}>
+      <h2 className="section-title portfolio-center-text">
         Get In <span className="gradient-text">Touch</span>
       </h2>
-      <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        Have a question or want to work together? Drop me a message!
+      <p className="section-subtitle portfolio-center-text portfolio-contact-subtitle">
+        Ask a question, request collaboration, or discuss your next project.
       </p>
 
       <div className="portfolio-contact">
         {sent ? (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass" style={{ padding: '3rem', textAlign: 'center', borderRadius: 'var(--radius-lg)' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
-            <h3>Message Sent!</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Thanks for reaching out to {profileName}. They'll get back to you soon!
+          <Motion.div
+            className="portfolio-contact-success glass"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="portfolio-contact-success__icon">Sent</div>
+            <h3>Message Delivered</h3>
+            <p>
+              Thanks for reaching out to {profileName || username}. You should receive a response soon.
             </p>
-          </motion.div>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setSent(false)}>
+              Send Another Message
+            </button>
+          </Motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="portfolio-contact__form">
             <div className="portfolio-contact__row">
               <div className="form-group">
-                <label className="form-label" htmlFor="c-name">Name *</label>
-                <input id="c-name" type="text" className="form-input" placeholder="Your name" value={form.sender_name} onChange={handleChange('sender_name')} />
+                <label className="form-label" htmlFor="contact-name">
+                  Name *
+                </label>
+                <input
+                  id="contact-name"
+                  className="form-input"
+                  value={form.sender_name}
+                  onChange={updateField('sender_name')}
+                  placeholder="Your name"
+                  required
+                />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="c-email">Email *</label>
-                <input id="c-email" type="email" className="form-input" placeholder="you@example.com" value={form.sender_email} onChange={handleChange('sender_email')} />
+                <label className="form-label" htmlFor="contact-email">
+                  Email *
+                </label>
+                <input
+                  id="contact-email"
+                  type="email"
+                  className="form-input"
+                  value={form.sender_email}
+                  onChange={updateField('sender_email')}
+                  placeholder="you@example.com"
+                  required
+                />
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="c-subject">Subject</label>
-              <input id="c-subject" type="text" className="form-input" placeholder="What's this about?" value={form.subject} onChange={handleChange('subject')} />
+              <label className="form-label" htmlFor="contact-subject">
+                Subject
+              </label>
+              <input
+                id="contact-subject"
+                className="form-input"
+                value={form.subject}
+                onChange={updateField('subject')}
+                placeholder="Project discussion, collaboration, question..."
+              />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="c-message">Message *</label>
-              <textarea id="c-message" className="form-input" placeholder="Your message..." value={form.content} onChange={handleChange('content')} />
+              <label className="form-label" htmlFor="contact-message">
+                Message *
+              </label>
+              <textarea
+                id="contact-message"
+                className="form-input"
+                value={form.content}
+                onChange={updateField('content')}
+                placeholder="Tell me what you are looking for..."
+                required
+              />
             </div>
-            <button type="submit" className="btn btn-primary btn-lg" disabled={sending} style={{ width: '100%' }}>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={sending}>
               {sending ? 'Sending...' : <><FaPaperPlane /> Send Message</>}
             </button>
           </form>
@@ -494,3 +1253,130 @@ function ContactSection({ username, profileName }) {
     </SectionWrapper>
   );
 }
+
+function ModalShell({ title, subtitle, onClose, children }) {
+  return (
+    <Motion.div className="portfolio-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <Motion.div
+        className="portfolio-modal__panel glass"
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 18, scale: 0.98 }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="portfolio-modal__header">
+          <div>
+            <h3>{title}</h3>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+          <button type="button" className="portfolio-modal__close" onClick={onClose} aria-label="Close details">
+            <FaTimes />
+          </button>
+        </div>
+        <div className="portfolio-modal__content">{children}</div>
+      </Motion.div>
+    </Motion.div>
+  );
+}
+
+function ProjectDetailsModal({ project, loading, onClose }) {
+  const description = project?.description || project?.short_description || 'No project description available.';
+  return (
+    <ModalShell
+      title={project?.title || 'Project details'}
+      subtitle={[project?.category, project?.date_built ? formatDate(project.date_built) : null].filter(Boolean).join(' | ')}
+      onClose={onClose}
+    >
+      {loading && <p>Loading latest project details...</p>}
+      {!loading && (
+        <>
+          {project?.thumbnail && <img src={project.thumbnail} alt={project.title} className="portfolio-modal__media" />}
+          <p>{description}</p>
+          {Array.isArray(project?.tech_stack) && project.tech_stack.length > 0 && (
+            <div className="portfolio-modal__chips">
+              {project.tech_stack.map((skill) => (
+                <span key={skill.id || skill.name} className="chip">
+                  {skill.name}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="portfolio-modal__actions">
+            {project?.live_url && (
+              <a href={project.live_url} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
+                <FaExternalLinkAlt /> View Live
+              </a>
+            )}
+            {project?.repo_url && (
+              <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+                <FaGithub /> View Code
+              </a>
+            )}
+          </div>
+        </>
+      )}
+    </ModalShell>
+  );
+}
+
+function BlogDetailsModal({ blog, loading, onClose }) {
+  const content = blog?.content || blog?.excerpt || 'No article content available.';
+  return (
+    <ModalShell
+      title={blog?.title || 'Article details'}
+      subtitle={`${formatDate(blog?.published_at || blog?.created_at)} | ${blog?.read_time || '5 min read'}`}
+      onClose={onClose}
+    >
+      {loading && <p>Loading latest article details...</p>}
+      {!loading && (
+        <>
+          {blog?.thumbnail && <img src={blog.thumbnail} alt={blog.title} className="portfolio-modal__media" />}
+          <div className="portfolio-modal__article">
+            {(content || '')
+              .split('\n')
+              .filter(Boolean)
+              .map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+          </div>
+          {Array.isArray(blog?.tags) && blog.tags.length > 0 && (
+            <div className="portfolio-modal__chips">
+              {blog.tags.map((tag) => (
+                <span key={tag} className="chip">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </ModalShell>
+  );
+}
+
+function TestimonialDetailsModal({ testimonial, onClose }) {
+  const rating = Math.max(0, Math.min(5, Number(testimonial?.rating) || 0));
+  const author = testimonial?.client_name || 'Client';
+  return (
+    <ModalShell
+      title={author}
+      subtitle={[testimonial?.client_role, testimonial?.client_company].filter(Boolean).join(' at ') || 'Verified client'}
+      onClose={onClose}
+    >
+      <div className="portfolio-modal__testimonial">
+        <div className="portfolio-modal__quote">
+          <FaQuoteLeft />
+        </div>
+        <div className="portfolio-testimonial-card__rating">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <FaStar key={`${author}-${index}`} className={index < rating ? 'active' : ''} />
+          ))}
+          <span>{rating.toFixed(1)}</span>
+        </div>
+        <p>{testimonial?.content || 'No testimonial text available.'}</p>
+        {testimonial?.project_name && <span className="chip">Project: {testimonial.project_name}</span>}
+      </div>
+    </ModalShell>
+  );
+}
+

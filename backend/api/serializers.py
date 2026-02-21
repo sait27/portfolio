@@ -1,5 +1,18 @@
 from rest_framework import serializers
-from .models import Profile, SkillCategory, Skill, Project, Experience, Message, BlogPost, Testimonial
+from .models import (
+    Profile,
+    SkillCategory,
+    Skill,
+    Project,
+    Experience,
+    Education,
+    Activity,
+    Achievement,
+    Certification,
+    Message,
+    BlogPost,
+    Testimonial,
+)
 
 
 # ─── Skill Serializers ──────────────────────────────────────────────────────
@@ -34,6 +47,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username_slug', 'full_name', 'tagline', 'bio', 'avatar', 'resume',
             'github_url', 'linkedin_url', 'twitter_url', 'email',
+            'show_hero', 'show_about', 'show_highlights', 'show_skills',
+            'show_projects', 'show_experience', 'show_education', 'show_activities',
+            'show_achievements', 'show_certifications', 'show_blog',
+            'show_testimonials', 'show_contact',
+            'show_nav_about', 'show_nav_skills', 'show_nav_projects',
+            'show_nav_experience', 'show_nav_education', 'show_nav_activities',
+            'show_nav_achievements', 'show_nav_certifications', 'show_nav_blog',
+            'show_nav_testimonials', 'show_nav_contact',
             'updated_at'
         ]
         extra_kwargs = {
@@ -90,6 +111,71 @@ class ExperienceSerializer(serializers.ModelSerializer):
 
 
 # ─── Message Serializer ─────────────────────────────────────────────────────
+
+class EducationSerializer(serializers.ModelSerializer):
+    duration = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Education
+        fields = [
+            'id', 'institution', 'degree', 'field_of_study',
+            'start_date', 'end_date', 'is_current', 'grade',
+            'description', 'duration', 'order'
+        ]
+
+    def get_duration(self, obj):
+        if not obj.start_date and not obj.end_date and not obj.is_current:
+            return 'Not specified'
+        start = obj.start_date.strftime('%b %Y') if obj.start_date else 'N/A'
+        end = 'Present' if obj.is_current or not obj.end_date else obj.end_date.strftime('%b %Y')
+        return f"{start} â€” {end}"
+
+
+class ActivitySerializer(serializers.ModelSerializer):
+    duration = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Activity
+        fields = [
+            'id', 'title', 'organization', 'role',
+            'start_date', 'end_date', 'is_current',
+            'highlights', 'description', 'duration', 'order'
+        ]
+
+    def get_duration(self, obj):
+        if not obj.start_date and not obj.end_date and not obj.is_current:
+            return 'Not specified'
+        start = obj.start_date.strftime('%b %Y') if obj.start_date else 'N/A'
+        end = 'Present' if obj.is_current or not obj.end_date else obj.end_date.strftime('%b %Y')
+        return f"{start} â€” {end}"
+
+
+class AchievementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Achievement
+        fields = [
+            'id', 'title', 'issuer', 'achieved_on',
+            'description', 'proof_url', 'order'
+        ]
+
+
+class CertificationSerializer(serializers.ModelSerializer):
+    validity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Certification
+        fields = [
+            'id', 'name', 'issuer', 'issue_date', 'expiry_date',
+            'credential_id', 'credential_url', 'skills', 'validity', 'order'
+        ]
+
+    def get_validity(self, obj):
+        if not obj.issue_date and not obj.expiry_date:
+            return 'Not specified'
+        start = obj.issue_date.strftime('%b %Y') if obj.issue_date else 'N/A'
+        end = obj.expiry_date.strftime('%b %Y') if obj.expiry_date else 'No expiry'
+        return f"{start} â€” {end}"
+
 
 class MessageCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating a message (public contact form)."""

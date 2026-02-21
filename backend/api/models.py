@@ -18,6 +18,30 @@ class Profile(models.Model):
     linkedin_url = models.URLField(blank=True)
     twitter_url = models.URLField(blank=True)
     email = models.EmailField()
+    show_hero = models.BooleanField(default=True)
+    show_about = models.BooleanField(default=True)
+    show_highlights = models.BooleanField(default=True)
+    show_skills = models.BooleanField(default=True)
+    show_projects = models.BooleanField(default=True)
+    show_experience = models.BooleanField(default=True)
+    show_education = models.BooleanField(default=True)
+    show_activities = models.BooleanField(default=True)
+    show_achievements = models.BooleanField(default=True)
+    show_certifications = models.BooleanField(default=True)
+    show_blog = models.BooleanField(default=True)
+    show_testimonials = models.BooleanField(default=True)
+    show_contact = models.BooleanField(default=True)
+    show_nav_about = models.BooleanField(default=True)
+    show_nav_skills = models.BooleanField(default=True)
+    show_nav_projects = models.BooleanField(default=True)
+    show_nav_experience = models.BooleanField(default=True)
+    show_nav_education = models.BooleanField(default=True)
+    show_nav_activities = models.BooleanField(default=True)
+    show_nav_achievements = models.BooleanField(default=True)
+    show_nav_certifications = models.BooleanField(default=True)
+    show_nav_blog = models.BooleanField(default=True)
+    show_nav_testimonials = models.BooleanField(default=True)
+    show_nav_contact = models.BooleanField(default=True)
     is_platform_admin = models.BooleanField(default=False, help_text="Super admin flag — platform owner only")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -153,6 +177,100 @@ class Experience(models.Model):
 
 
 # ─── Blog Post ─────────────────────────────────────────────────────────────
+
+class Education(models.Model):
+    """Academic education entry scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='educations')
+    institution = models.CharField(max_length=140)
+    degree = models.CharField(max_length=140)
+    field_of_study = models.CharField(max_length=140, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    grade = models.CharField(max_length=80, blank=True, help_text="Optional GPA/score/class")
+    description = models.TextField(blank=True)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-start_date', '-created_at']
+        verbose_name_plural = "Education"
+
+    def __str__(self):
+        return f"{self.degree} - {self.institution}"
+
+
+class Activity(models.Model):
+    """Extracurricular activity entry scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activities')
+    title = models.CharField(max_length=160)
+    organization = models.CharField(max_length=140, blank=True)
+    role = models.CharField(max_length=140, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    highlights = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of activity highlights, e.g. ["Led coding club", "Organized hackathon"]'
+    )
+    description = models.TextField(blank=True)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-start_date', '-created_at']
+        verbose_name_plural = "Activities"
+
+    def __str__(self):
+        return self.title
+
+
+class Achievement(models.Model):
+    """Achievement or award entry scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='achievements')
+    title = models.CharField(max_length=180)
+    issuer = models.CharField(max_length=140, blank=True)
+    achieved_on = models.DateField(null=True, blank=True)
+    description = models.TextField(blank=True)
+    proof_url = models.URLField(blank=True)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-achieved_on', '-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class Certification(models.Model):
+    """Certification entry scoped to each user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certifications')
+    name = models.CharField(max_length=180)
+    issuer = models.CharField(max_length=140, blank=True)
+    issue_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    credential_id = models.CharField(max_length=120, blank=True)
+    credential_url = models.URLField(blank=True)
+    skills = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Optional tags, e.g. ["Python", "Cloud"]'
+    )
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-issue_date', '-created_at']
+
+    def __str__(self):
+        return self.name
+
 
 class BlogPost(models.Model):
     """Blog posts — scoped to each user."""

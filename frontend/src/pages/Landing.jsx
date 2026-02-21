@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   FaRocket, FaPaintBrush, FaShieldAlt,
   FaLink, FaChartLine, FaMobileAlt,
+  FaCheckCircle, FaLaptopCode, FaUserTie, FaUsers, FaClock, FaGlobe,
 } from 'react-icons/fa';
 import { HiMenu, HiX } from 'react-icons/hi';
 import './Landing.css';
@@ -45,6 +46,62 @@ const features = [
     color: 'blue',
     title: 'Fully Responsive',
     desc: 'Looks perfect on desktop, tablet, and mobile — optimized for every screen.',
+  },
+];
+
+const proofStats = [
+  { value: '5 min', label: 'Average setup time' },
+  { value: '100%', label: 'Mobile responsive pages' },
+  { value: '10+', label: 'Content sections available' },
+  { value: '24/7', label: 'Live public portfolio URL' },
+];
+
+const audienceCards = [
+  {
+    icon: <FaLaptopCode />,
+    title: 'Students & Freshers',
+    points: [
+      'Show projects, internships, and certifications in one place.',
+      'Share a clean profile link directly in applications.',
+      'Stand out from generic resume-only submissions.',
+    ],
+  },
+  {
+    icon: <FaUserTie />,
+    title: 'Working Professionals',
+    points: [
+      'Highlight impact with experience, achievements, and proof links.',
+      'Maintain a polished public profile outside social platforms.',
+      'Update sections from dashboard without touching code.',
+    ],
+  },
+  {
+    icon: <FaUsers />,
+    title: 'Freelancers & Consultants',
+    points: [
+      'Showcase testimonials and featured work for instant credibility.',
+      'Use one branded URL in proposals and client outreach.',
+      'Turn profile views into inbound project conversations.',
+    ],
+  },
+];
+
+const faqs = [
+  {
+    q: 'Do I need coding knowledge to use PortfolioHub?',
+    a: 'No. You can create and manage your entire portfolio from the dashboard using simple forms.',
+  },
+  {
+    q: 'Can I choose which sections appear publicly?',
+    a: 'Yes. You can toggle section visibility and navbar links from profile controls at any time.',
+  },
+  {
+    q: 'Can I edit content later?',
+    a: 'Yes. Projects, skills, blog posts, testimonials, milestones, and profile data are fully editable.',
+  },
+  {
+    q: 'Will my portfolio work on mobile devices?',
+    a: 'Yes. Every page is optimized for desktop, tablet, and mobile by default.',
   },
 ];
 
@@ -90,7 +147,10 @@ export default function Landing() {
             </Link>
             <div className="landing-nav__links">
               <a href="#features">Features</a>
+              <a href="#benefits">Benefits</a>
+              <a href="#audience">Who It&apos;s For</a>
               <a href="#how-it-works">How It Works</a>
+              <a href="#faq">FAQ</a>
               <Link to="/user/login" className="btn btn-outline btn-sm">Sign In</Link>
               <Link to="/register" className="btn btn-primary btn-sm">Get Started</Link>
             </div>
@@ -112,7 +172,10 @@ export default function Landing() {
                 exit={{ opacity: 0, height: 0 }}
               >
                 <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
+                <a href="#benefits" onClick={() => setMobileMenuOpen(false)}>Benefits</a>
+                <a href="#audience" onClick={() => setMobileMenuOpen(false)}>Who It&apos;s For</a>
                 <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a>
+                <a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
                 <Link to="/user/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                 <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
               </motion.div>
@@ -149,6 +212,74 @@ export default function Landing() {
         </section>
 
         {/* ─── Features ─────────────────────────────────── */}
+        <section id="benefits" className="landing-proof">
+          <div className="landing-section-header">
+            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+              Built for Fast Career Momentum
+            </motion.h2>
+            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+              PortfolioHub combines portfolio publishing, credibility, and content control in one workflow.
+            </motion.p>
+          </div>
+
+          <div className="landing-proof__grid">
+            {proofStats.map((item, i) => (
+              <motion.article
+                key={item.label}
+                className="proof-card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={i}
+                viewport={{ once: true }}
+              >
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </motion.article>
+            ))}
+          </div>
+
+          <div className="landing-benefits">
+            <motion.article
+              className="benefit-card glass"
+              initial="hidden"
+              whileInView="visible"
+              variants={fadeUp}
+              viewport={{ once: true }}
+            >
+              <h3><FaClock /> Faster than building from scratch</h3>
+              <p>
+                No template hunting, no deployment setup, no repeated redesign work.
+                Focus on your content, not tooling.
+              </p>
+              <ul>
+                <li><FaCheckCircle /> Ready-to-use structure for projects, skills, and achievements</li>
+                <li><FaCheckCircle /> Dedicated admin dashboard for updates</li>
+                <li><FaCheckCircle /> Professional public profile URL instantly available</li>
+              </ul>
+            </motion.article>
+            <motion.article
+              className="benefit-card glass"
+              initial="hidden"
+              whileInView="visible"
+              variants={fadeUp}
+              custom={1}
+              viewport={{ once: true }}
+            >
+              <h3><FaGlobe /> Portfolio that sells your profile</h3>
+              <p>
+                Present your work with context and proof so recruiters and clients
+                understand your value in seconds.
+              </p>
+              <ul>
+                <li><FaCheckCircle /> Rich sections for experience, education, certificates, and social proof</li>
+                <li><FaCheckCircle /> Selective visibility controls for public and navigation sections</li>
+                <li><FaCheckCircle /> Built-in contact flow to capture inbound opportunities</li>
+              </ul>
+            </motion.article>
+          </div>
+        </section>
+
         <section id="features" className="landing-features">
           <div className="landing-section-header">
             <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
@@ -181,6 +312,41 @@ export default function Landing() {
         </section>
 
         {/* ─── How It Works ─────────────────────────────── */}
+        <section id="audience" className="landing-audience">
+          <div className="landing-section-header">
+            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+              Who PortfolioHub Helps Most
+            </motion.h2>
+            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+              Tailored for developers at different stages of growth.
+            </motion.p>
+          </div>
+          <div className="landing-audience__grid">
+            {audienceCards.map((item, i) => (
+              <motion.article
+                key={item.title}
+                className="audience-card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={i}
+                viewport={{ once: true }}
+              >
+                <div className="audience-card__icon">{item.icon}</div>
+                <h3>{item.title}</h3>
+                <ul>
+                  {item.points.map((point) => (
+                    <li key={point}>
+                      <FaCheckCircle />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+
         <section id="how-it-works" className="landing-steps">
           <div className="landing-section-header">
             <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
@@ -215,6 +381,33 @@ export default function Landing() {
         </section>
 
         {/* ─── CTA ──────────────────────────────────────── */}
+        <section id="faq" className="landing-faq">
+          <div className="landing-section-header">
+            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+              Frequently Asked Questions
+            </motion.h2>
+            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+              Quick answers before you start building.
+            </motion.p>
+          </div>
+          <div className="landing-faq__grid">
+            {faqs.map((item, i) => (
+              <motion.article
+                key={item.q}
+                className="faq-card glass"
+                initial="hidden"
+                whileInView="visible"
+                variants={fadeUp}
+                custom={i}
+                viewport={{ once: true }}
+              >
+                <h3>{item.q}</h3>
+                <p>{item.a}</p>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+
         <section className="landing-cta">
           <motion.div
             className="landing-cta__content"

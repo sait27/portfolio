@@ -192,12 +192,18 @@
 }
 
 .landing-features,
+.landing-proof,
+.landing-audience,
+.landing-faq,
 .landing-steps,
 .landing-cta {
   padding: 5.25rem 1.25rem;
 }
 
+.landing-proof,
 .landing-features,
+.landing-audience,
+.landing-faq,
 .landing-steps {
   max-width: 1200px;
   margin: 0 auto;
@@ -223,6 +229,79 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
+}
+
+.landing-proof__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.proof-card {
+  padding: 1.15rem 1rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+}
+
+.proof-card strong {
+  display: block;
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  margin-bottom: 0.4rem;
+  color: #f5f9ff;
+}
+
+.proof-card span {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.landing-benefits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.benefit-card {
+  padding: 1.35rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.benefit-card h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+  color: #c7f7ee;
+}
+
+.benefit-card p {
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.benefit-card ul {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.benefit-card li {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.44rem;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.benefit-card li svg {
+  color: #2ed3b7;
+  margin-top: 0.18rem;
+  flex-shrink: 0;
 }
 
 .feature-card {
@@ -289,6 +368,54 @@
   color: var(--text-secondary);
 }
 
+.landing-audience__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.audience-card {
+  padding: 1.4rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.audience-card__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+  background: rgba(46, 211, 183, 0.14);
+  color: #a4f3e5;
+}
+
+.audience-card h3 {
+  margin-bottom: 0.7rem;
+}
+
+.audience-card ul {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.audience-card li {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.audience-card li svg {
+  margin-top: 0.18rem;
+  color: #ffbf9e;
+  flex-shrink: 0;
+}
+
 .landing-steps {
   border-top: 1px solid var(--border-glass);
   border-bottom: 1px solid var(--border-glass);
@@ -327,6 +454,29 @@
 .step-card p {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
+}
+
+.landing-faq__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.faq-card {
+  padding: 1.2rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.faq-card h3 {
+  font-size: var(--font-size-base);
+  margin-bottom: 0.45rem;
+}
+
+.faq-card p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .landing-cta {
@@ -394,6 +544,11 @@
 
   .landing-hero__actions .btn {
     width: 100%;
+  }
+
+  .landing-benefits,
+  .landing-faq__grid {
+    grid-template-columns: 1fr;
   }
 
   .landing-cta::before {

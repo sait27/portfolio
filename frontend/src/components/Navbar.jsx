@@ -6,7 +6,7 @@ import { publicApi } from '../api/client';
 import './Navbar.css';
 
 const NAV_LINKS = [
-  { label: 'Home', path: '/home' },
+  { label: 'Home', path: '/' },
   { label: 'About', path: '/about' },
   { label: 'Projects', path: '/projects' },
   { label: 'Blog', path: '/blog' },
@@ -43,7 +43,7 @@ export default function Navbar() {
     >
       <div className="navbar__container container">
         {/* Logo */}
-        <Link to="/home" className="navbar__logo">
+        <Link to="/" className="navbar__logo">
           <img src="/favicon.svg" alt="Logo" className="navbar__logo-icon" />
           <span className="gradient-text">Portfolio</span>
         </Link>

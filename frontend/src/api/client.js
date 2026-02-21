@@ -101,6 +101,10 @@ export const publicApi = {
   },
   getSkills: (username) => api.get(`/u/${resolveUsername(username)}/skills/`),
   getExperience: (username) => api.get(`/u/${resolveUsername(username)}/experience/`),
+  getEducation: (username) => api.get(`/u/${resolveUsername(username)}/education/`),
+  getActivities: (username) => api.get(`/u/${resolveUsername(username)}/activities/`),
+  getAchievements: (username) => api.get(`/u/${resolveUsername(username)}/achievements/`),
+  getCertifications: (username) => api.get(`/u/${resolveUsername(username)}/certifications/`),
   getBlogs: (usernameOrParams, maybeParams = {}) => {
     const { username, params } = resolveUsernameAndParams(usernameOrParams, maybeParams);
     return api.get(`/u/${username}/blog/`, { params });
@@ -154,6 +158,30 @@ export const userApi = {
   createExperience: (data) => api.post('/user/experience/', data),
   updateExperience: (id, data) => api.put(`/user/experience/${id}/`, data),
   deleteExperience: (id) => api.delete(`/user/experience/${id}/`),
+
+  // Education
+  getEducation: () => api.get('/user/education/'),
+  createEducation: (data) => api.post('/user/education/', data),
+  updateEducation: (id, data) => api.put(`/user/education/${id}/`, data),
+  deleteEducation: (id) => api.delete(`/user/education/${id}/`),
+
+  // Activities
+  getActivities: () => api.get('/user/activities/'),
+  createActivity: (data) => api.post('/user/activities/', data),
+  updateActivity: (id, data) => api.put(`/user/activities/${id}/`, data),
+  deleteActivity: (id) => api.delete(`/user/activities/${id}/`),
+
+  // Achievements
+  getAchievements: () => api.get('/user/achievements/'),
+  createAchievement: (data) => api.post('/user/achievements/', data),
+  updateAchievement: (id, data) => api.put(`/user/achievements/${id}/`, data),
+  deleteAchievement: (id) => api.delete(`/user/achievements/${id}/`),
+
+  // Certifications
+  getCertifications: () => api.get('/user/certifications/'),
+  createCertification: (data) => api.post('/user/certifications/', data),
+  updateCertification: (id, data) => api.put(`/user/certifications/${id}/`, data),
+  deleteCertification: (id) => api.delete(`/user/certifications/${id}/`),
 
   // Messages
   getMessages: () => api.get('/user/messages/'),

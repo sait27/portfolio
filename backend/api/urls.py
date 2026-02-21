@@ -28,6 +28,10 @@ urlpatterns = [
     path('u/<str:username>/projects/', views.PublicProjectListView.as_view(), name='public-projects'),
     path('u/<str:username>/projects/<slug:slug>/', views.PublicProjectDetailView.as_view(), name='public-project-detail'),
     path('u/<str:username>/experience/', views.PublicExperienceListView.as_view(), name='public-experience'),
+    path('u/<str:username>/education/', views.PublicEducationListView.as_view(), name='public-education'),
+    path('u/<str:username>/activities/', views.PublicActivityListView.as_view(), name='public-activities'),
+    path('u/<str:username>/achievements/', views.PublicAchievementListView.as_view(), name='public-achievements'),
+    path('u/<str:username>/certifications/', views.PublicCertificationListView.as_view(), name='public-certifications'),
     path('u/<str:username>/contact/', views.PublicContactView.as_view(), name='public-contact'),
     path('u/<str:username>/blog/', views.PublicBlogListView.as_view(), name='public-blog'),
     path('u/<str:username>/blog/<slug:slug>/', views.PublicBlogDetailView.as_view(), name='public-blog-detail'),
@@ -48,6 +52,18 @@ urlpatterns = [
 
     path('user/experience/', admin_views.DashboardExperienceListCreateView.as_view(), name='user-experience'),
     path('user/experience/<int:pk>/', admin_views.DashboardExperienceDetailView.as_view(), name='user-experience-detail'),
+
+    path('user/education/', admin_views.DashboardEducationListCreateView.as_view(), name='user-education'),
+    path('user/education/<int:pk>/', admin_views.DashboardEducationDetailView.as_view(), name='user-education-detail'),
+
+    path('user/activities/', admin_views.DashboardActivityListCreateView.as_view(), name='user-activities'),
+    path('user/activities/<int:pk>/', admin_views.DashboardActivityDetailView.as_view(), name='user-activity-detail'),
+
+    path('user/achievements/', admin_views.DashboardAchievementListCreateView.as_view(), name='user-achievements'),
+    path('user/achievements/<int:pk>/', admin_views.DashboardAchievementDetailView.as_view(), name='user-achievement-detail'),
+
+    path('user/certifications/', admin_views.DashboardCertificationListCreateView.as_view(), name='user-certifications'),
+    path('user/certifications/<int:pk>/', admin_views.DashboardCertificationDetailView.as_view(), name='user-certification-detail'),
 
     path('user/messages/', admin_views.DashboardMessageListView.as_view(), name='user-messages'),
     path('user/messages/<int:pk>/', admin_views.DashboardMessageDetailView.as_view(), name='user-message-detail'),
@@ -75,6 +91,18 @@ urlpatterns = [
 
     path('dashboard/experience/', admin_views.DashboardExperienceListCreateView.as_view(), name='dashboard-experience'),
     path('dashboard/experience/<int:pk>/', admin_views.DashboardExperienceDetailView.as_view(), name='dashboard-experience-detail'),
+
+    path('dashboard/education/', admin_views.DashboardEducationListCreateView.as_view(), name='dashboard-education'),
+    path('dashboard/education/<int:pk>/', admin_views.DashboardEducationDetailView.as_view(), name='dashboard-education-detail'),
+
+    path('dashboard/activities/', admin_views.DashboardActivityListCreateView.as_view(), name='dashboard-activities'),
+    path('dashboard/activities/<int:pk>/', admin_views.DashboardActivityDetailView.as_view(), name='dashboard-activity-detail'),
+
+    path('dashboard/achievements/', admin_views.DashboardAchievementListCreateView.as_view(), name='dashboard-achievements'),
+    path('dashboard/achievements/<int:pk>/', admin_views.DashboardAchievementDetailView.as_view(), name='dashboard-achievement-detail'),
+
+    path('dashboard/certifications/', admin_views.DashboardCertificationListCreateView.as_view(), name='dashboard-certifications'),
+    path('dashboard/certifications/<int:pk>/', admin_views.DashboardCertificationDetailView.as_view(), name='dashboard-certification-detail'),
 
     path('dashboard/messages/', admin_views.DashboardMessageListView.as_view(), name='dashboard-messages'),
     path('dashboard/messages/<int:pk>/', admin_views.DashboardMessageDetailView.as_view(), name='dashboard-message-detail'),

@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { FaExternalLinkAlt, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase, FaUserShield, FaBlog, FaQuoteLeft } from 'react-icons/fa';
+import { FaCertificate, FaExternalLinkAlt, FaProjectDiagram, FaEnvelope, FaTachometerAlt, FaSignOutAlt, FaUser, FaCode, FaBriefcase, FaUserShield, FaBlog, FaQuoteLeft } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { useImpersonation } from '../../hooks/useImpersonation';
 import './AdminLayout.css';
@@ -11,6 +11,7 @@ const SIDEBAR_LINKS = [
   { label: 'Testimonials', path: '/user/testimonials', icon: <FaQuoteLeft /> },
   { label: 'Skills', path: '/user/skills', icon: <FaCode /> },
   { label: 'Experience', path: '/user/experience', icon: <FaBriefcase /> },
+  { label: 'Milestones', path: '/user/milestones', icon: <FaCertificate /> },
   { label: 'Messages', path: '/user/messages', icon: <FaEnvelope /> },
   { label: 'Profile', path: '/user/profile', icon: <FaUser /> },
 ];

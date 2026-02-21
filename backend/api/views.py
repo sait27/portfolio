@@ -3,13 +3,30 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Profile, SkillCategory, Skill, Project, Experience, Message, BlogPost, Testimonial
+from .models import (
+    Profile,
+    SkillCategory,
+    Skill,
+    Project,
+    Experience,
+    Education,
+    Activity,
+    Achievement,
+    Certification,
+    Message,
+    BlogPost,
+    Testimonial,
+)
 from .serializers import (
     ProfileSerializer,
     SkillCategorySerializer,
     ProjectListSerializer,
     ProjectDetailSerializer,
     ExperienceSerializer,
+    EducationSerializer,
+    ActivitySerializer,
+    AchievementSerializer,
+    CertificationSerializer,
     MessageCreateSerializer,
     BlogPostListSerializer,
     BlogPostDetailSerializer,
@@ -120,6 +137,70 @@ class PublicExperienceListView(generics.ListAPIView):
 
 
 # ─── Contact ───────────────────────────────────────────────────────────────
+
+class PublicEducationListView(generics.ListAPIView):
+    """
+    GET /api/u/{username}/education/
+    Returns education entries for a user.
+    """
+    serializer_class = EducationSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_user_by_username(username)
+        if not user:
+            return Education.objects.none()
+        return Education.objects.filter(user=user)
+
+
+class PublicActivityListView(generics.ListAPIView):
+    """
+    GET /api/u/{username}/activities/
+    Returns extracurricular activities for a user.
+    """
+    serializer_class = ActivitySerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_user_by_username(username)
+        if not user:
+            return Activity.objects.none()
+        return Activity.objects.filter(user=user)
+
+
+class PublicAchievementListView(generics.ListAPIView):
+    """
+    GET /api/u/{username}/achievements/
+    Returns achievements for a user.
+    """
+    serializer_class = AchievementSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_user_by_username(username)
+        if not user:
+            return Achievement.objects.none()
+        return Achievement.objects.filter(user=user)
+
+
+class PublicCertificationListView(generics.ListAPIView):
+    """
+    GET /api/u/{username}/certifications/
+    Returns certifications for a user.
+    """
+    serializer_class = CertificationSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_user_by_username(username)
+        if not user:
+            return Certification.objects.none()
+        return Certification.objects.filter(user=user)
+
 
 class PublicContactView(generics.CreateAPIView):
     """

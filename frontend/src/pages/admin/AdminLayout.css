@@ -67,6 +67,14 @@
   transition: all var(--transition-fast);
 }
 
+.admin-sidebar__link:visited {
+  color: var(--text-secondary);
+}
+
+.admin-sidebar__link:active {
+  color: var(--text-primary);
+}
+
 .admin-sidebar__link:hover {
   color: var(--text-primary);
   border-color: var(--border-glass);
@@ -75,9 +83,16 @@
 }
 
 .admin-sidebar__link--active {
-  color: #09131b !important;
+  color: #f5f9ff !important;
   border-color: transparent !important;
   background: var(--accent-gradient) !important;
+  text-shadow: 0 1px 6px rgba(7, 16, 24, 0.28);
+}
+
+.admin-sidebar__link--active:visited,
+.admin-sidebar__link--active:hover,
+.admin-sidebar__link--active:active {
+  color: #f5f9ff !important;
 }
 
 .admin-sidebar__footer {
@@ -122,20 +137,24 @@
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.9rem;
-  margin-bottom: 1.6rem;
+  gap: 1rem;
+  margin-bottom: 1.8rem;
 }
 
 .admin-stat {
-  padding: 1.1rem;
+  padding: 1.25rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-glass);
   background: rgba(255, 255, 255, 0.03);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .admin-stat:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   border-color: var(--border-glass-hover);
 }
 

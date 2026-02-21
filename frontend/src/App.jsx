@@ -9,7 +9,6 @@ import ImpersonationBanner from './components/ImpersonationBanner';
 
 // Public / Marketing
 import Landing from './pages/Landing';
-import Home from './pages/Home';
 import About from './pages/About';
 import Projects from './pages/Projects';
 import Contact from './pages/Contact';
@@ -33,6 +32,7 @@ import AdminBlog from './pages/admin/AdminBlog';
 import AdminTestimonials from './pages/admin/AdminTestimonials';
 import UserSkills from './pages/admin/AdminSkills';
 import UserExperience from './pages/admin/AdminExperience';
+import AdminMilestones from './pages/admin/AdminMilestones';
 import UserMessages from './pages/admin/AdminMessages';
 import UserProfile from './pages/admin/AdminProfile';
 import AdminPanel from './pages/admin/SuperAdminPanel';
@@ -54,7 +54,6 @@ export default function App() {
             <Routes>
               {/* Marketing */}
               <Route path="/" element={<Landing />} />
-              <Route path="/home" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/contact" element={<Contact />} />
@@ -84,6 +83,7 @@ export default function App() {
                 <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="skills" element={<UserSkills />} />
                 <Route path="experience" element={<UserExperience />} />
+                <Route path="milestones" element={<AdminMilestones />} />
                 <Route path="messages" element={<UserMessages />} />
                 <Route path="profile" element={<UserProfile />} />
               </Route>
