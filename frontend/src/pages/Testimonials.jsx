@@ -18,22 +18,24 @@ export default function Testimonials() {
 
       <Navbar />
 
-      <SectionWrapper className="testimonials-hero">
-        <Motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <PageHeader
-            badge="Social Proof"
-            title="Client"
-            highlight="Testimonials"
-            subtitle="Hear from the clients and colleagues I've had the privilege to work with."
-          />
-        </Motion.div>
-      </SectionWrapper>
+      <main id="main-content">
+        <SectionWrapper className="testimonials-hero">
+          <Motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <PageHeader
+              badge="Social Proof"
+              title="Client"
+              highlight="Testimonials"
+              subtitle="Hear from the clients and colleagues I've had the privilege to work with."
+            />
+          </Motion.div>
+        </SectionWrapper>
 
-      <TestimonialsComponent />
+        <TestimonialsComponent />
+      </main>
       <Footer />
     </PageTransition>
   );

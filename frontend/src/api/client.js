@@ -134,6 +134,7 @@ export const userApi = {
   // Profile
   getProfile: () => api.get('/user/profile/'),
   updateProfile: (data) => api.put('/user/profile/', data),
+  patchProfile: (data) => api.patch('/user/profile/', data),
 
   // Projects
   getProjects: () => api.get('/user/projects/'),
@@ -201,9 +202,12 @@ export const userApi = {
   deleteTestimonial: (id) => api.delete(`/user/testimonials/${id}/`),
 
   // Upload
-  uploadFile: (file) => {
+  uploadFile: (file, options = {}) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (options.upload_context) {
+      formData.append('upload_context', options.upload_context);
+    }
     return api.post('/user/upload/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });

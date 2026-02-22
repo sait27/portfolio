@@ -47,6 +47,11 @@
   cursor: pointer;
 }
 
+.project-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent-secondary) 65%, white);
+  outline-offset: 3px;
+}
+
 .project-card__img {
   position: relative;
   height: 200px;

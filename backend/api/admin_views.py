@@ -371,23 +371,51 @@ class DashboardUploadView(APIView):
         if not file:
             return Response({'detail': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        upload_context = (request.data.get('upload_context') or '').strip().lower()
+
         # Size limit: 10MB
         if file.size > 10 * 1024 * 1024:
             return Response({'detail': 'File too large. Max 10MB.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        file_name = (file.name or '').lower()
+        content_type = (getattr(file, 'content_type', '') or '').lower()
+
+        upload_options = {
+            'folder': f'portfolio/{request.user.username}',
+            'resource_type': 'auto',
+        }
+
+        # Resume files should be strict PDF to avoid broken/non-renderable document links.
+        if upload_context == 'resume':
+            is_pdf = file_name.endswith('.pdf') or content_type == 'application/pdf'
+            if not is_pdf:
+                return Response({'detail': 'Resume must be a PDF file.'}, status=status.HTTP_400_BAD_REQUEST)
+            upload_options['resource_type'] = 'raw'
+
         import cloudinary.uploader
         try:
-            result = cloudinary.uploader.upload(
-                file,
-                folder=f'portfolio/{request.user.username}',
-                resource_type='auto'
-            )
-            return Response({
+            result = cloudinary.uploader.upload(file, **upload_options)
+            response_payload = {
                 'url': result['secure_url'],
                 'public_id': result['public_id'],
+            }
+            return Response({
+                **response_payload
             })
         except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            message = str(e)
+            lower_message = message.lower()
+            if upload_context == 'resume' and (
+                'pdf' in lower_message
+                or 'zip' in lower_message
+                or 'show_original_customer_untrusted' in lower_message
+                or 'untrusted' in lower_message
+            ):
+                message = (
+                    'Resume upload failed due to Cloudinary account trust/security settings. '
+                    'Enable PDF delivery in Cloudinary Security settings or complete account trust verification.'
+                )
+            return Response({'detail': message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ─── Dashboard Blog Posts CRUD ────────────────────────────────────────────

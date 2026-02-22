@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaExternalLinkAlt, FaGithub, FaArrowRight } from 'react-icons/fa';
@@ -30,13 +30,20 @@ export default function Projects() {
     setLoading(true);
     const params = activeFilter ? { category: activeFilter } : {};
     publicApi.getProjects(params)
-      .then(res => {
+      .then((res) => {
         const data = res.data.results || res.data;
         setProjects(Array.isArray(data) ? data : []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [activeFilter]);
+
+  const handleProjectCardKeyDown = (event, project) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setSelectedProject(project);
+    }
+  };
 
   return (
     <PageTransition>
@@ -47,7 +54,7 @@ export default function Projects() {
 
       <Navbar />
 
-      <div style={{ paddingTop: '5rem' }}>
+      <main id="main-content" style={{ paddingTop: '5rem' }}>
         <SectionWrapper>
           <div className="projects__header">
             <PageHeader
@@ -58,9 +65,8 @@ export default function Projects() {
             />
           </div>
 
-          {/* Filter Tabs */}
           <div className="projects__filters">
-            {CATEGORY_FILTERS.map(filter => (
+            {CATEGORY_FILTERS.map((filter) => (
               <button
                 key={filter.value}
                 className={`projects__filter ${activeFilter === filter.value ? 'projects__filter--active' : ''}`}
@@ -71,10 +77,9 @@ export default function Projects() {
             ))}
           </div>
 
-          {/* Projects Grid */}
           {loading ? (
             <div className="projects__grid">
-              {[1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)}
+              {[1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)}
             </div>
           ) : projects.length > 0 ? (
             <motion.div className="projects__grid" layout>
@@ -83,6 +88,10 @@ export default function Projects() {
                   <motion.div
                     key={project.id}
                     className="project-card glass"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open details for ${project.title}`}
+                    aria-haspopup="dialog"
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -90,6 +99,7 @@ export default function Projects() {
                     transition={{ duration: 0.3 }}
                     whileHover={{ y: -8 }}
                     onClick={() => setSelectedProject(project)}
+                    onKeyDown={(event) => handleProjectCardKeyDown(event, project)}
                   >
                     <div className="project-card__img">
                       <img
@@ -112,7 +122,7 @@ export default function Projects() {
                       <h3 className="project-card__title">{project.title}</h3>
                       <p className="project-card__desc">{project.short_description}</p>
                       <div className="project-card__tech">
-                        {project.tech_stack?.slice(0, 4).map(skill => (
+                        {project.tech_stack?.slice(0, 4).map((skill) => (
                           <span key={skill.id} className="chip">{skill.name}</span>
                         ))}
                         {project.tech_stack?.length > 4 && (
@@ -126,7 +136,7 @@ export default function Projects() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="project-card__link"
-                            onClick={e => e.stopPropagation()}
+                            onClick={(event) => event.stopPropagation()}
                           >
                             <FaExternalLinkAlt /> Live
                           </a>
@@ -137,7 +147,7 @@ export default function Projects() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="project-card__link"
-                            onClick={e => e.stopPropagation()}
+                            onClick={(event) => event.stopPropagation()}
                           >
                             <FaGithub /> Code
                           </a>
@@ -159,9 +169,8 @@ export default function Projects() {
             </div>
           )}
         </SectionWrapper>
-      </div>
+      </main>
 
-      {/* Project Detail Modal */}
       <AnimatePresence>
         {selectedProject && (
           <ProjectModal
@@ -176,14 +185,50 @@ export default function Projects() {
   );
 }
 
-// ─── Project Modal ─────────────────────────────────────────────────────────
-
 function ProjectModal({ project, onClose }) {
-  // Close on ESC
+  const modalRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const previousActiveElementRef = useRef(null);
+
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    previousActiveElementRef.current = document.activeElement;
+    closeButtonRef.current?.focus();
+
+    const originalBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handler = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const focusable = modalRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.body.style.overflow = originalBodyOverflow;
+      previousActiveElementRef.current?.focus?.();
+    };
   }, [onClose]);
 
   return (
@@ -193,16 +238,24 @@ function ProjectModal({ project, onClose }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
+      role="presentation"
     >
       <motion.div
+        ref={modalRef}
         className="modal glass"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-modal-title"
+        aria-describedby="project-modal-description"
         initial={{ opacity: 0, y: 40, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 40, scale: 0.95 }}
         transition={{ duration: 0.3 }}
-        onClick={e => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
-        <button className="modal__close" onClick={onClose}>✕</button>
+        <button ref={closeButtonRef} className="modal__close" onClick={onClose} aria-label="Close project details">
+          X
+        </button>
 
         <div className="modal__img">
           <img
@@ -214,21 +267,25 @@ function ProjectModal({ project, onClose }) {
         <div className="modal__body">
           <div className="modal__meta">
             <span className="chip chip-active">{project.category}</span>
-            {project.is_featured && <span className="chip" style={{ background: 'rgba(236,72,153,0.15)', borderColor: '#ec4899', color: '#ec4899' }}>⭐ Featured</span>}
+            {project.is_featured && (
+              <span className="chip" style={{ background: 'rgba(236,72,153,0.15)', borderColor: '#ec4899', color: '#ec4899' }}>
+                Featured
+              </span>
+            )}
           </div>
 
-          <h2 className="modal__title">{project.title}</h2>
+          <h2 id="project-modal-title" className="modal__title">{project.title}</h2>
 
-          <div className="modal__description">
-            {project.description?.split('\n').map((p, i) => (
-              <p key={i}>{p}</p>
+          <div id="project-modal-description" className="modal__description">
+            {project.description?.split('\n').map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
             )) || <p>{project.short_description}</p>}
           </div>
 
           <div className="modal__tech">
             <h4>Technologies Used</h4>
             <div className="modal__tech-list">
-              {project.tech_stack?.map(skill => (
+              {project.tech_stack?.map((skill) => (
                 <span key={skill.id} className="chip">{skill.name}</span>
               ))}
             </div>

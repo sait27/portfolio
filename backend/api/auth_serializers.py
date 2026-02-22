@@ -3,6 +3,24 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import Profile
 
+RESERVED_USERNAMES = {
+    'about',
+    'projects',
+    'contact',
+    'blog',
+    'testimonials',
+    'login',
+    'register',
+    'forgot-password',
+    'reset-password',
+    'user',
+    'admin',
+    'dashboard',
+    'api',
+    'static',
+    'media',
+}
+
 
 class RegisterSerializer(serializers.Serializer):
     """Register a new user. Creates User + Profile."""
@@ -16,6 +34,8 @@ class RegisterSerializer(serializers.Serializer):
         value = value.lower().strip()
         if User.objects.filter(username__iexact=value).exists():
             raise serializers.ValidationError("This username is already taken.")
+        if value in RESERVED_USERNAMES:
+            raise serializers.ValidationError("This username is reserved. Please choose another.")
         # Only allow alphanumeric and hyphens
         import re
         if not re.match(r'^[a-z0-9_-]+$', value):

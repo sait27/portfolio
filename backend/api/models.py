@@ -42,6 +42,11 @@ class Profile(models.Model):
     show_nav_blog = models.BooleanField(default=True)
     show_nav_testimonials = models.BooleanField(default=True)
     show_nav_contact = models.BooleanField(default=True)
+    dashboard_section_order = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Ordered dashboard section ids, e.g. ["portfolio_metrics", "quick_actions", "needs_attention"]',
+    )
     is_platform_admin = models.BooleanField(default=False, help_text="Super admin flag — platform owner only")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -343,3 +348,4 @@ class Message(models.Model):
 
     def __str__(self):
         return f"From {self.sender_name}: {self.subject or '(no subject)'}"
+

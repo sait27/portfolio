@@ -30,7 +30,10 @@ export default function Navbar() {
   // Fetch resume URL
   useEffect(() => {
     publicApi.getProfile()
-      .then(res => { if (res.data?.resume) setResumeUrl(res.data.resume); })
+      .then((res) => {
+        const resolvedResumeUrl = res.data?.resume_download_url || res.data?.resume || '';
+        if (resolvedResumeUrl) setResumeUrl(resolvedResumeUrl);
+      })
       .catch(() => {});
   }, []);
 
@@ -86,6 +89,8 @@ export default function Navbar() {
           className="navbar__toggle"
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle menu"
+          aria-expanded={isOpen}
+          aria-controls="navbar-mobile-menu"
         >
           {isOpen ? <HiX size={24} /> : <HiMenu size={24} />}
         </button>
@@ -95,6 +100,7 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="navbar-mobile-menu"
             className="navbar__mobile"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}

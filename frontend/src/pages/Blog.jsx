@@ -59,110 +59,112 @@ export default function Blog() {
 
       <Navbar />
 
-      <SectionWrapper className="blog-hero">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <PageHeader
-            badge="Writing"
-            title="Technical"
-            highlight="Blog"
-            subtitle="Sharing insights, tutorials, and lessons learned from my development journey."
-          />
-        </motion.div>
-      </SectionWrapper>
+      <main id="main-content">
+        <SectionWrapper className="blog-hero">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <PageHeader
+              badge="Writing"
+              title="Technical"
+              highlight="Blog"
+              subtitle="Sharing insights, tutorials, and lessons learned from my development journey."
+            />
+          </motion.div>
+        </SectionWrapper>
 
-      <SectionWrapper>
-        {/* Tag Filter */}
-        <motion.div 
-          className="blog-filters"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {allTags.map(tag => (
-            <button
-              key={tag}
-              className={`blog-filter ${selectedTag === tag ? 'active' : ''}`}
-              onClick={() => setSelectedTag(tag)}
-            >
-              <FaTag /> {tag === 'all' ? 'All Articles' : tag}
-            </button>
-          ))}
-        </motion.div>
-
-        {/* Articles Grid */}
-        <div className="blog-grid">
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="blog-card glass">
-                <div className="blog-card__skeleton">
-                  <div className="skeleton-img"></div>
-                  <div className="skeleton-content">
-                    <div className="skeleton-line"></div>
-                    <div className="skeleton-line short"></div>
-                    <div className="skeleton-line"></div>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            filteredArticles.map((article, i) => (
-              <motion.article
-                key={article.id}
-                className="blog-card glass"
-                initial="hidden"
-                whileInView="visible"
-                variants={fadeUp}
-                custom={i}
-                viewport={{ once: true }}
-                whileHover={{ y: -8 }}
+        <SectionWrapper>
+          {/* Tag Filter */}
+          <motion.div 
+            className="blog-filters"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                className={`blog-filter ${selectedTag === tag ? 'active' : ''}`}
+                onClick={() => setSelectedTag(tag)}
               >
-                <div className="blog-card__image">
-                  <img src={article.thumbnail || `https://via.placeholder.com/600x300/16161f/7c3aed?text=${encodeURIComponent(article.title)}`} alt={article.title} />
-                  <div className="blog-card__overlay">
-                    <Link to={`/blog/${article.slug || article.id}`} className="btn btn-primary btn-sm">
-                      Read Article <FaArrowRight />
-                    </Link>
-                  </div>
-                </div>
-                
-                <div className="blog-card__content">
-                  <div className="blog-card__meta">
-                    <span className="blog-card__date">
-                      <FaCalendarAlt /> {new Date(article.published_at || article.created_at).toLocaleDateString()}
-                    </span>
-                    <span className="blog-card__read-time">
-                      <FaClock /> {article.read_time || '5 min read'}
-                    </span>
-                  </div>
-                  
-                  <h2 className="blog-card__title">
-                    <Link to={`/blog/${article.slug || article.id}`}>{article.title}</Link>
-                  </h2>
-                  
-                  <p className="blog-card__excerpt">{article.excerpt}</p>
-                  
-                  <div className="blog-card__tags">
-                    {article.tags && article.tags.map(tag => (
-                      <span key={tag} className="chip">{tag}</span>
-                    ))}
-                  </div>
-                </div>
-              </motion.article>
-            ))
-          )}
-        </div>
+                <FaTag /> {tag === 'all' ? 'All Articles' : tag}
+              </button>
+            ))}
+          </motion.div>
 
-        {filteredArticles.length === 0 && !loading && (
-          <div className="blog-empty glass">
-            <h3>No articles found</h3>
-            <p>No articles match the selected filter. Try selecting a different tag.</p>
+          {/* Articles Grid */}
+          <div className="blog-grid">
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="blog-card glass">
+                  <div className="blog-card__skeleton">
+                    <div className="skeleton-img"></div>
+                    <div className="skeleton-content">
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line short"></div>
+                      <div className="skeleton-line"></div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              filteredArticles.map((article, i) => (
+                <motion.article
+                  key={article.id}
+                  className="blog-card glass"
+                  initial="hidden"
+                  whileInView="visible"
+                  variants={fadeUp}
+                  custom={i}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -8 }}
+                >
+                  <div className="blog-card__image">
+                    <img src={article.thumbnail || `https://via.placeholder.com/600x300/16161f/7c3aed?text=${encodeURIComponent(article.title)}`} alt={article.title} />
+                    <div className="blog-card__overlay">
+                      <Link to={`/blog/${article.slug || article.id}`} className="btn btn-primary btn-sm">
+                        Read Article <FaArrowRight />
+                      </Link>
+                    </div>
+                  </div>
+                  
+                  <div className="blog-card__content">
+                    <div className="blog-card__meta">
+                      <span className="blog-card__date">
+                        <FaCalendarAlt /> {new Date(article.published_at || article.created_at).toLocaleDateString()}
+                      </span>
+                      <span className="blog-card__read-time">
+                        <FaClock /> {article.read_time || '5 min read'}
+                      </span>
+                    </div>
+                    
+                    <h2 className="blog-card__title">
+                      <Link to={`/blog/${article.slug || article.id}`}>{article.title}</Link>
+                    </h2>
+                    
+                    <p className="blog-card__excerpt">{article.excerpt}</p>
+                    
+                    <div className="blog-card__tags">
+                      {article.tags && article.tags.map(tag => (
+                        <span key={tag} className="chip">{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                </motion.article>
+              ))
+            )}
           </div>
-        )}
-      </SectionWrapper>
+
+          {filteredArticles.length === 0 && !loading && (
+            <div className="blog-empty glass">
+              <h3>No articles found</h3>
+              <p>No articles match the selected filter. Try selecting a different tag.</p>
+            </div>
+          )}
+        </SectionWrapper>
+      </main>
 
       <Footer />
     </PageTransition>

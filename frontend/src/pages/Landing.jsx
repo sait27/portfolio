@@ -159,6 +159,7 @@ export default function Landing() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
+              aria-controls="landing-mobile-menu"
             >
               {mobileMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
             </button>
@@ -166,6 +167,7 @@ export default function Landing() {
           <AnimatePresence>
             {mobileMenuOpen && (
               <motion.div
+                id="landing-mobile-menu"
                 className="landing-nav__mobile"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -183,7 +185,7 @@ export default function Landing() {
           </AnimatePresence>
         </motion.nav>
         {/* ─── Hero ──────────────────────────────────────── */}
-        <section className="landing-hero">
+        <section id="main-content" className="landing-hero">
           <motion.div
             className="landing-hero__content"
             initial={{ opacity: 0, y: 40 }}

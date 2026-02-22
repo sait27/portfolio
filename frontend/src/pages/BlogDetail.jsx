@@ -58,62 +58,64 @@ export default function BlogDetail() {
 
       <Navbar />
 
-      <SectionWrapper className="blog-detail">
-        <Link to="/blog" className="blog-detail__back">
-          <FaArrowLeft /> Back to blog
-        </Link>
+      <main id="main-content">
+        <SectionWrapper className="blog-detail">
+          <Link to="/blog" className="blog-detail__back">
+            <FaArrowLeft /> Back to blog
+          </Link>
 
-        {loading ? (
-          <div className="blog-detail__state glass">Loading article...</div>
-        ) : hasError || !article ? (
-          <div className="blog-detail__state glass">
-            <h3>Article not found</h3>
-            <p>This post may be unpublished or no longer available.</p>
-          </div>
-        ) : (
-          <article className="blog-detail__article glass">
-            <PageHeader
-              align="left"
-              badge="Article"
-              title={article.title}
-              subtitle={article.excerpt}
-              className="blog-detail__header"
-            />
-
-            <div className="blog-detail__meta">
-              <span>
-                <FaCalendarAlt />{' '}
-                {new Date(article.published_at || article.created_at).toLocaleDateString()}
-              </span>
-              <span>
-                <FaClock /> {article.read_time || '5 min read'}
-              </span>
+          {loading ? (
+            <div className="blog-detail__state glass">Loading article...</div>
+          ) : hasError || !article ? (
+            <div className="blog-detail__state glass">
+              <h3>Article not found</h3>
+              <p>This post may be unpublished or no longer available.</p>
             </div>
+          ) : (
+            <article className="blog-detail__article glass">
+              <PageHeader
+                align="left"
+                badge="Article"
+                title={article.title}
+                subtitle={article.excerpt}
+                className="blog-detail__header"
+              />
 
-            {article.thumbnail && (
-              <div className="blog-detail__image">
-                <img src={article.thumbnail} alt={article.title} />
+              <div className="blog-detail__meta">
+                <span>
+                  <FaCalendarAlt />{' '}
+                  {new Date(article.published_at || article.created_at).toLocaleDateString()}
+                </span>
+                <span>
+                  <FaClock /> {article.read_time || '5 min read'}
+                </span>
               </div>
-            )}
 
-            <div className="blog-detail__content">
-              {(article.content || '').split('\n').filter(Boolean).map((paragraph, idx) => (
-                <p key={idx}>{paragraph}</p>
-              ))}
-            </div>
+              {article.thumbnail && (
+                <div className="blog-detail__image">
+                  <img src={article.thumbnail} alt={article.title} />
+                </div>
+              )}
 
-            {Array.isArray(article.tags) && article.tags.length > 0 && (
-              <div className="blog-detail__tags">
-                {article.tags.map((tag) => (
-                  <span key={tag} className="chip">
-                    {tag}
-                  </span>
+              <div className="blog-detail__content">
+                {(article.content || '').split('\n').filter(Boolean).map((paragraph, idx) => (
+                  <p key={idx}>{paragraph}</p>
                 ))}
               </div>
-            )}
-          </article>
-        )}
-      </SectionWrapper>
+
+              {Array.isArray(article.tags) && article.tags.length > 0 && (
+                <div className="blog-detail__tags">
+                  {article.tags.map((tag) => (
+                    <span key={tag} className="chip">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </article>
+          )}
+        </SectionWrapper>
+      </main>
 
       <Footer />
     </PageTransition>

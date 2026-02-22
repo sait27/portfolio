@@ -28,6 +28,7 @@ import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import FormField from '../../components/FormField';
+import FileUploader from '../../components/FileUploader';
 
 const PROFILE_KEYS = [
   'full_name',
@@ -91,6 +92,7 @@ export default function AdminProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const resumeUrl = profile?.resume_download_url || profile?.resume || '';
 
   useEffect(() => {
     userApi.getProfile()
@@ -173,7 +175,7 @@ export default function AdminProfile() {
           </div>
           <div className="admin-profile-summary__links">
             {profile?.avatar && <a href={profile.avatar} target="_blank" rel="noopener noreferrer" className="chip">Avatar</a>}
-            {profile?.resume && <a href={profile.resume} target="_blank" rel="noopener noreferrer" className="chip">Resume</a>}
+            {resumeUrl && <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="chip">Resume</a>}
             <span className="chip chip-active">{visibleSectionCount}/{SECTION_VISIBILITY_OPTIONS.length} sections visible</span>
             <span className="chip chip-active">{visibleNavCount}/{NAV_VISIBILITY_OPTIONS.length} nav links visible</span>
           </div>
@@ -254,6 +256,22 @@ export default function AdminProfile() {
                 value={profile?.resume || ''}
                 onChange={handleChange}
                 icon={FaFileAlt}
+              />
+            </div>
+            <div className="admin-form__row">
+              <FileUploader
+                label="Upload Avatar"
+                accept="image/*"
+                buttonText="Upload Avatar"
+                onUploaded={(url) => setProfile((prev) => ({ ...(prev || {}), avatar: url }))}
+              />
+              <FileUploader
+                label="Upload Resume"
+                accept=".pdf,application/pdf"
+                buttonText="Upload Resume"
+                uploadContext="resume"
+                helpText="PDF only. Max size: 10MB"
+                onUploaded={(url) => setProfile((prev) => ({ ...(prev || {}), resume: url }))}
               />
             </div>
             {profile?.avatar && (

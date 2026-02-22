@@ -270,6 +270,7 @@ export default function PublicPortfolio() {
   const showNavBlog = isNavVisible('show_nav_blog');
   const showNavTestimonials = isNavVisible('show_nav_testimonials');
   const showNavContact = isNavVisible('show_nav_contact');
+  const resumeUrl = profile?.resume_download_url || profile?.resume || '';
 
   const visibleProjects = useMemo(
     () => (showAllProjects ? projects : projects.slice(0, 3)),
@@ -407,6 +408,7 @@ export default function PublicPortfolio() {
         </div>
       </nav>
 
+      <main id="main-content">
       {showHero && (
       <section className="hero" id="hero" style={{ paddingTop: '5rem' }}>
         <div className="hero__orbs">
@@ -448,8 +450,8 @@ export default function PublicPortfolio() {
               <a href="#projects" className="btn btn-primary btn-lg">
                 Explore Work
               </a>
-              {profile?.resume && (
-                <a href={profile.resume} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-lg">
+              {resumeUrl && (
+                <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-lg">
                   <HiDownload /> Resume
                 </a>
               )}
@@ -1096,6 +1098,7 @@ export default function PublicPortfolio() {
       )}
 
       {showContact && <ContactSection username={username} profileName={profile?.full_name} />}
+      </main>
 
       <footer className="portfolio-footer">
         Built with <span className="gradient-text">PortfolioHub</span> | {new Date().getFullYear()} {profile?.full_name || username}

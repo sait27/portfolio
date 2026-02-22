@@ -35,7 +35,7 @@ export default function ForgotPassword() {
       <Helmet>
         <title>Forgot Password | PortfolioHub</title>
       </Helmet>
-      <div className="auth-page">
+      <main id="main-content" className="auth-page">
         <motion.div
           className="auth-card glass"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -109,7 +109,7 @@ export default function ForgotPassword() {
             </>
           )}
         </motion.div>
-      </div>
+      </main>
     </>
   );
 }

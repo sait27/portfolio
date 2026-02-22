@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion as Motion } from 'framer-motion';
+import { motion as Motion, Reorder, useDragControls } from 'framer-motion';
+import toast from 'react-hot-toast';
 import {
   FaProjectDiagram,
   FaEnvelope,
@@ -16,20 +17,138 @@ import {
   FaGraduationCap,
   FaTrophy,
   FaUsers,
+  FaGripVertical,
 } from 'react-icons/fa';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
+const DASHBOARD_SECTION_IDS = ['portfolio_metrics', 'quick_actions', 'needs_attention'];
+
+const normalizeSectionOrder = (rawOrder) => {
+  if (!Array.isArray(rawOrder)) {
+    return DASHBOARD_SECTION_IDS;
+  }
+
+  const filtered = rawOrder.filter((sectionId) => DASHBOARD_SECTION_IDS.includes(sectionId));
+  if (filtered.length !== DASHBOARD_SECTION_IDS.length) {
+    return DASHBOARD_SECTION_IDS;
+  }
+
+  if (new Set(filtered).size !== DASHBOARD_SECTION_IDS.length) {
+    return DASHBOARD_SECTION_IDS;
+  }
+
+  return filtered;
+};
+
+const isSameOrder = (left, right) =>
+  Array.isArray(left) &&
+  Array.isArray(right) &&
+  left.length === right.length &&
+  left.every((value, index) => value === right[index]);
+
+function SortableDashboardSection({ section, onDragEnd }) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={section.id}
+      className="admin-dashboard__section-shell"
+      dragListener={false}
+      dragControls={dragControls}
+      whileDrag={{ scale: 1.01, zIndex: 2 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+      onDragEnd={onDragEnd}
+    >
+      <section className="admin-dashboard__section">
+        <div className="admin-dashboard__section-header">
+          <h2>{section.title}</h2>
+          <button
+            type="button"
+            className="admin-dashboard__drag-handle"
+            onPointerDown={(event) => dragControls.start(event)}
+            aria-label={`Drag to reorder ${section.title}`}
+            title="Drag to reorder"
+          >
+            <FaGripVertical />
+            Drag
+          </button>
+        </div>
+        {section.content}
+      </section>
+    </Reorder.Item>
+  );
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sectionOrder, setSectionOrder] = useState(DASHBOARD_SECTION_IDS);
+  const [lastSavedSectionOrder, setLastSavedSectionOrder] = useState(DASHBOARD_SECTION_IDS);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const latestSectionOrderRef = useRef(DASHBOARD_SECTION_IDS);
 
   useEffect(() => {
-    userApi.getStats()
-      .then(res => setStats(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    let isMounted = true;
+
+    const loadDashboard = async () => {
+      const [statsResult, profileResult] = await Promise.allSettled([
+        userApi.getStats(),
+        userApi.getProfile(),
+      ]);
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value.data);
+      }
+
+      if (profileResult.status === 'fulfilled') {
+        const normalizedOrder = normalizeSectionOrder(profileResult.value?.data?.dashboard_section_order);
+        setSectionOrder(normalizedOrder);
+        setLastSavedSectionOrder(normalizedOrder);
+        latestSectionOrderRef.current = normalizedOrder;
+      }
+
+      setLoading(false);
+    };
+
+    loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  const persistSectionOrder = async (nextOrder) => {
+    if (isSameOrder(nextOrder, lastSavedSectionOrder)) {
+      return;
+    }
+
+    setIsSavingOrder(true);
+    try {
+      await userApi.patchProfile({ dashboard_section_order: nextOrder });
+      setLastSavedSectionOrder(nextOrder);
+    } catch {
+      toast.error('Failed to save dashboard section order.');
+      setSectionOrder(lastSavedSectionOrder);
+      latestSectionOrderRef.current = lastSavedSectionOrder;
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  const handleSectionReorder = (nextOrder) => {
+    const normalizedOrder = normalizeSectionOrder(nextOrder);
+    setSectionOrder(normalizedOrder);
+    latestSectionOrderRef.current = normalizedOrder;
+  };
+
+  const handleSectionDragEnd = () => {
+    void persistSectionOrder(latestSectionOrderRef.current);
+  };
 
   const normalizedStats = {
     projects: stats?.projects || 0,
@@ -59,9 +178,10 @@ export default function AdminDashboard() {
     normalizedStats.blog_posts +
     normalizedStats.testimonials;
 
-  const publishRate = normalizedStats.blog_posts > 0
-    ? Math.round((normalizedStats.published_posts / normalizedStats.blog_posts) * 100)
-    : 0;
+  const publishRate =
+    normalizedStats.blog_posts > 0
+      ? Math.round((normalizedStats.published_posts / normalizedStats.blog_posts) * 100)
+      : 0;
 
   const spotlightCards = [
     {
@@ -74,7 +194,10 @@ export default function AdminDashboard() {
     {
       label: 'Inbox Focus',
       value: normalizedStats.unread_messages,
-      hint: normalizedStats.unread_messages > 0 ? 'Unread messages need a response' : 'Inbox is up to date',
+      hint:
+        normalizedStats.unread_messages > 0
+          ? 'Unread messages need a response'
+          : 'Inbox is up to date',
       icon: <FaEnvelope />,
       color: normalizedStats.unread_messages > 0 ? 'pink' : 'cyan',
     },
@@ -89,14 +212,34 @@ export default function AdminDashboard() {
 
   const statCards = [
     { label: 'Total Projects', value: normalizedStats.projects, icon: <FaProjectDiagram />, color: 'accent' },
-    { label: 'Featured Projects', value: normalizedStats.featured_projects, icon: <FaProjectDiagram />, color: 'cyan' },
+    {
+      label: 'Featured Projects',
+      value: normalizedStats.featured_projects,
+      icon: <FaProjectDiagram />,
+      color: 'cyan',
+    },
     { label: 'Skills', value: normalizedStats.skills, icon: <FaCode />, color: 'accent' },
     { label: 'Skill Categories', value: normalizedStats.categories, icon: <FaCode />, color: 'cyan' },
-    { label: 'Experience Entries', value: normalizedStats.experience, icon: <FaBriefcase />, color: 'pink' },
-    { label: 'Education Entries', value: normalizedStats.education, icon: <FaGraduationCap />, color: 'cyan' },
+    {
+      label: 'Experience Entries',
+      value: normalizedStats.experience,
+      icon: <FaBriefcase />,
+      color: 'pink',
+    },
+    {
+      label: 'Education Entries',
+      value: normalizedStats.education,
+      icon: <FaGraduationCap />,
+      color: 'cyan',
+    },
     { label: 'Activities', value: normalizedStats.activities, icon: <FaUsers />, color: 'accent' },
     { label: 'Achievements', value: normalizedStats.achievements, icon: <FaTrophy />, color: 'pink' },
-    { label: 'Certifications', value: normalizedStats.certifications, icon: <FaCertificate />, color: 'cyan' },
+    {
+      label: 'Certifications',
+      value: normalizedStats.certifications,
+      icon: <FaCertificate />,
+      color: 'cyan',
+    },
     { label: 'Blog Posts', value: normalizedStats.blog_posts, icon: <FaBlog />, color: 'accent' },
     { label: 'Published Posts', value: normalizedStats.published_posts, icon: <FaBlog />, color: 'cyan' },
     { label: 'Testimonials', value: normalizedStats.testimonials, icon: <FaQuoteLeft />, color: 'pink' },
@@ -173,7 +316,9 @@ export default function AdminDashboard() {
   const attentionItems = [];
   if (normalizedStats.unread_messages > 0) {
     attentionItems.push({
-      text: `${normalizedStats.unread_messages} unread message${normalizedStats.unread_messages > 1 ? 's' : ''} waiting in inbox.`,
+      text: `${normalizedStats.unread_messages} unread message${
+        normalizedStats.unread_messages > 1 ? 's' : ''
+      } waiting in inbox.`,
       path: '/user/messages',
       action: 'Open messages',
     });
@@ -213,6 +358,83 @@ export default function AdminDashboard() {
     });
   }
 
+  const dashboardSections = {
+    portfolio_metrics: {
+      id: 'portfolio_metrics',
+      title: 'Portfolio Metrics',
+      content: (
+        <div className="admin-stats">
+          {statCards.map((card, i) => (
+            <Motion.div
+              key={card.label}
+              className="admin-stat"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03 }}
+            >
+              <div className="admin-stat__label">
+                <span className={`admin-stat__icon admin-stat__icon--${card.color}`}>{card.icon}</span>
+                {card.label}
+              </div>
+              <div className={`admin-stat__value admin-stat__value--${card.color}`}>{card.value}</div>
+            </Motion.div>
+          ))}
+        </div>
+      ),
+    },
+    quick_actions: {
+      id: 'quick_actions',
+      title: 'Quick Actions',
+      content: (
+        <div className="admin-dashboard__actions">
+          {quickActions.map((action, i) => (
+            <Motion.div
+              key={action.path}
+              className={`admin-dashboard__action-card admin-dashboard__action-card--${action.tone}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.04 }}
+            >
+              <div className="admin-dashboard__action-icon">{action.icon}</div>
+              <div className="admin-dashboard__action-content">
+                <h3>{action.title}</h3>
+                <p>{action.text}</p>
+              </div>
+              <Link to={action.path} className="admin-dashboard__action-link">
+                Open <FaArrowRight />
+              </Link>
+            </Motion.div>
+          ))}
+        </div>
+      ),
+    },
+    needs_attention: {
+      id: 'needs_attention',
+      title: 'Needs Attention',
+      content: (
+        <div className="admin-dashboard__alerts">
+          {attentionItems.map((item, i) => (
+            <Motion.div
+              key={`${item.text}-${i}`}
+              className={`admin-dashboard__alert ${item.positive ? 'admin-dashboard__alert--positive' : ''}`}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.12 + i * 0.05 }}
+            >
+              <div className="admin-dashboard__alert-copy">
+                <FaExclamationCircle />
+                <p>{item.text}</p>
+              </div>
+              <Link to={item.path} className="btn btn-outline btn-sm">
+                {item.action}
+              </Link>
+            </Motion.div>
+          ))}
+        </div>
+      ),
+    },
+  };
+
   return (
     <div className="admin-dashboard">
       <div className="admin-page-header admin-dashboard__header">
@@ -227,7 +449,7 @@ export default function AdminDashboard() {
             <LoadingSkeleton variant="text" />
           </div>
           <div className="admin-stats">
-            {[1, 2, 3, 4, 5, 6].map(i => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="admin-stat">
                 <LoadingSkeleton variant="text" />
                 <LoadingSkeleton variant="title" />
@@ -240,10 +462,14 @@ export default function AdminDashboard() {
           <div className="admin-dashboard__summary glass">
             <div>
               <p className="admin-dashboard__eyebrow">Performance Snapshot</p>
-              <h2 className="admin-dashboard__headline">{totalContentItems} total content items published</h2>
+              <h2 className="admin-dashboard__headline">
+                {totalContentItems} total content items published
+              </h2>
               <p className="admin-dashboard__subtext">
                 {normalizedStats.unread_messages > 0
-                  ? `${normalizedStats.unread_messages} unread message${normalizedStats.unread_messages > 1 ? 's' : ''} still needs attention.`
+                  ? `${normalizedStats.unread_messages} unread message${
+                      normalizedStats.unread_messages > 1 ? 's' : ''
+                    } still needs attention.`
                   : 'No unread messages right now. Response queue is clear.'}
               </p>
             </div>
@@ -267,81 +493,32 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <section className="admin-dashboard__section">
-            <div className="admin-dashboard__section-header">
-              <h2>Portfolio Metrics</h2>
-            </div>
-            <div className="admin-stats">
-              {statCards.map((card, i) => (
-                <Motion.div
-                  key={card.label}
-                  className="admin-stat"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                >
-                  <div className="admin-stat__label">
-                    <span className={`admin-stat__icon admin-stat__icon--${card.color}`}>{card.icon}</span>
-                    {card.label}
-                  </div>
-                  <div className={`admin-stat__value admin-stat__value--${card.color}`}>
-                    {card.value}
-                  </div>
-                </Motion.div>
-              ))}
-            </div>
-          </section>
+          <p className="admin-dashboard__reorder-hint">
+            Drag a section handle to reorder dashboard blocks.
+            <span>{isSavingOrder ? ' Saving order...' : ' Order syncs to your account.'}</span>
+          </p>
 
-          <section className="admin-dashboard__section">
-            <div className="admin-dashboard__section-header">
-              <h2>Quick Actions</h2>
-            </div>
-            <div className="admin-dashboard__actions">
-              {quickActions.map((action, i) => (
-                <Motion.div
-                  key={action.path}
-                  className={`admin-dashboard__action-card admin-dashboard__action-card--${action.tone}`}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + i * 0.04 }}
-                >
-                  <div className="admin-dashboard__action-icon">{action.icon}</div>
-                  <div className="admin-dashboard__action-content">
-                    <h3>{action.title}</h3>
-                    <p>{action.text}</p>
-                  </div>
-                  <Link to={action.path} className="admin-dashboard__action-link">
-                    Open <FaArrowRight />
-                  </Link>
-                </Motion.div>
-              ))}
-            </div>
-          </section>
+          <Reorder.Group
+            axis="y"
+            values={sectionOrder}
+            onReorder={handleSectionReorder}
+            className="admin-dashboard__sections"
+          >
+            {sectionOrder.map((sectionId) => {
+              const section = dashboardSections[sectionId];
+              if (!section) {
+                return null;
+              }
 
-          <section className="admin-dashboard__section">
-            <div className="admin-dashboard__section-header">
-              <h2>Needs Attention</h2>
-            </div>
-            <div className="admin-dashboard__alerts">
-              {attentionItems.map((item, i) => (
-                <Motion.div
-                  key={`${item.text}-${i}`}
-                  className={`admin-dashboard__alert ${item.positive ? 'admin-dashboard__alert--positive' : ''}`}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.12 + i * 0.05 }}
-                >
-                  <div className="admin-dashboard__alert-copy">
-                    <FaExclamationCircle />
-                    <p>{item.text}</p>
-                  </div>
-                  <Link to={item.path} className="btn btn-outline btn-sm">
-                    {item.action}
-                  </Link>
-                </Motion.div>
-              ))}
-            </div>
-          </section>
+              return (
+                <SortableDashboardSection
+                  key={section.id}
+                  section={section}
+                  onDragEnd={handleSectionDragEnd}
+                />
+              );
+            })}
+          </Reorder.Group>
         </>
       )}
     </div>

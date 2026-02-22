@@ -18,6 +18,7 @@ import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import FormField from '../../components/FormField';
+import FileUploader from '../../components/FileUploader';
 
 const EMPTY_TESTIMONIAL = {
   client_name: '',
@@ -297,6 +298,12 @@ export default function AdminTestimonials() {
                   onChange={handleChange}
                   icon={FaImage}
                   placeholder="https://example.com/avatar.jpg"
+                />
+                <FileUploader
+                  label="Upload Client Avatar"
+                  accept="image/*"
+                  buttonText="Upload Avatar"
+                  onUploaded={(url) => setFormData((prev) => ({ ...prev, client_avatar: url }))}
                 />
 
                 {formData.client_avatar && (

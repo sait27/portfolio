@@ -191,6 +191,14 @@
   gap: 0.85rem;
 }
 
+#features,
+#benefits,
+#audience,
+#how-it-works,
+#faq {
+  scroll-margin-top: 6.5rem;
+}
+
 .landing-features,
 .landing-proof,
 .landing-audience,

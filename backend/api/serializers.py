@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.urls import reverse
 from .models import (
     Profile,
     SkillCategory,
@@ -13,6 +14,8 @@ from .models import (
     BlogPost,
     Testimonial,
 )
+
+DASHBOARD_SECTION_IDS = ['portfolio_metrics', 'quick_actions', 'needs_attention']
 
 
 # ─── Skill Serializers ──────────────────────────────────────────────────────
@@ -42,10 +45,34 @@ class SkillCategorySerializer(serializers.ModelSerializer):
 # ─── Profile Serializer ────────────────────────────────────────────────────
 
 class ProfileSerializer(serializers.ModelSerializer):
+    resume_download_url = serializers.SerializerMethodField(read_only=True)
+
+    def validate_dashboard_section_order(self, value):
+        if value in (None, []):
+            return []
+        if not isinstance(value, list):
+            raise serializers.ValidationError('dashboard_section_order must be a list.')
+        if len(value) != len(DASHBOARD_SECTION_IDS):
+            raise serializers.ValidationError('dashboard_section_order must contain all dashboard sections.')
+        if len(set(value)) != len(value):
+            raise serializers.ValidationError('dashboard_section_order cannot contain duplicates.')
+        if any(section_id not in DASHBOARD_SECTION_IDS for section_id in value):
+            raise serializers.ValidationError('dashboard_section_order contains unsupported section ids.')
+        return value
+
+    def get_resume_download_url(self, obj):
+        if not obj.resume or not obj.username_slug:
+            return ''
+        resume_path = reverse('public-resume', kwargs={'username': obj.username_slug})
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(resume_path)
+        return resume_path
+
     class Meta:
         model = Profile
         fields = [
-            'id', 'username_slug', 'full_name', 'tagline', 'bio', 'avatar', 'resume',
+            'id', 'username_slug', 'full_name', 'tagline', 'bio', 'avatar', 'resume', 'resume_download_url',
             'github_url', 'linkedin_url', 'twitter_url', 'email',
             'show_hero', 'show_about', 'show_highlights', 'show_skills',
             'show_projects', 'show_experience', 'show_education', 'show_activities',
@@ -54,7 +81,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'show_nav_about', 'show_nav_skills', 'show_nav_projects',
             'show_nav_experience', 'show_nav_education', 'show_nav_activities',
             'show_nav_achievements', 'show_nav_certifications', 'show_nav_blog',
-            'show_nav_testimonials', 'show_nav_contact',
+            'show_nav_testimonials', 'show_nav_contact', 'dashboard_section_order',
             'updated_at'
         ]
         extra_kwargs = {

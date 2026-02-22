@@ -1,4 +1,9 @@
-from django.contrib.auth.models import User
+import os
+import re
+import time
+from urllib.parse import urlparse
+
+from django.http import HttpResponseRedirect
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -44,6 +49,50 @@ def get_user_by_username(username):
         return None
 
 
+_CLOUDINARY_VERSION_RE = re.compile(r'^v\d+$')
+
+
+def _is_public_http_url(value):
+    parsed = urlparse(value)
+    return parsed.scheme in {'http', 'https'} and bool(parsed.netloc)
+
+
+def _extract_cloudinary_asset_details(asset_url):
+    parsed = urlparse(asset_url)
+    if parsed.netloc != 'res.cloudinary.com':
+        return None
+
+    path_parts = [part for part in parsed.path.split('/') if part]
+    if len(path_parts) < 5:
+        return None
+
+    resource_type = path_parts[1]
+    delivery_type = path_parts[2]
+    version_index = next(
+        (index for index, part in enumerate(path_parts) if _CLOUDINARY_VERSION_RE.match(part)),
+        None,
+    )
+    if version_index is None or version_index >= len(path_parts) - 1:
+        return None
+
+    public_id_parts = path_parts[version_index + 1:]
+    file_name = public_id_parts[-1]
+    base_name, extension = os.path.splitext(file_name)
+    if resource_type != 'raw' and base_name:
+        public_id_parts[-1] = base_name
+
+    public_id = '/'.join(public_id_parts).strip('/')
+    if not public_id:
+        return None
+
+    return {
+        'public_id': public_id,
+        'resource_type': resource_type,
+        'delivery_type': delivery_type,
+        'format': extension.lstrip('.').lower() if extension else '',
+    }
+
+
 # ─── Profile ────────────────────────────────────────────────────────────────
 
 class PublicProfileView(APIView):
@@ -55,8 +104,64 @@ class PublicProfileView(APIView):
         user = get_user_by_username(username)
         if not user:
             return Response({'detail': 'Portfolio not found.'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ProfileSerializer(user.profile)
+        serializer = ProfileSerializer(user.profile, context={'request': request})
         return Response(serializer.data)
+
+
+class PublicResumeView(APIView):
+    """
+    GET /api/u/{username}/resume/
+    Redirects to a resume download URL. Uses signed Cloudinary download links
+    when resume assets are hosted on Cloudinary.
+    """
+    def get(self, request, username):
+        user = get_user_by_username(username)
+        if not user:
+            return Response({'detail': 'Portfolio not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        resume_url = (getattr(user.profile, 'resume', '') or '').strip()
+        if not resume_url:
+            return Response({'detail': 'Resume not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if not _is_public_http_url(resume_url):
+            return Response({'detail': 'Resume URL is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
+        parsed_resume_url = urlparse(resume_url)
+        if parsed_resume_url.path == request.path:
+            return Response({'detail': 'Resume URL is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cloudinary_asset = _extract_cloudinary_asset_details(resume_url)
+        if cloudinary_asset:
+            try:
+                import cloudinary
+                import cloudinary.utils
+
+                cloudinary_config = cloudinary.config()
+                if not cloudinary_config.api_key or not cloudinary_config.api_secret:
+                    return Response(
+                        {
+                            'detail': (
+                                'Resume delivery is not configured on the server. '
+                                'Set CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.'
+                            )
+                        },
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    )
+
+                signed_download_url = cloudinary.utils.private_download_url(
+                    cloudinary_asset['public_id'],
+                    cloudinary_asset['format'] or 'pdf',
+                    resource_type=cloudinary_asset['resource_type'],
+                    type=cloudinary_asset['delivery_type'],
+                    attachment=True,
+                    secure=True,
+                    expires_at=int(time.time()) + (10 * 60),
+                )
+                if _is_public_http_url(signed_download_url):
+                    return HttpResponseRedirect(signed_download_url)
+            except Exception:
+                # Fall back to the stored URL when signed URL generation fails.
+                pass
+
+        return HttpResponseRedirect(resume_url)
 
 
 # ─── Skills ─────────────────────────────────────────────────────────────────

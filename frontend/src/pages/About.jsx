@@ -235,11 +235,11 @@ export default function About() {
         <meta name="description" content="Learn about my skills, experience, and what drives me as a developer." />
       </Helmet>
       <Navbar />
-      <div style={{ paddingTop: '5rem' }}>
+      <main id="main-content" style={{ paddingTop: '5rem' }}>
         <ProfileSection />
         <SkillsSection />
         <ExperienceTimeline />
-      </div>
+      </main>
       <Footer />
     </PageTransition>
   );

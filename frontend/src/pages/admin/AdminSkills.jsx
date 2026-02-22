@@ -6,6 +6,7 @@ import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import FormField from '../../components/FormField';
 import SkillIcon from '../../components/SkillIcon';
+import FileUploader from '../../components/FileUploader';
 
 const EMPTY_CATEGORY = { name: '', order: 0 };
 const EMPTY_SKILL = { name: '', icon: '', category: '', order: 0 };
@@ -409,6 +410,12 @@ export default function AdminSkills() {
                     icon={FaSort}
                   />
                 </div>
+                <FileUploader
+                  label="Upload Skill Icon"
+                  accept="image/*,.svg,image/svg+xml"
+                  buttonText="Upload Icon"
+                  onUploaded={(url) => setSkillForm((prev) => ({ ...prev, icon: url }))}
+                />
 
                 <div className="form-actions">
                   <button type="button" className="btn btn-outline btn-sm" onClick={closeSkillForm}>

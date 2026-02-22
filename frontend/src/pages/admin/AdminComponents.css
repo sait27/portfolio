@@ -134,6 +134,10 @@
   gap: 0.8rem;
 }
 
+.admin-form__row > * {
+  min-width: 0;
+}
+
 .admin-form-modal h2,
 .admin-form h3 {
   font-size: var(--font-size-xl);
@@ -413,8 +417,64 @@
   gap: 0.8rem;
 }
 
+.admin-dashboard__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-dashboard__section-shell {
+  border-radius: var(--radius-lg);
+  list-style: none;
+  transition: box-shadow var(--transition-fast), opacity var(--transition-fast);
+}
+
+.admin-dashboard__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
 .admin-dashboard__section-header h2 {
   font-size: var(--font-size-lg);
+}
+
+.admin-dashboard__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: grab;
+  touch-action: none;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.admin-dashboard__drag-handle:hover {
+  border-color: var(--border-glass-hover);
+  color: #9ff1e3;
+}
+
+.admin-dashboard__drag-handle:active {
+  cursor: grabbing;
+}
+
+.admin-dashboard__reorder-hint {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  margin-top: -0.25rem;
+}
+
+.admin-dashboard__reorder-hint span {
+  color: #9ff1e3;
 }
 
 .admin-dashboard__actions {
@@ -901,6 +961,53 @@
 .admin-media-preview img {
   width: 100%;
   display: block;
+}
+
+.admin-upload-field {
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+.admin-upload-field__controls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem 0.55rem;
+  min-width: 0;
+}
+
+.admin-upload-field__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-upload-field__trigger {
+  white-space: nowrap;
+}
+
+.admin-upload-field__trigger--disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.admin-upload-field__file {
+  grid-column: 1 / -1;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-upload-field__hint {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
 }
 
 .admin-content-card--testimonial {

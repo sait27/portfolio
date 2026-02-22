@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import FormField from '../../components/FormField';
+import FileUploader from '../../components/FileUploader';
 
 const EMPTY_POST = {
   title: '',
@@ -292,6 +293,12 @@ export default function AdminBlog() {
                     hint="Comma separated"
                   />
                 </div>
+                <FileUploader
+                  label="Upload Thumbnail"
+                  accept="image/*"
+                  buttonText="Upload Image"
+                  onUploaded={(url) => setFormData((prev) => ({ ...prev, thumbnail: url }))}
+                />
 
                 {formData.thumbnail && (
                   <div className="admin-media-preview">

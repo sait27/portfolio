@@ -5,7 +5,7 @@ import './NotFound.css';
 export default function NotFound() {
   return (
     <PageTransition>
-      <div className="notfound">
+      <main id="main-content" className="notfound">
         <div className="notfound__content">
           <h1 className="notfound__code">
             <span className="gradient-text">404</span>
@@ -18,7 +18,7 @@ export default function NotFound() {
             Back to Home
           </Link>
         </div>
-      </div>
+      </main>
     </PageTransition>
   );
 }

@@ -85,7 +85,7 @@ export default function Register() {
       <Helmet>
         <title>Create Account | PortfolioHub</title>
       </Helmet>
-      <div className="auth-page">
+      <main id="main-content" className="auth-page">
         <motion.div
           className="auth-card glass"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -226,7 +226,7 @@ export default function Register() {
             <Link to="/login">Sign in</Link>
           </div>
         </motion.div>
-      </div>
+      </main>
     </>
   );
 }

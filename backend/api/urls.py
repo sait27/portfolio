@@ -24,6 +24,7 @@ urlpatterns = [
 
     # ── Public Portfolio Endpoints (by username) ─────────────────────────
     path('u/<str:username>/profile/', views.PublicProfileView.as_view(), name='public-profile'),
+    path('u/<str:username>/resume/', views.PublicResumeView.as_view(), name='public-resume'),
     path('u/<str:username>/skills/', views.PublicSkillListView.as_view(), name='public-skills'),
     path('u/<str:username>/projects/', views.PublicProjectListView.as_view(), name='public-projects'),
     path('u/<str:username>/projects/<slug:slug>/', views.PublicProjectDetailView.as_view(), name='public-project-detail'),
@@ -115,3 +116,4 @@ urlpatterns = [
     path('dashboard/testimonials/', admin_views.DashboardTestimonialListCreateView.as_view(), name='dashboard-testimonials'),
     path('dashboard/testimonials/<int:pk>/', admin_views.DashboardTestimonialDetailView.as_view(), name='dashboard-testimonial-detail'),
 ]
+

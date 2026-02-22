@@ -8,6 +8,7 @@ import './Footer.css';
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const [profile, setProfile] = useState(null);
+  const resumeUrl = profile?.resume_download_url || profile?.resume || '';
 
   useEffect(() => {
     publicApi.getProfile().then(res => setProfile(res.data)).catch(() => {});
@@ -36,9 +37,9 @@ export default function Footer() {
               <li><Link to="/about">About</Link></li>
               <li><Link to="/projects">Projects</Link></li>
               <li><Link to="/contact">Contact</Link></li>
-              {profile?.resume && (
+              {resumeUrl && (
                 <li>
-                  <a href={profile.resume} target="_blank" rel="noopener noreferrer">
+                  <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
                     <HiDownload /> Resume
                   </a>
                 </li>

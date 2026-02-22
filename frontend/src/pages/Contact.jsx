@@ -108,7 +108,7 @@ export default function Contact() {
 
       <Navbar />
 
-      <div style={{ paddingTop: '5rem' }}>
+      <main id="main-content" style={{ paddingTop: '5rem' }}>
         <SectionWrapper>
           <div className="contact__grid">
             {/* Info Side */}
@@ -261,7 +261,7 @@ export default function Contact() {
             </motion.div>
           </div>
         </SectionWrapper>
-      </div>
+      </main>
 
       <Footer />
     </PageTransition>

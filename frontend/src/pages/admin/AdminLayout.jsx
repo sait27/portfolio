@@ -106,7 +106,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="admin-main">
+      <main id="main-content" className="admin-main">
         <Outlet />
       </main>
     </div>

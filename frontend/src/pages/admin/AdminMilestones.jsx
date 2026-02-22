@@ -20,6 +20,7 @@ import toast from 'react-hot-toast';
 import { userApi } from '../../api/client';
 import FormField from '../../components/FormField';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import FileUploader from '../../components/FileUploader';
 
 const SECTION_ORDER = ['education', 'activities', 'achievements', 'certifications'];
 
@@ -491,6 +492,12 @@ export default function AdminMilestones() {
                       <FormField label="Date" name="achieved_on" type="date" value={formData.achieved_on || ''} onChange={handleChange} icon={FaCalendarAlt} />
                       <FormField label="Proof URL" name="proof_url" value={formData.proof_url} onChange={handleChange} icon={FaExternalLinkAlt} />
                     </div>
+                    <FileUploader
+                      label="Upload Proof File"
+                      accept="image/*,.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      buttonText="Upload Proof"
+                      onUploaded={(url) => setFormData((prev) => ({ ...prev, proof_url: url }))}
+                    />
                     <FormField label="Description" name="description" type="textarea" value={formData.description} onChange={handleChange} rows={4} />
                   </>
                 )}
@@ -509,6 +516,12 @@ export default function AdminMilestones() {
                       <FormField label="Credential ID" name="credential_id" value={formData.credential_id} onChange={handleChange} icon={FaIdCard} />
                       <FormField label="Credential URL" name="credential_url" value={formData.credential_url} onChange={handleChange} icon={FaExternalLinkAlt} />
                     </div>
+                    <FileUploader
+                      label="Upload Credential File"
+                      accept="image/*,.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      buttonText="Upload Credential"
+                      onUploaded={(url) => setFormData((prev) => ({ ...prev, credential_url: url }))}
+                    />
                     <div className="admin-highlight-block">
                       <label className="form-label" htmlFor="cert-skill-input">Skills / Tags</label>
                       <div className="admin-highlight-input">
