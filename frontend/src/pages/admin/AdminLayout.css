@@ -118,6 +118,7 @@
   margin-left: 272px;
   padding: 1.6rem;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .admin-page-header {

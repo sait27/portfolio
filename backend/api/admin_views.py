@@ -1,4 +1,9 @@
+from datetime import timedelta
+
+import requests
+from django.utils import timezone
 from rest_framework import generics, status
+from rest_framework.exceptions import Throttled
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,6 +39,8 @@ from .serializers import (
     BlogPostDetailSerializer,
     TestimonialSerializer,
 )
+from .throttles import UploadBurstRateThrottle, UploadDailyRateThrottle
+from .resume_autofill import apply_parsed_resume, parse_resume_from_url
 
 
 # ─── Dashboard Stats ───────────────────────────────────────────────────────
@@ -85,6 +92,82 @@ class DashboardProfileView(generics.RetrieveUpdateAPIView):
             }
         )
         return profile
+
+
+class DashboardResumeAutofillView(APIView):
+    """
+    POST /api/user/resume/autofill/
+    Parse the stored resume PDF and auto-fill relevant portfolio sections.
+    """
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UploadBurstRateThrottle, UploadDailyRateThrottle]
+
+    def post(self, request):
+        overwrite_existing = bool(request.data.get('overwrite_existing', False))
+        preview_only = bool(request.data.get('preview_only', False))
+
+        profile, _ = Profile.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'full_name': request.user.username,
+                'email': request.user.email,
+                'username_slug': request.user.username,
+            },
+        )
+        resume_url = (profile.resume or '').strip()
+        if not resume_url:
+            return Response(
+                {'detail': 'Please upload a resume first.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            parsed = parse_resume_from_url(resume_url)
+        except requests.RequestException:
+            return Response(
+                {'detail': 'Unable to fetch resume file. Please re-upload and try again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except RuntimeError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(
+                {'detail': 'Resume parsing failed. Please use a clean text-based PDF and try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        parsed_data = parsed.to_dict()
+        if preview_only:
+            return Response(
+                {
+                    'detail': 'Resume parsed successfully.',
+                    'parsed': parsed_data,
+                }
+            )
+
+        summary = apply_parsed_resume(
+            request.user,
+            profile,
+            parsed,
+            overwrite_existing=overwrite_existing,
+        )
+        return Response(
+            {
+                'detail': 'Resume parsed and sections updated.',
+                'summary': summary,
+                'parsed': {
+                    'skills': parsed_data.get('skills', [])[:20],
+                    'languages': parsed_data.get('languages', [])[:20],
+                    'projects': parsed_data.get('projects', [])[:5],
+                    'experience': parsed_data.get('experience', [])[:5],
+                    'education': parsed_data.get('education', [])[:5],
+                    'activities': parsed_data.get('activities', [])[:5],
+                    'certifications': parsed_data.get('certifications', [])[:5],
+                    'achievements': parsed_data.get('achievements', [])[:5],
+                    'section_report': parsed_data.get('section_report', {}),
+                },
+            }
+        )
 
 
 # ─── Dashboard Projects CRUD ──────────────────────────────────────────────
@@ -364,7 +447,36 @@ class DashboardUploadView(APIView):
     Upload a file to Cloudinary. Returns the secure URL.
     """
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UploadBurstRateThrottle, UploadDailyRateThrottle]
     parser_classes = [MultiPartParser, FormParser]
+
+    def check_throttles(self, request):
+        throttle_durations = []
+        failed_scopes = []
+        for throttle in self.get_throttles():
+            if not throttle.allow_request(request, self):
+                throttle_durations.append(throttle.wait())
+                scope = getattr(throttle, 'scope', None)
+                if scope:
+                    failed_scopes.append(scope)
+        if throttle_durations:
+            durations = [duration for duration in throttle_durations if duration is not None]
+            duration = max(durations, default=None)
+            self._failed_upload_throttle_scopes = failed_scopes
+            self.throttled(request, duration)
+
+    def throttled(self, request, wait):
+        wait_seconds = int(wait) if wait else 0
+        retry_at = timezone.localtime(timezone.now() + timedelta(seconds=wait_seconds)) if wait_seconds > 0 else None
+        retry_at_text = retry_at.strftime('%d %b %Y, %I:%M %p %Z') if retry_at else 'later'
+        failed_scopes = set(getattr(self, '_failed_upload_throttle_scopes', []))
+
+        if 'upload_daily' in failed_scopes:
+            detail = f'Daily upload limit reached. Try tomorrow at {retry_at_text}.'
+        else:
+            detail = f'Upload limit reached. Please upload after one hour. Next upload time: {retry_at_text}.'
+
+        raise Throttled(wait=wait, detail=detail)
 
     def post(self, request):
         file = request.FILES.get('file')
@@ -481,3 +593,4 @@ class DashboardTestimonialDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Testimonial.objects.filter(user=self.request.user)
+

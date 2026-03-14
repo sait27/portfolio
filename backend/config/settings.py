@@ -129,6 +129,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/hour',
         'contact': '3/hour',       # Rate limit for contact form
+        'upload_burst': config('UPLOAD_BURST_RATE', default='3/hour'),  # Per authenticated user
+        'upload_daily': config('UPLOAD_DAILY_RATE', default='25/day'),  # Per authenticated user
     },
 }
 

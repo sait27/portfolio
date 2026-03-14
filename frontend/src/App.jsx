@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 import ScrollProgress from './components/ScrollProgress';
@@ -9,12 +9,6 @@ import ImpersonationBanner from './components/ImpersonationBanner';
 
 // Public / Marketing
 import Landing from './pages/Landing';
-import About from './pages/About';
-import Projects from './pages/Projects';
-import Contact from './pages/Contact';
-import Blog from './pages/Blog';
-import BlogDetail from './pages/BlogDetail';
-import Testimonials from './pages/Testimonials';
 import PublicPortfolio from './pages/PublicPortfolio';
 import NotFound from './pages/NotFound';
 
@@ -41,6 +35,19 @@ import ProtectedRoute from './pages/admin/ProtectedRoute';
 // User Dashboard CSS
 import './pages/admin/AdminComponents.css';
 
+/**
+ * Redirects old marketing portfolio routes to the logged-in user's
+ * public portfolio, or to the landing page if not authenticated.
+ */
+function PortfolioRedirect() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (isAuthenticated && user?.username) {
+    return <Navigate to={`/${user.username}`} replace />;
+  }
+  return <Navigate to="/" replace />;
+}
+
 export default function App() {
   return (
     <HelmetProvider>
@@ -55,12 +62,14 @@ export default function App() {
             <Routes>
               {/* Marketing */}
               <Route path="/" element={<Landing />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:slug" element={<BlogDetail />} />
-              <Route path="/testimonials" element={<Testimonials />} />
+
+              {/* Redirect old marketing portfolio routes to user's portfolio */}
+              <Route path="/about" element={<PortfolioRedirect />} />
+              <Route path="/projects" element={<PortfolioRedirect />} />
+              <Route path="/contact" element={<PortfolioRedirect />} />
+              <Route path="/blog" element={<PortfolioRedirect />} />
+              <Route path="/blog/:slug" element={<PortfolioRedirect />} />
+              <Route path="/testimonials" element={<PortfolioRedirect />} />
 
               {/* Auth */}
               <Route path="/login" element={<Login />} />

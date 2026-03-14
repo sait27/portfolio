@@ -82,6 +82,21 @@ const DEFAULT_NAV_VISIBILITY = NAV_VISIBILITY_OPTIONS.reduce((accumulator, optio
   return accumulator;
 }, {});
 
+const EDITABLE_PROFILE_KEYS = [
+  ...PROFILE_KEYS,
+  ...SECTION_VISIBILITY_OPTIONS.map((option) => option.key),
+  ...NAV_VISIBILITY_OPTIONS.map((option) => option.key),
+];
+
+const PROFILE_SECTION_LINKS = [
+  { id: 'profile-basics', label: 'Basics', icon: FaUser },
+  { id: 'profile-about', label: 'About', icon: FaInfoCircle },
+  { id: 'profile-assets', label: 'Assets', icon: FaImage },
+  { id: 'profile-social', label: 'Social', icon: FaLinkedin },
+  { id: 'profile-section-controls', label: 'Sections', icon: FaProjectDiagram },
+  { id: 'profile-navbar-controls', label: 'Navbar', icon: FaLayerGroup },
+];
+
 const filledCount = (profile) =>
   PROFILE_KEYS.filter((key) => {
     const value = profile?.[key];
@@ -90,16 +105,60 @@ const filledCount = (profile) =>
 
 export default function AdminProfile() {
   const [profile, setProfile] = useState(null);
+  const [savedProfileSnapshot, setSavedProfileSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingAsset, setIsSavingAsset] = useState(false);
+  const [isExtractingResume, setIsExtractingResume] = useState(false);
+  const [isSavingResumeExtract, setIsSavingResumeExtract] = useState(false);
+  const [overwriteExtractOnSave, setOverwriteExtractOnSave] = useState(false);
+  const [resumePreview, setResumePreview] = useState(null);
   const resumeUrl = profile?.resume_download_url || profile?.resume || '';
+
+  const normalizeProfileForCompare = (value) => {
+    if (!value) return null;
+    const normalized = {};
+    EDITABLE_PROFILE_KEYS.forEach((key) => {
+      const raw = value[key];
+      if (typeof raw === 'string') {
+        normalized[key] = raw.trim();
+      } else if (typeof raw === 'boolean') {
+        normalized[key] = raw;
+      } else if (raw === undefined || raw === null) {
+        normalized[key] = '';
+      } else {
+        normalized[key] = raw;
+      }
+    });
+    return normalized;
+  };
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!profile || !savedProfileSnapshot) return false;
+    return JSON.stringify(normalizeProfileForCompare(profile))
+      !== JSON.stringify(normalizeProfileForCompare(savedProfileSnapshot));
+  }, [profile, savedProfileSnapshot]);
 
   useEffect(() => {
     userApi.getProfile()
-      .then((response) => setProfile({ ...DEFAULT_SECTION_VISIBILITY, ...DEFAULT_NAV_VISIBILITY, ...response.data }))
+      .then((response) => {
+        const merged = { ...DEFAULT_SECTION_VISIBILITY, ...DEFAULT_NAV_VISIBILITY, ...response.data };
+        setProfile(merged);
+        setSavedProfileSnapshot(merged);
+      })
       .catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (!hasUnsavedChanges || isSubmitting) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, isSubmitting]);
 
   const completion = useMemo(() => {
     const count = filledCount(profile);
@@ -118,6 +177,23 @@ export default function AdminProfile() {
     () => NAV_VISIBILITY_OPTIONS.filter((option) => profile?.[option.key] !== false).length,
     [profile]
   );
+  const previewStats = useMemo(() => ({
+    skills: resumePreview?.skills?.length || 0,
+    languages: resumePreview?.languages?.length || 0,
+    projects: resumePreview?.projects?.length || 0,
+    experience: resumePreview?.experience?.length || 0,
+    education: resumePreview?.education?.length || 0,
+    activities: resumePreview?.activities?.length || 0,
+    certifications: resumePreview?.certifications?.length || 0,
+    achievements: resumePreview?.achievements?.length || 0,
+  }), [resumePreview]);
+
+  const formatDateLabel = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  };
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -126,9 +202,16 @@ export default function AdminProfile() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!hasUnsavedChanges) {
+      toast('No changes to save.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await userApi.updateProfile(profile);
+      const response = await userApi.updateProfile(profile);
+      const merged = { ...profile, ...(response?.data || {}) };
+      setProfile(merged);
+      setSavedProfileSnapshot(merged);
       toast.success('Profile updated');
     } catch (error) {
       const errors = error.response?.data;
@@ -139,6 +222,98 @@ export default function AdminProfile() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const persistUploadedAsset = async (field, url) => {
+    setProfile((prev) => ({ ...(prev || {}), [field]: url }));
+    if (field === 'resume') {
+      setResumePreview(null);
+    }
+    setIsSavingAsset(true);
+    try {
+      const response = await userApi.patchProfile({ [field]: url });
+      setProfile((prev) => {
+        const merged = { ...(prev || {}), ...(response?.data || {}), [field]: url };
+        setSavedProfileSnapshot(merged);
+        return merged;
+      });
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      toast.error(detail || `Uploaded ${field}, but failed to save profile.`);
+    } finally {
+      setIsSavingAsset(false);
+    }
+  };
+
+  const handleResumeExtractPreview = async () => {
+    if (!profile?.resume) {
+      toast.error('Upload resume first, then extract preview.');
+      return;
+    }
+    setIsExtractingResume(true);
+    try {
+      const response = await userApi.autofillResume({ preview_only: true });
+      const parsed = response?.data?.parsed;
+      if (!parsed) {
+        toast.error('Resume was parsed, but no preview data was returned.');
+        return;
+      }
+      setResumePreview(parsed);
+      toast.success(response?.data?.detail || 'Resume extracted for preview.');
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      toast.error(detail || 'Resume extraction failed.');
+    } finally {
+      setIsExtractingResume(false);
+    }
+  };
+
+  const handleSaveExtractedResume = async () => {
+    if (!profile?.resume) {
+      toast.error('Upload resume first, then extract preview.');
+      return;
+    }
+    if (!resumePreview) {
+      toast.error('Extract preview first, then save.');
+      return;
+    }
+    setIsSavingResumeExtract(true);
+    try {
+      const response = await userApi.autofillResume({
+        overwrite_existing: overwriteExtractOnSave,
+        preview_only: false,
+      });
+      const summary = response?.data?.summary || {};
+      const detail = response?.data?.detail || 'Extracted resume data saved.';
+      toast.success(
+        `${detail} Added: ${summary.skills_created || 0} skills, `
+        + `${summary.languages_created || 0} languages, `
+        + `${summary.projects_created || 0} projects, `
+        + `${summary.experience_created || 0} experience, `
+        + `${summary.education_created || 0} education, `
+        + `${summary.activities_created || 0} activities, `
+        + `${summary.certifications_created || 0} certifications, `
+        + `${summary.achievements_created || 0} achievements.`
+      );
+      const updatedProfile = await userApi.getProfile();
+      setProfile((prev) => {
+        const merged = { ...(prev || {}), ...(updatedProfile?.data || {}) };
+        setSavedProfileSnapshot(merged);
+        return merged;
+      });
+      setResumePreview(null);
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      toast.error(detail || 'Failed to save extracted resume data.');
+    } finally {
+      setIsSavingResumeExtract(false);
+    }
+  };
+
+  const handleResetChanges = () => {
+    if (!savedProfileSnapshot) return;
+    setProfile(savedProfileSnapshot);
+    toast.success('Unsaved changes were reset.');
   };
 
   if (loading) {
@@ -160,6 +335,246 @@ export default function AdminProfile() {
           <p>Keep your public identity current and complete.</p>
         </div>
       </div>
+
+      <div className="admin-profile-tools glass">
+        <div className="admin-profile-tools__links">
+          {PROFILE_SECTION_LINKS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <a key={item.id} href={`#${item.id}`} className="chip">
+                <Icon />
+                {item.label}
+              </a>
+            );
+          })}
+        </div>
+        <div className="admin-profile-tools__state">
+          <span className={`chip ${hasUnsavedChanges ? '' : 'chip-active'}`}>
+            {hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
+          </span>
+          {hasUnsavedChanges && (
+            <button type="button" className="btn btn-outline btn-sm" onClick={handleResetChanges}>
+              Reset Changes
+            </button>
+          )}
+        </div>
+      </div>
+
+      <section className="admin-resume-extract glass">
+        <div className="admin-resume-extract__header">
+          <div>
+            <p className="admin-dashboard__eyebrow">Resume Extraction</p>
+            <h2 className="admin-dashboard__headline">Preview Before Save</h2>
+            <p className="admin-dashboard__subtext">
+              Extracted data stays temporary until you click Save Extracted Data.
+            </p>
+          </div>
+          <div className="admin-resume-extract__actions">
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={handleResumeExtractPreview}
+              disabled={!profile?.resume || isExtractingResume || isSavingResumeExtract}
+            >
+              <FaBolt /> {isExtractingResume ? 'Extracting...' : 'Extract Resume'}
+            </button>
+            <label className="admin-resume-extract__overwrite">
+              <input
+                type="checkbox"
+                checked={overwriteExtractOnSave}
+                onChange={(event) => setOverwriteExtractOnSave(event.target.checked)}
+                disabled={isExtractingResume || isSavingResumeExtract}
+              />
+              Overwrite existing records on save
+            </label>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={handleSaveExtractedResume}
+              disabled={!resumePreview || isExtractingResume || isSavingResumeExtract}
+            >
+              <FaSave /> {isSavingResumeExtract ? 'Saving Extract...' : 'Save Extracted Data'}
+            </button>
+          </div>
+        </div>
+
+        {!profile?.resume && (
+          <p className="admin-profile-section__hint">Upload a resume in Assets first to enable extraction.</p>
+        )}
+
+        {resumePreview && (
+          <div className="admin-resume-extract__preview">
+            <div className="admin-resume-extract__chips">
+              <span className="chip chip-active">{previewStats.skills} skills</span>
+              <span className="chip chip-active">{previewStats.languages} languages</span>
+              <span className="chip chip-active">{previewStats.projects} projects</span>
+              <span className="chip chip-active">{previewStats.experience} experience</span>
+              <span className="chip chip-active">{previewStats.education} education</span>
+              <span className="chip chip-active">{previewStats.activities} activities</span>
+              <span className="chip chip-active">{previewStats.certifications} certifications</span>
+              <span className="chip chip-active">{previewStats.achievements} achievements</span>
+            </div>
+
+            {(resumePreview.full_name || resumePreview.tagline || resumePreview.summary_text) && (
+              <div className="admin-resume-extract__block">
+                <h3>Profile Preview</h3>
+                {resumePreview.full_name && <p><strong>Name:</strong> {resumePreview.full_name}</p>}
+                {resumePreview.tagline && <p><strong>Tagline:</strong> {resumePreview.tagline}</p>}
+                {resumePreview?.contact?.phone && <p><strong>Phone:</strong> {resumePreview.contact.phone}</p>}
+                {resumePreview?.contact?.email && <p><strong>Email:</strong> {resumePreview.contact.email}</p>}
+                {resumePreview?.contact?.linkedin_url && <p><strong>LinkedIn:</strong> {resumePreview.contact.linkedin_url}</p>}
+                {resumePreview?.contact?.github_url && <p><strong>GitHub:</strong> {resumePreview.contact.github_url}</p>}
+                {resumePreview.summary_text && <p className="admin-resume-extract__summary">{resumePreview.summary_text}</p>}
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.skills) && resumePreview.skills.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Skills Preview</h3>
+                <div className="admin-resume-extract__chips">
+                  {resumePreview.skills.slice(0, 20).map((skill) => (
+                    <span key={skill} className="chip">{skill}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.languages) && resumePreview.languages.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Languages Preview</h3>
+                <div className="admin-resume-extract__chips">
+                  {resumePreview.languages.slice(0, 20).map((language) => (
+                    <span key={language} className="chip">{language}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.experience) && resumePreview.experience.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Experience Preview</h3>
+                <div className="admin-resume-extract__list">
+                  {resumePreview.experience.slice(0, 4).map((item, index) => (
+                    <article key={`${item.role}-${item.company}-${index}`} className="admin-resume-extract__item">
+                      <strong>{item.role || 'Role'}</strong>
+                      <p>{item.company || 'Company'}</p>
+                      <small>
+                        {formatDateLabel(item.start_date) || 'Start'} - {item.is_current ? 'Present' : (formatDateLabel(item.end_date) || 'End')}
+                      </small>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.projects) && resumePreview.projects.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Projects Preview</h3>
+                <div className="admin-resume-extract__list">
+                  {resumePreview.projects.slice(0, 4).map((item, index) => (
+                    <article key={`${item.title}-${index}`} className="admin-resume-extract__item">
+                      <strong>{item.title || 'Project'}</strong>
+                      {(item.short_description || item.description) && <p>{item.short_description || item.description}</p>}
+                      {item.date_built && <small>{formatDateLabel(item.date_built)}</small>}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.education) && resumePreview.education.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Education Preview</h3>
+                <div className="admin-resume-extract__list">
+                  {resumePreview.education.slice(0, 4).map((item, index) => (
+                    <article key={`${item.degree}-${item.institution}-${index}`} className="admin-resume-extract__item">
+                      <strong>{item.degree || 'Degree'}</strong>
+                      <p>{item.institution || 'Institution'}</p>
+                      <small>
+                        {formatDateLabel(item.start_date) || 'Start'} - {item.is_current ? 'Present' : (formatDateLabel(item.end_date) || 'End')}
+                      </small>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.activities) && resumePreview.activities.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Activities Preview</h3>
+                <div className="admin-resume-extract__list">
+                  {resumePreview.activities.slice(0, 4).map((item, index) => (
+                    <article key={`${item.title}-${item.organization}-${index}`} className="admin-resume-extract__item">
+                      <strong>{item.title || 'Activity'}</strong>
+                      {(item.organization || item.role) && <p>{[item.role, item.organization].filter(Boolean).join(' at ')}</p>}
+                      {(item.start_date || item.end_date || item.is_current) && (
+                        <small>
+                          {formatDateLabel(item.start_date) || 'Start'} - {item.is_current ? 'Present' : (formatDateLabel(item.end_date) || 'End')}
+                        </small>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.certifications) && resumePreview.certifications.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Certification Preview</h3>
+                <div className="admin-resume-extract__list">
+                  {resumePreview.certifications.slice(0, 6).map((item, index) => (
+                    <article key={`${item.name}-${item.issuer}-${index}`} className="admin-resume-extract__item">
+                      <strong>{item.name || 'Certification'}</strong>
+                      {item.issuer && <p>{item.issuer}</p>}
+                      {item.issue_date && <small>{formatDateLabel(item.issue_date)}</small>}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(resumePreview.achievements) && resumePreview.achievements.length > 0 && (
+              <div className="admin-resume-extract__block">
+                <h3>Achievement Preview</h3>
+                <div className="admin-resume-extract__list">
+                  {resumePreview.achievements.slice(0, 6).map((item, index) => (
+                    <article key={`${item.title}-${index}`} className="admin-resume-extract__item">
+                      <strong>{item.title || 'Achievement'}</strong>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(Array.isArray(resumePreview?.section_report?.missing) && resumePreview.section_report.missing.length > 0)
+              || (Array.isArray(resumePreview?.section_report?.neglected) && resumePreview.section_report.neglected.length > 0) ? (
+                <div className="admin-resume-extract__block">
+                  <h3>Section Coverage</h3>
+                  {Array.isArray(resumePreview?.section_report?.missing) && resumePreview.section_report.missing.length > 0 && (
+                    <>
+                      <p>Missing in resume:</p>
+                      <div className="admin-resume-extract__chips">
+                        {resumePreview.section_report.missing.map((sectionName) => (
+                          <span key={`missing-${sectionName}`} className="chip">{sectionName}</span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {Array.isArray(resumePreview?.section_report?.neglected) && resumePreview.section_report.neglected.length > 0 && (
+                    <>
+                      <p>Neglected (not mapped to current website sections):</p>
+                      <div className="admin-resume-extract__chips">
+                        {resumePreview.section_report.neglected.map((sectionName) => (
+                          <span key={`neglected-${sectionName}`} className="chip">{sectionName}</span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : null}
+          </div>
+        )}
+      </section>
 
       <div className="admin-profile-summary glass">
         <div>
@@ -190,6 +605,7 @@ export default function AdminProfile() {
       >
         <div className="admin-profile-grid">
           <section className="admin-profile-section admin-profile-section--half">
+            <div id="profile-basics" className="admin-profile-anchor" />
             <h3 className="admin-profile-section__title">
               <FaUser /> Basics
             </h3>
@@ -223,6 +639,7 @@ export default function AdminProfile() {
           </section>
 
           <section className="admin-profile-section admin-profile-section--half">
+            <div id="profile-about" className="admin-profile-anchor" />
             <h3 className="admin-profile-section__title">
               <FaInfoCircle /> About
             </h3>
@@ -239,6 +656,7 @@ export default function AdminProfile() {
           </section>
 
           <section className="admin-profile-section admin-profile-section--half">
+            <div id="profile-assets" className="admin-profile-anchor" />
             <h3 className="admin-profile-section__title">
               <FaImage /> Assets
             </h3>
@@ -263,15 +681,17 @@ export default function AdminProfile() {
                 label="Upload Avatar"
                 accept="image/*"
                 buttonText="Upload Avatar"
-                onUploaded={(url) => setProfile((prev) => ({ ...(prev || {}), avatar: url }))}
+                uploadContext="avatar"
+                helpText="Images only. Auto-saves after upload."
+                onUploaded={(url) => { persistUploadedAsset('avatar', url); }}
               />
               <FileUploader
                 label="Upload Resume"
                 accept=".pdf,application/pdf"
                 buttonText="Upload Resume"
                 uploadContext="resume"
-                helpText="PDF only. Max size: 10MB"
-                onUploaded={(url) => setProfile((prev) => ({ ...(prev || {}), resume: url }))}
+                helpText="PDF only. Max size: 10MB. Auto-saves after upload."
+                onUploaded={(url) => { persistUploadedAsset('resume', url); }}
               />
             </div>
             {profile?.avatar && (
@@ -282,6 +702,7 @@ export default function AdminProfile() {
           </section>
 
           <section className="admin-profile-section admin-profile-section--half">
+            <div id="profile-social" className="admin-profile-anchor" />
             <h3 className="admin-profile-section__title">
               <FaLinkedin /> Social Links
             </h3>
@@ -311,6 +732,7 @@ export default function AdminProfile() {
           </section>
 
           <section className="admin-profile-section admin-profile-section--half">
+            <div id="profile-section-controls" className="admin-profile-anchor" />
             <h3 className="admin-profile-section__title">
               <FaProjectDiagram /> Public Section Controls
             </h3>
@@ -338,6 +760,7 @@ export default function AdminProfile() {
           </section>
 
           <section className="admin-profile-section admin-profile-section--half">
+            <div id="profile-navbar-controls" className="admin-profile-anchor" />
             <h3 className="admin-profile-section__title">
               <FaLayerGroup /> Navbar Controls
             </h3>
@@ -366,8 +789,16 @@ export default function AdminProfile() {
         </div>
 
         <div className="admin-profile-submit">
-          <button type="submit" className="btn btn-primary btn-lg" disabled={isSubmitting}>
-            <FaSave /> {isSubmitting ? 'Saving...' : 'Save Profile'}
+          <button
+            type="button"
+            className="btn btn-outline btn-lg"
+            onClick={handleResetChanges}
+            disabled={!hasUnsavedChanges || isSubmitting || isSavingAsset || isExtractingResume || isSavingResumeExtract}
+          >
+            Reset
+          </button>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={isSubmitting || isSavingAsset || isExtractingResume || isSavingResumeExtract}>
+            <FaSave /> {isSubmitting || isSavingAsset ? 'Saving...' : 'Save Profile'}
           </button>
         </div>
       </Motion.form>

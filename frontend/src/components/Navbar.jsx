@@ -1,40 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiMenu, HiX, HiDownload } from 'react-icons/hi';
-import { publicApi } from '../api/client';
+import { HiMenu, HiX } from 'react-icons/hi';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
-
-const NAV_LINKS = [
-  { label: 'Home', path: '/' },
-  { label: 'About', path: '/about' },
-  { label: 'Projects', path: '/projects' },
-  { label: 'Blog', path: '/blog' },
-  { label: 'Testimonials', path: '/testimonials' },
-  { label: 'Contact', path: '/contact' },
-];
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [resumeUrl, setResumeUrl] = useState(null);
+  const { user, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // Detect scroll for navbar background
+  const NAV_LINKS = [
+    { label: 'Home', path: '/' },
+    ...(isAuthenticated && user?.username
+      ? [{ label: 'My Portfolio', path: `/${user.username}` }]
+      : []),
+  ];
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Fetch resume URL
-  useEffect(() => {
-    publicApi.getProfile()
-      .then((res) => {
-        const resolvedResumeUrl = res.data?.resume_download_url || res.data?.resume || '';
-        if (resolvedResumeUrl) setResumeUrl(resolvedResumeUrl);
-      })
-      .catch(() => {});
   }, []);
 
   return (
@@ -45,7 +32,6 @@ export default function Navbar() {
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
       <div className="navbar__container container">
-        {/* Logo */}
         <Link to="/" className="navbar__logo">
           <img src="/favicon.svg" alt="Logo" className="navbar__logo-icon" />
           <span className="gradient-text">Portfolio</span>
@@ -72,16 +58,22 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* Desktop CTA & Resume */}
+        {/* Desktop CTA */}
         <div className="navbar__right">
-          {resumeUrl && (
-            <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm navbar__resume">
-              <HiDownload /> Resume
-            </a>
+          {isAuthenticated ? (
+            <Link to="/user/dashboard" className="btn btn-primary btn-sm navbar__cta">
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/user/login" className="btn btn-outline btn-sm">
+                Sign In
+              </Link>
+              <Link to="/register" className="btn btn-primary btn-sm navbar__cta">
+                Get Started
+              </Link>
+            </>
           )}
-          <Link to="/contact" className="btn btn-primary btn-sm navbar__cta">
-            Let's Talk
-          </Link>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -124,23 +116,29 @@ export default function Navbar() {
                   </Link>
                 </motion.li>
               ))}
-              {resumeUrl && (
-                <motion.li
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <a
-                    href={resumeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              <motion.li
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                {isAuthenticated ? (
+                  <Link
+                    to="/user/dashboard"
                     className="navbar__mobile-link"
                     onClick={() => setIsOpen(false)}
                   >
-                    <HiDownload /> Resume
-                  </a>
-                </motion.li>
-              )}
+                    Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    to="/user/login"
+                    className="navbar__mobile-link"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </motion.li>
             </ul>
           </motion.div>
         )}

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base API client configured for the Django backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002/api';
-const DEFAULT_PUBLIC_USERNAME = import.meta.env.VITE_DEFAULT_PUBLIC_USERNAME || 'demo';
+
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -61,7 +61,7 @@ const resolveUsername = (username) => {
   if (typeof username === 'string' && username.trim().length > 0) {
     return username.trim();
   }
-  return DEFAULT_PUBLIC_USERNAME;
+  throw new Error('Username is required for public API calls');
 };
 
 const isPlainObject = (value) =>
@@ -71,10 +71,7 @@ const resolveUsernameAndParams = (usernameOrParams, maybeParams = {}) => {
   if (typeof usernameOrParams === 'string') {
     return { username: resolveUsername(usernameOrParams), params: maybeParams };
   }
-  if (isPlainObject(usernameOrParams)) {
-    return { username: DEFAULT_PUBLIC_USERNAME, params: usernameOrParams };
-  }
-  return { username: DEFAULT_PUBLIC_USERNAME, params: maybeParams };
+  throw new Error('Username is required for public API calls');
 };
 
 export const authApi = {
@@ -93,11 +90,8 @@ export const publicApi = {
     const { username, params } = resolveUsernameAndParams(usernameOrParams, maybeParams);
     return api.get(`/u/${username}/projects/`, { params });
   },
-  getProjectBySlug: (usernameOrSlug, maybeSlug) => {
-    if (typeof maybeSlug === 'string') {
-      return api.get(`/u/${resolveUsername(usernameOrSlug)}/projects/${maybeSlug}/`);
-    }
-    return api.get(`/u/${DEFAULT_PUBLIC_USERNAME}/projects/${usernameOrSlug}/`);
+  getProjectBySlug: (username, slug) => {
+    return api.get(`/u/${resolveUsername(username)}/projects/${slug}/`);
   },
   getSkills: (username) => api.get(`/u/${resolveUsername(username)}/skills/`),
   getExperience: (username) => api.get(`/u/${resolveUsername(username)}/experience/`),
@@ -109,21 +103,15 @@ export const publicApi = {
     const { username, params } = resolveUsernameAndParams(usernameOrParams, maybeParams);
     return api.get(`/u/${username}/blog/`, { params });
   },
-  getBlogBySlug: (usernameOrSlug, maybeSlug) => {
-    if (typeof maybeSlug === 'string') {
-      return api.get(`/u/${resolveUsername(usernameOrSlug)}/blog/${maybeSlug}/`);
-    }
-    return api.get(`/u/${DEFAULT_PUBLIC_USERNAME}/blog/${usernameOrSlug}/`);
+  getBlogBySlug: (username, slug) => {
+    return api.get(`/u/${resolveUsername(username)}/blog/${slug}/`);
   },
   getTestimonials: (usernameOrParams, maybeParams = {}) => {
     const { username, params } = resolveUsernameAndParams(usernameOrParams, maybeParams);
     return api.get(`/u/${username}/testimonials/`, { params });
   },
-  sendMessage: (usernameOrData, maybeData) => {
-    if (isPlainObject(usernameOrData) && maybeData === undefined) {
-      return api.post(`/u/${DEFAULT_PUBLIC_USERNAME}/contact/`, usernameOrData);
-    }
-    return api.post(`/u/${resolveUsername(usernameOrData)}/contact/`, maybeData);
+  sendMessage: (username, data) => {
+    return api.post(`/u/${resolveUsername(username)}/contact/`, data);
   },
 };
 
@@ -212,6 +200,7 @@ export const userApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  autofillResume: (options = {}) => api.post('/user/resume/autofill/', options),
 };
 
 // Backward compatibility aliases
@@ -219,10 +208,16 @@ export const dashboardApi = userApi;
 
 export const adminApi = {
   getStats: () => api.get('/admin/stats/'),
+  getAnalytics: () => api.get('/admin/analytics/'),
+  getActivity: (limit = 30) => api.get('/admin/activity/', { params: { limit } }),
   getUsers: () => api.get('/admin/users/'),
   getUser: (id) => api.get(`/admin/users/${id}/`),
   toggleUser: (id, isActive) => api.patch(`/admin/users/${id}/`, { is_active: isActive }),
   deleteUser: (id) => api.delete(`/admin/users/${id}/`),
+  bulkAction: (userIds, action) => api.post('/admin/bulk-action/', { user_ids: userIds, action }),
+  exportUsersUrl: () => `${API_BASE_URL}/admin/export-users/`,
+  getSettings: () => api.get('/admin/settings/'),
+  updateSettings: (data) => api.put('/admin/settings/', data),
   impersonateUser: (id) => api.post(`/admin/impersonate/${id}/`),
   stopImpersonation: (originalAdminId) =>
     api.post('/admin/stop-impersonation/', { original_admin_id: originalAdminId }),

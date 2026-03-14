@@ -40,6 +40,11 @@ export default function FileUploader({
       onUploaded?.(uploadedUrl, file);
       toast.success('File uploaded successfully');
     } catch (error) {
+      if (error.response?.status === 429) {
+        const detail = error.response?.data?.detail;
+        toast.error(detail || 'Upload limit reached. Please try again later.');
+        return;
+      }
       const detail = error.response?.data?.detail;
       toast.error(detail || 'File upload failed');
     } finally {
