@@ -8,7 +8,7 @@ import SectionWrapper from '../components/SectionWrapper';
 import PageTransition from '../components/PageTransition';
 import PageHeader from '../components/PageHeader';
 import { publicApi } from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import './BlogDetail.css';
 
 export default function BlogDetail() {

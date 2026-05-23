@@ -74,6 +74,18 @@ export default function AdminExperience() {
     [experiences]
   );
 
+  const experienceInsights = useMemo(() => {
+    const total = experiences.length;
+    const current = experiences.filter((item) => item.is_current).length;
+    const withHighlights = experiences.filter((item) => Array.isArray(item.highlights) && item.highlights.length > 0).length;
+    return [
+      { label: 'Entries', value: total },
+      { label: 'Current Roles', value: current },
+      { label: 'Past Roles', value: Math.max(total - current, 0) },
+      { label: 'With Highlights', value: withHighlights },
+    ];
+  }, [experiences]);
+
   const openCreate = () => {
     setEditing(null);
     setFormData(EMPTY_EXPERIENCE);
@@ -195,6 +207,15 @@ export default function AdminExperience() {
         <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
           <FaPlus /> Add Experience
         </button>
+      </div>
+
+      <div className="admin-content-insights">
+        {experienceInsights.map((item) => (
+          <div key={item.label} className="admin-content-insights__item">
+            <span className="admin-content-insights__label">{item.label}</span>
+            <strong className="admin-content-insights__value">{item.value}</strong>
+          </div>
+        ))}
       </div>
 
       <AnimatePresence>

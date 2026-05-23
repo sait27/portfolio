@@ -27,6 +27,7 @@ from .permissions import IsSuperAdmin
 class PlatformUserSerializer(serializers.ModelSerializer):
     """Serializer for listing platform users in super admin panel."""
     full_name = serializers.CharField(source='profile.full_name', default='')
+    phone = serializers.CharField(source='profile.phone', default='')
     username_slug = serializers.CharField(source='profile.username_slug', default='')
     avatar = serializers.URLField(source='profile.avatar', default=None)
     is_platform_admin = serializers.BooleanField(source='profile.is_platform_admin', default=False)
@@ -50,6 +51,7 @@ class DetailedUserSerializer(serializers.ModelSerializer):
     avatar = serializers.URLField(source='profile.avatar', default=None)
     tagline = serializers.CharField(source='profile.tagline', default='')
     bio = serializers.CharField(source='profile.bio', default='')
+    website_url = serializers.URLField(source='profile.website_url', default='')
     github_url = serializers.URLField(source='profile.github_url', default='')
     linkedin_url = serializers.URLField(source='profile.linkedin_url', default='')
     is_platform_admin = serializers.BooleanField(source='profile.is_platform_admin', default=False)
@@ -66,8 +68,8 @@ class DetailedUserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'date_joined', 'last_login', 'is_active',
-            'full_name', 'username_slug', 'avatar', 'tagline', 'bio',
-            'github_url', 'linkedin_url', 'is_platform_admin',
+            'full_name', 'phone', 'username_slug', 'avatar', 'tagline', 'bio',
+            'website_url', 'github_url', 'linkedin_url', 'is_platform_admin',
             'projects_count', 'skills_count', 'experience_count',
             'blog_count', 'messages_count', 'testimonials_count',
             'education_count', 'certifications_count',

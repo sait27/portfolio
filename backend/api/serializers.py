@@ -72,8 +72,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            'id', 'username_slug', 'full_name', 'tagline', 'bio', 'avatar', 'resume', 'resume_download_url',
-            'github_url', 'linkedin_url', 'twitter_url', 'email',
+            'id', 'username_slug', 'full_name', 'phone', 'tagline', 'bio', 'avatar', 'resume', 'resume_download_url',
+            'website_url', 'github_url', 'linkedin_url', 'twitter_url', 'email',
             'show_hero', 'show_about', 'show_highlights', 'show_skills',
             'show_projects', 'show_experience', 'show_education', 'show_activities',
             'show_achievements', 'show_certifications', 'show_blog',

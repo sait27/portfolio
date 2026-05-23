@@ -100,7 +100,7 @@ class DashboardResumeAutofillView(APIView):
     Parse the stored resume PDF and auto-fill relevant portfolio sections.
     """
     permission_classes = [IsAuthenticated]
-    throttle_classes = [UploadBurstRateThrottle, UploadDailyRateThrottle]
+    throttle_classes = []
 
     def post(self, request):
         overwrite_existing = bool(request.data.get('overwrite_existing', False))
@@ -137,12 +137,30 @@ class DashboardResumeAutofillView(APIView):
             )
 
         parsed_data = parsed.to_dict()
+        quality_report = parsed_data.get('quality_report', {})
+        quality_warnings = quality_report.get('warnings', [])
         if preview_only:
             return Response(
                 {
-                    'detail': 'Resume parsed successfully.',
+                    'detail': (
+                        'Resume parsed with warnings.'
+                        if quality_warnings else
+                        'Resume parsed successfully.'
+                    ),
                     'parsed': parsed_data,
                 }
+            )
+
+        if not quality_report.get('save_recommended', True):
+            return Response(
+                {
+                    'detail': (
+                        'Resume extraction quality is too low to save safely. '
+                        'Please upload a cleaner text-based PDF and review the preview warnings.'
+                    ),
+                    'parsed': parsed_data,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         summary = apply_parsed_resume(
@@ -165,6 +183,7 @@ class DashboardResumeAutofillView(APIView):
                     'certifications': parsed_data.get('certifications', [])[:5],
                     'achievements': parsed_data.get('achievements', [])[:5],
                     'section_report': parsed_data.get('section_report', {}),
+                    'quality_report': quality_report,
                 },
             }
         )
@@ -451,6 +470,10 @@ class DashboardUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def check_throttles(self, request):
+        upload_context = (request.data.get('upload_context') or '').strip().lower()
+        if upload_context == 'resume':
+            return
+
         throttle_durations = []
         failed_scopes = []
         for throttle in self.get_throttles():
@@ -485,8 +508,8 @@ class DashboardUploadView(APIView):
 
         upload_context = (request.data.get('upload_context') or '').strip().lower()
 
-        # Size limit: 10MB
-        if file.size > 10 * 1024 * 1024:
+        # Keep the generic upload size limit for non-resume files only.
+        if upload_context != 'resume' and file.size > 10 * 1024 * 1024:
             return Response({'detail': 'File too large. Max 10MB.'}, status=status.HTTP_400_BAD_REQUEST)
 
         file_name = (file.name or '').lower()

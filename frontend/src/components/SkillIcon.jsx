@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FaAws, FaCode, FaDatabase, FaPython } from 'react-icons/fa';
 import {
   SiCss3,
@@ -59,14 +59,16 @@ const normalizeSkillName = (name) => String(name || '').trim().toLowerCase();
 
 const getSkillIconByName = (name) => {
   const normalized = normalizeSkillName(name);
-  if (!normalized) return FaCode;
+  if (!normalized) {
+    return (props) => <FaCode {...props} />;
+  }
   const rule = SKILL_ICON_RULES.find(({ test }) => test.test(normalized));
-  return rule?.icon || FaCode;
+  const IconComponent = rule?.icon || FaCode;
+  return (props) => <IconComponent {...props} />;
 };
 
 export default function SkillIcon({ name, iconUrl, className = '', fallbackClassName = '' }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const Icon = useMemo(() => getSkillIconByName(name), [name]);
 
   if (iconUrl && !imageFailed) {
     return (
@@ -80,5 +82,8 @@ export default function SkillIcon({ name, iconUrl, className = '', fallbackClass
     );
   }
 
-  return <Icon className={`${className} ${fallbackClassName}`.trim()} aria-hidden="true" />;
+  return getSkillIconByName(name)({
+    className: `${className} ${fallbackClassName}`.trim(),
+    'aria-hidden': 'true',
+  });
 }

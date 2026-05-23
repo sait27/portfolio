@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { motion, useScroll, useSpring } from 'framer-motion';
+import { motion as Motion, useScroll, useSpring } from 'framer-motion';
 import './ScrollProgress.css';
 
 export default function ScrollProgress() {
@@ -11,7 +10,7 @@ export default function ScrollProgress() {
   });
 
   return (
-    <motion.div 
+    <Motion.div
       className="scroll-progress"
       style={{ scaleX }}
     />

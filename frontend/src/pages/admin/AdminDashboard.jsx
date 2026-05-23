@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { motion as Motion, Reorder, useDragControls } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
+  FaCheckCircle,
   FaProjectDiagram,
   FaEnvelope,
+  FaBolt,
   FaCode,
   FaBriefcase,
   FaBlog,
@@ -23,7 +25,7 @@ import {
 import { userApi } from '../../api/client';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
-const DASHBOARD_SECTION_IDS = ['portfolio_metrics', 'quick_actions', 'needs_attention'];
+const DASHBOARD_SECTION_IDS = ['launch_checklist', 'portfolio_metrics', 'quick_actions', 'needs_attention'];
 
 const normalizeSectionOrder = (rawOrder) => {
   if (!Array.isArray(rawOrder)) {
@@ -31,15 +33,14 @@ const normalizeSectionOrder = (rawOrder) => {
   }
 
   const filtered = rawOrder.filter((sectionId) => DASHBOARD_SECTION_IDS.includes(sectionId));
-  if (filtered.length !== DASHBOARD_SECTION_IDS.length) {
+  if (new Set(filtered).size !== filtered.length) {
     return DASHBOARD_SECTION_IDS;
   }
 
-  if (new Set(filtered).size !== DASHBOARD_SECTION_IDS.length) {
-    return DASHBOARD_SECTION_IDS;
-  }
-
-  return filtered;
+  return [
+    ...filtered,
+    ...DASHBOARD_SECTION_IDS.filter((sectionId) => !filtered.includes(sectionId)),
+  ];
 };
 
 const isSameOrder = (left, right) =>
@@ -83,6 +84,7 @@ function SortableDashboardSection({ section, onDragEnd }) {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
+  const [dashboardProfile, setDashboardProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statsUnavailable, setStatsUnavailable] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
@@ -112,11 +114,14 @@ export default function AdminDashboard() {
     }
 
     if (profileResult.status === 'fulfilled') {
-      const normalizedOrder = normalizeSectionOrder(profileResult.value?.data?.dashboard_section_order);
+      const profileData = profileResult.value?.data || null;
+      const normalizedOrder = normalizeSectionOrder(profileData?.dashboard_section_order);
+      setDashboardProfile(profileData);
       setSectionOrder(normalizedOrder);
       setLastSavedSectionOrder(normalizedOrder);
       latestSectionOrderRef.current = normalizedOrder;
     } else {
+      setDashboardProfile(null);
       errors.push('Dashboard section order could not be synced.');
     }
 
@@ -216,6 +221,20 @@ export default function AdminDashboard() {
     unread_messages: stats?.unread_messages || 0,
   };
   const hasStatsData = Boolean(stats);
+  const hasResume = Boolean(dashboardProfile?.resume || dashboardProfile?.resume_download_url);
+  const hasProfileBasics = Boolean(
+    dashboardProfile?.full_name?.trim()
+    && dashboardProfile?.email?.trim()
+    && dashboardProfile?.tagline?.trim()
+  );
+  const hasProfileStory = Boolean(dashboardProfile?.bio?.trim());
+  const hasAvatar = Boolean(dashboardProfile?.avatar);
+  const hasSocialLinks = Boolean(
+    dashboardProfile?.website_url
+    || dashboardProfile?.github_url
+    || dashboardProfile?.linkedin_url
+    || dashboardProfile?.twitter_url
+  );
 
   const totalContentItems =
     normalizedStats.projects +
@@ -238,8 +257,78 @@ export default function AdminDashboard() {
     normalizedStats.achievements === 0 &&
     normalizedStats.certifications === 0;
   const hasDraftOnlyBlog = normalizedStats.blog_posts > 0 && normalizedStats.published_posts === 0;
+  const onboardingSteps = [
+    {
+      id: 'profile-basics',
+      title: 'Complete profile basics',
+      description: 'Add your name, tagline, and contact details so the public portfolio feels credible immediately.',
+      path: '/user/profile',
+      action: hasProfileBasics ? 'Review profile' : 'Complete basics',
+      done: hasProfileBasics,
+      icon: <FaBriefcase />,
+    },
+    {
+      id: 'profile-story',
+      title: 'Add your story and identity',
+      description: 'A short bio, avatar, and at least one social link make the portfolio look intentional instead of empty.',
+      path: '/user/profile',
+      action: hasProfileStory && hasAvatar && hasSocialLinks ? 'Polish profile' : 'Add story',
+      done: hasProfileStory && hasAvatar && hasSocialLinks,
+      icon: <FaChartLine />,
+    },
+    {
+      id: 'skills',
+      title: 'Add your core skills',
+      description: 'Skills help recruiters and clients understand your stack before they read projects in detail.',
+      path: '/user/skills',
+      action: normalizedStats.skills >= 5 ? 'Review skills' : 'Add skills',
+      done: normalizedStats.skills >= 5,
+      icon: <FaCode />,
+    },
+    {
+      id: 'projects',
+      title: 'Show proof of work',
+      description: 'At least one visible project is the minimum bar for a convincing portfolio.',
+      path: '/user/projects',
+      action: normalizedStats.projects > 0 ? 'Review projects' : 'Create project',
+      done: normalizedStats.projects > 0,
+      icon: <FaProjectDiagram />,
+    },
+    {
+      id: 'resume',
+      title: 'Upload your resume',
+      description: 'Resume upload speeds up setup and gives visitors another asset to review.',
+      path: '/user/profile?view=resume',
+      action: hasResume ? 'Open resume extract' : 'Upload resume',
+      done: hasResume,
+      icon: <FaBolt />,
+    },
+    {
+      id: 'trust-signals',
+      title: 'Add trust signals',
+      description: 'Milestones, articles, or testimonials make the portfolio feel complete and more believable.',
+      path: hasEmptyMilestones ? '/user/milestones?section=education' : normalizedStats.testimonials === 0 ? '/user/testimonials' : '/user/blog',
+      action: normalizedStats.education + normalizedStats.activities + normalizedStats.achievements + normalizedStats.certifications + normalizedStats.testimonials + normalizedStats.published_posts > 0
+        ? 'Improve proof'
+        : 'Add proof',
+      done: normalizedStats.education + normalizedStats.activities + normalizedStats.achievements + normalizedStats.certifications + normalizedStats.testimonials + normalizedStats.published_posts > 0,
+      icon: <FaCertificate />,
+    },
+  ];
+  const completedOnboardingSteps = onboardingSteps.filter((step) => step.done).length;
+  const onboardingProgress = onboardingSteps.length > 0
+    ? Math.round((completedOnboardingSteps / onboardingSteps.length) * 100)
+    : 0;
+  const nextOnboardingStep = onboardingSteps.find((step) => !step.done) || onboardingSteps[onboardingSteps.length - 1];
 
   const spotlightCards = [
+    {
+      label: 'Publish Readiness',
+      value: `${onboardingProgress}%`,
+      hint: `${completedOnboardingSteps}/${onboardingSteps.length} onboarding steps complete`,
+      icon: <FaCheckCircle />,
+      color: onboardingProgress >= 80 ? 'cyan' : onboardingProgress >= 50 ? 'accent' : 'pink',
+    },
     {
       label: 'Content Inventory',
       value: totalContentItems,
@@ -291,6 +380,17 @@ export default function AdminDashboard() {
     : coreStatCards;
 
   const quickActions = [
+    {
+      id: 'resume-extract',
+      title: hasResume ? 'Resume Extract' : 'Upload Resume',
+      text: hasResume
+        ? 'Extract resume data into profile, projects, experience, and milestones.'
+        : 'Upload your resume first, then extract it into portfolio sections.',
+      path: '/user/profile?view=resume',
+      icon: <FaBolt />,
+      tone: 'cyan',
+      priority: hasResume ? 210 : 240,
+    },
     {
       id: 'messages',
       title: 'Review Messages',
@@ -394,12 +494,75 @@ export default function AdminDashboard() {
     .sort((left, right) => right.priority - left.priority)
     .map((item, index) => ({ ...item, rank: index + 1 }));
 
-  const visibleQuickActions = showAllQuickActions ? quickActions : quickActions.slice(0, 6);
+  const topQuickActions = quickActions.slice(0, 3);
+  const visibleQuickActions = showAllQuickActions ? quickActions : topQuickActions;
   const hiddenQuickActionsCount = Math.max(quickActions.length - visibleQuickActions.length, 0);
 
+  const emptyStatePrompts = [];
+  if (normalizedStats.projects === 0) {
+    emptyStatePrompts.push({
+      id: 'empty-projects',
+      title: 'No projects yet',
+      text: 'Add your first project so visitors can see proof of work.',
+      path: '/user/projects',
+      action: 'Create project',
+      tone: 'accent',
+      icon: <FaProjectDiagram />,
+    });
+  }
+  if (!hasResume) {
+    emptyStatePrompts.push({
+      id: 'empty-resume',
+      title: 'Resume not uploaded',
+      text: 'Upload your resume and use extraction to seed profile, experience, projects, and milestones faster.',
+      path: '/user/profile?view=resume',
+      action: 'Open resume extract',
+      tone: 'cyan',
+      icon: <FaBolt />,
+    });
+  }
+  if (normalizedStats.blog_posts === 0) {
+    emptyStatePrompts.push({
+      id: 'empty-blog',
+      title: 'No articles published',
+      text: 'Publish one post to improve trust and search visibility.',
+      path: '/user/blog',
+      action: 'Create article',
+      tone: 'cyan',
+      icon: <FaBlog />,
+    });
+  }
+  if (normalizedStats.testimonials === 0) {
+    emptyStatePrompts.push({
+      id: 'empty-testimonials',
+      title: 'No testimonials yet',
+      text: 'Add client feedback to strengthen social proof.',
+      path: '/user/testimonials',
+      action: 'Add testimonial',
+      tone: 'pink',
+      icon: <FaQuoteLeft />,
+    });
+  }
+
   const attentionItems = [];
-  if (normalizedStats.unread_messages > 0) {
+  if (!hasResume) {
     attentionItems.push({
+      severity: 'warning',
+      text: 'Resume extraction is not set up yet. Upload a resume to speed up dashboard setup.',
+      path: '/user/profile?view=resume',
+      action: 'Open resume extract',
+    });
+  }
+  if (normalizedStats.unread_messages >= 3) {
+    attentionItems.push({
+      severity: 'critical',
+      text: `${normalizedStats.unread_messages} unread messages are pending. Prioritize replies now.`,
+      path: '/user/messages',
+      action: 'Open inbox',
+    });
+  } else if (normalizedStats.unread_messages > 0) {
+    attentionItems.push({
+      severity: 'warning',
       text: `${normalizedStats.unread_messages} unread message${
         normalizedStats.unread_messages > 1 ? 's' : ''
       } waiting in inbox.`,
@@ -409,6 +572,7 @@ export default function AdminDashboard() {
   }
   if (hasDraftOnlyBlog) {
     attentionItems.push({
+      severity: 'warning',
       text: 'You have blog drafts but no published article yet.',
       path: '/user/blog',
       action: 'Publish a post',
@@ -416,6 +580,7 @@ export default function AdminDashboard() {
   }
   if (normalizedStats.projects === 0) {
     attentionItems.push({
+      severity: 'warning',
       text: 'No projects added yet. Portfolio visitors will see an empty section.',
       path: '/user/projects',
       action: 'Add project',
@@ -423,6 +588,7 @@ export default function AdminDashboard() {
   }
   if (hasEmptyMilestones) {
     attentionItems.push({
+      severity: 'info',
       text: 'Milestone sections are empty. Add education, achievements, and certifications for stronger trust signals.',
       path: '/user/milestones?section=education',
       action: 'Add milestones',
@@ -430,14 +596,82 @@ export default function AdminDashboard() {
   }
   if (attentionItems.length === 0) {
     attentionItems.push({
+      severity: 'info',
       text: 'Everything looks healthy. Keep content fresh to improve discoverability.',
       path: '/user/profile',
       action: 'Review profile',
       positive: true,
     });
   }
+  const severityRank = { critical: 0, warning: 1, info: 2 };
+  attentionItems.sort((left, right) => severityRank[left.severity] - severityRank[right.severity]);
 
   const dashboardSections = {
+    launch_checklist: {
+      id: 'launch_checklist',
+      title: 'Launch Checklist',
+      content: (
+        <>
+          <div className="admin-dashboard__onboarding glass">
+            <div className="admin-dashboard__onboarding-copy">
+              <p className="admin-dashboard__eyebrow">Guided Setup</p>
+              <h3>
+                {onboardingProgress >= 100
+                  ? 'Portfolio setup is in a strong state.'
+                  : `You are ${onboardingProgress}% of the way to a publish-ready portfolio.`}
+              </h3>
+              <p className="admin-dashboard__section-note">
+                {onboardingProgress >= 100
+                  ? 'The core launch checklist is complete. Keep refreshing projects, testimonials, and articles to stay credible.'
+                  : `Next best step: ${nextOnboardingStep?.title || 'Review your portfolio setup'}.`}
+              </p>
+            </div>
+            <div className="admin-dashboard__onboarding-meter">
+              <div className="admin-dashboard__meter-label">
+                <strong>{onboardingProgress}%</strong>
+                <span>{completedOnboardingSteps}/{onboardingSteps.length} complete</span>
+              </div>
+              <div className="admin-dashboard__meter-track" aria-hidden="true">
+                <div style={{ width: `${onboardingProgress}%` }} />
+              </div>
+              {nextOnboardingStep && (
+                <Link to={nextOnboardingStep.path} className="btn btn-primary btn-sm">
+                  {nextOnboardingStep.action} <FaArrowRight />
+                </Link>
+              )}
+            </div>
+          </div>
+
+          <div className="admin-dashboard__checklist">
+            {onboardingSteps.map((step, index) => (
+              <Motion.article
+                key={step.id}
+                className={`admin-dashboard__checklist-card ${step.done ? 'admin-dashboard__checklist-card--done' : ''}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+              >
+                <div className="admin-dashboard__checklist-status">
+                  {step.done ? <FaCheckCircle /> : step.icon}
+                </div>
+                <div className="admin-dashboard__checklist-copy">
+                  <div className="admin-dashboard__checklist-topline">
+                    <h3>{step.title}</h3>
+                    <span className={`chip ${step.done ? 'chip-status-active' : ''}`}>
+                      {step.done ? 'Done' : 'Pending'}
+                    </span>
+                  </div>
+                  <p>{step.description}</p>
+                </div>
+                <Link to={step.path} className="admin-dashboard__action-link">
+                  {step.action} <FaArrowRight />
+                </Link>
+              </Motion.article>
+            ))}
+          </div>
+        </>
+      ),
+    },
     portfolio_metrics: {
       id: 'portfolio_metrics',
       title: 'Portfolio Metrics',
@@ -482,6 +716,29 @@ export default function AdminDashboard() {
       title: 'Quick Actions',
       content: (
         <>
+          <div className="admin-dashboard__section-tools">
+            <p className="admin-dashboard__section-note">
+              {showAllQuickActions
+                ? 'Showing all available actions.'
+                : 'Showing top 3 recommended actions.'}
+            </p>
+          </div>
+          {emptyStatePrompts.length > 0 && (
+            <div className="admin-dashboard__empty-prompts">
+              {emptyStatePrompts.map((item) => (
+                <article key={item.id} className={`admin-dashboard__empty-card admin-dashboard__empty-card--${item.tone}`}>
+                  <div className="admin-dashboard__empty-icon">{item.icon}</div>
+                  <div className="admin-dashboard__empty-copy">
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                  </div>
+                  <Link to={item.path} className="btn btn-outline btn-sm">
+                    {item.action}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
           <div className="admin-dashboard__actions">
             {visibleQuickActions.map((action, i) => (
               <Motion.div
@@ -530,14 +787,19 @@ export default function AdminDashboard() {
           {attentionItems.map((item, i) => (
             <Motion.div
               key={`${item.text}-${i}`}
-              className={`admin-dashboard__alert ${item.positive ? 'admin-dashboard__alert--positive' : ''}`}
+              className={`admin-dashboard__alert admin-dashboard__alert--${item.severity} ${item.positive ? 'admin-dashboard__alert--positive' : ''}`}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.12 + i * 0.05 }}
             >
               <div className="admin-dashboard__alert-copy">
                 <FaExclamationCircle />
-                <p>{item.text}</p>
+                <div>
+                  <span className={`admin-dashboard__severity admin-dashboard__severity--${item.severity}`}>
+                    {item.severity}
+                  </span>
+                  <p>{item.text}</p>
+                </div>
               </div>
               <Link to={item.path} className="btn btn-outline btn-sm">
                 {item.action}
@@ -557,6 +819,18 @@ export default function AdminDashboard() {
           <p>Track portfolio health, publishing activity, and incoming leads.</p>
         </div>
         <div className="admin-dashboard__header-actions">
+          <Link to="/user/profile?view=resume" className="btn btn-primary btn-sm">
+            <FaBolt /> Resume Extract
+          </Link>
+          <Link to="/user/projects" className="btn btn-outline btn-sm">
+            <FaProjectDiagram /> New Project
+          </Link>
+          <Link to="/user/blog" className="btn btn-outline btn-sm">
+            <FaBlog /> New Blog
+          </Link>
+          <Link to="/user/testimonials" className="btn btn-outline btn-sm">
+            <FaQuoteLeft /> New Testimonial
+          </Link>
           <button
             type="button"
             className="btn btn-outline btn-sm"

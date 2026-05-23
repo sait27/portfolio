@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaUserPlus,
   FaRocket, FaBlog, FaCertificate,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import './Auth.css';
 
 const FEATURES = [
@@ -115,7 +115,7 @@ export default function Register() {
           <div className="auth-showcase__orb auth-showcase__orb--2" />
           <div className="auth-showcase__orb auth-showcase__orb--3" />
 
-          <motion.div
+          <Motion.div
             className="auth-showcase__content"
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -162,12 +162,12 @@ export default function Register() {
                 <span>Forever</span>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
 
         {/* ── Right: Registration Form ── */}
         <div className="auth-panel">
-          <motion.div
+          <Motion.div
             className="auth-card"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -309,7 +309,7 @@ export default function Register() {
               Already have an account?{' '}
               <Link to="/login">Sign in</Link>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
       </main>
     </>

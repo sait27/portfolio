@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaEnvelope, FaMapMarkerAlt, FaPaperPlane, FaUser, FaFileAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -112,7 +112,7 @@ export default function Contact() {
         <SectionWrapper>
           <div className="contact__grid">
             {/* Info Side */}
-            <motion.div
+            <Motion.div
               className="contact__info"
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -154,10 +154,10 @@ export default function Contact() {
                 </p>
                 <span className="contact__decor-author">— Peter Drucker</span>
               </div>
-            </motion.div>
+            </Motion.div>
 
             {/* Form Side */}
-            <motion.div
+            <Motion.div
               className="contact__form-wrapper glass"
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -165,7 +165,7 @@ export default function Contact() {
             >
               {isSubmitted ? (
                 <div className="contact__success">
-                  <motion.div
+                  <Motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 15 }}
@@ -179,7 +179,7 @@ export default function Contact() {
                     >
                       Send Another
                     </button>
-                  </motion.div>
+                  </Motion.div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="contact__form" noValidate>
@@ -258,7 +258,7 @@ export default function Contact() {
                   </button>
                 </form>
               )}
-            </motion.div>
+            </Motion.div>
           </div>
         </SectionWrapper>
       </main>

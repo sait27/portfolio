@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaLock, FaUser } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import FormField from '../../components/FormField';
 import './AdminLogin.css';
 
@@ -51,7 +51,7 @@ export default function AdminLogin() {
         <title>Admin Login | Portfolio</title>
       </Helmet>
       <div className="admin-login">
-        <motion.div
+        <Motion.div
           className="admin-login__card glass"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -95,7 +95,7 @@ export default function AdminLogin() {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-        </motion.div>
+        </Motion.div>
       </div>
     </>
   );

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaEnvelope, FaCheckCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -23,7 +23,7 @@ export default function ForgotPassword() {
     try {
       await authApi.forgotPassword(email);
       setSent(true);
-    } catch (err) {
+    } catch {
       toast.error('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
@@ -36,7 +36,7 @@ export default function ForgotPassword() {
         <title>Forgot Password | PortfolioHub</title>
       </Helmet>
       <main id="main-content" className="auth-page">
-        <motion.div
+        <Motion.div
           className="auth-card glass"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -49,7 +49,7 @@ export default function ForgotPassword() {
           </div>
 
           {sent ? (
-            <motion.div
+            <Motion.div
               className="auth-success"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -65,7 +65,7 @@ export default function ForgotPassword() {
               <Link to="/login" className="btn btn-primary btn-lg auth-submit">
                 Back to Sign In
               </Link>
-            </motion.div>
+            </Motion.div>
           ) : (
             <>
               <div className="auth-header" style={{ marginTop: 0 }}>
@@ -108,7 +108,7 @@ export default function ForgotPassword() {
               </div>
             </>
           )}
-        </motion.div>
+        </Motion.div>
       </main>
     </>
   );

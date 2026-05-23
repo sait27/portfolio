@@ -97,6 +97,20 @@ export default function AdminTestimonials() {
       });
   }, [testimonials, searchTerm, ratingFilter]);
 
+  const testimonialInsights = useMemo(() => {
+    const total = testimonials.length;
+    const featured = testimonials.filter((item) => item.is_featured).length;
+    const averageRating = total === 0
+      ? 0
+      : (testimonials.reduce((sum, item) => sum + (Math.max(0, Math.min(5, Number(item.rating) || 0))), 0) / total);
+    return [
+      { label: 'Total', value: total },
+      { label: 'Featured', value: featured },
+      { label: 'Avg Rating', value: total === 0 ? '0.0' : averageRating.toFixed(1) },
+      { label: '4+ Stars', value: testimonials.filter((item) => (Number(item.rating) || 0) >= 4).length },
+    ];
+  }, [testimonials]);
+
   const openCreate = () => {
     setEditingTestimonial(null);
     setFormData(EMPTY_TESTIMONIAL);
@@ -201,6 +215,15 @@ export default function AdminTestimonials() {
         <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
           <FaPlus /> Add Testimonial
         </button>
+      </div>
+
+      <div className="admin-content-insights">
+        {testimonialInsights.map((item) => (
+          <div key={item.label} className="admin-content-insights__item">
+            <span className="admin-content-insights__label">{item.label}</span>
+            <strong className="admin-content-insights__value">{item.value}</strong>
+          </div>
+        ))}
       </div>
 
       <div className="admin-content-toolbar glass">

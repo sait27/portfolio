@@ -25,13 +25,13 @@ class ProfileAdmin(admin.ModelAdmin):
             'fields': ('user', 'username_slug', 'is_platform_admin')
         }),
         ('Personal Info', {
-            'fields': ('full_name', 'tagline', 'bio', 'email')
+            'fields': ('full_name', 'phone', 'tagline', 'bio', 'email')
         }),
         ('Media', {
             'fields': ('avatar', 'resume')
         }),
         ('Social Links', {
-            'fields': ('github_url', 'linkedin_url', 'twitter_url')
+            'fields': ('website_url', 'github_url', 'linkedin_url', 'twitter_url')
         }),
         ('Portfolio Sections', {
             'fields': (

@@ -26,7 +26,7 @@ export default function ImpersonationBanner() {
       
       toast.success('Stopped impersonation');
       navigate('/admin/dashboard', { replace: true });
-    } catch (err) {
+    } catch {
       setStopping(false);
       toast.error('Failed to stop impersonation');
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaCalendarAlt, FaClock, FaArrowRight, FaTag } from 'react-icons/fa';
 import Navbar from '../components/Navbar';
@@ -9,7 +9,7 @@ import SectionWrapper from '../components/SectionWrapper';
 import PageTransition from '../components/PageTransition';
 import PageHeader from '../components/PageHeader';
 import { publicApi } from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import './Blog.css';
 
 const fadeUp = {
@@ -61,7 +61,7 @@ export default function Blog() {
 
       <main id="main-content">
         <SectionWrapper className="blog-hero">
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -72,12 +72,12 @@ export default function Blog() {
               highlight="Blog"
               subtitle="Sharing insights, tutorials, and lessons learned from my development journey."
             />
-          </motion.div>
+          </Motion.div>
         </SectionWrapper>
 
         <SectionWrapper>
           {/* Tag Filter */}
-          <motion.div 
+          <Motion.div
             className="blog-filters"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -92,7 +92,7 @@ export default function Blog() {
                 <FaTag /> {tag === 'all' ? 'All Articles' : tag}
               </button>
             ))}
-          </motion.div>
+          </Motion.div>
 
           {/* Articles Grid */}
           <div className="blog-grid">
@@ -111,7 +111,7 @@ export default function Blog() {
               ))
             ) : (
               filteredArticles.map((article, i) => (
-                <motion.article
+                <Motion.article
                   key={article.id}
                   className="blog-card glass"
                   initial="hidden"
@@ -152,7 +152,7 @@ export default function Blog() {
                       ))}
                     </div>
                   </div>
-                </motion.article>
+                </Motion.article>
               ))
             )}
           </div>

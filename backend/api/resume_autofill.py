@@ -84,6 +84,8 @@ HEADING_ALIASES = {
     'technical toolkit': 'skills',
     'programming languages': 'skills',
     'languages': 'languages',
+    'skill highlight': 'skills',
+    'skill highlights': 'skills',
     'spoken languages': 'languages',
     'language proficiency': 'languages',
     'language proficiencies': 'languages',
@@ -98,8 +100,8 @@ HEADING_ALIASES = {
     'key projects': 'projects',
     'internships': 'experience',
     'internship experience': 'experience',
-    'personal skills': 'soft_skills',
-    'soft skills': 'soft_skills',
+    'personal skills': 'skills',
+    'soft skills': 'skills',
     'work history': 'experience',
     'work experience': 'experience',
     'career history': 'experience',
@@ -243,7 +245,11 @@ KNOWN_HUMAN_LANGUAGES = {
 EMAIL_RE = re.compile(r'[\w.\-+]+@[\w.\-]+\.\w+')
 URL_RE = re.compile(r'https?://[^\s)]+')
 PLAIN_URL_RE = re.compile(
-    r'\b(?:www\.)?(linkedin\.com/[^\s,;|)]+|github\.com/[^\s,;|)]+|x\.com/[^\s,;|)]+|twitter\.com/[^\s,;|)]+)\b',
+    r'(?<!@)\b(?:www\.)?(linkedin\.com/[^\s,;|)]+|github\.com/[^\s,;|)]+|x\.com/[^\s,;|)]+|twitter\.com/[^\s,;|)]+)\b',
+    re.IGNORECASE,
+)
+GENERIC_PLAIN_URL_RE = re.compile(
+    r'(?<!@)\b(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:/[^\s,;|)]*)?\b',
     re.IGNORECASE,
 )
 PHONE_RE = re.compile(
@@ -324,10 +330,211 @@ HEADING_KEYWORD_HINTS = {
     'acknowledg',
     'declaration',
 }
+NAME_LINE_SKIP_KEYWORDS = {
+    'email',
+    'phone',
+    'mobile',
+    'contact',
+    'tel',
+    'telephone',
+    'linkedin',
+    'github',
+    'twitter',
+    'x.com',
+    'website',
+    'portfolio',
+    'site',
+    'www.',
+}
+INLINE_SECTION_HEADINGS = tuple(
+    sorted(
+        {
+            'summary',
+            'professional summary',
+            'profile summary',
+            'career summary',
+            'objective',
+            'work experience',
+            'professional experience',
+            'experience',
+            'education',
+            'skill highlights',
+            'skills',
+            'projects',
+            'certifications',
+            'activities',
+            'achievements',
+            'languages',
+            'contact',
+        },
+        key=len,
+        reverse=True,
+    )
+)
+BULLET_CHARS = '\u2022\u25cf\u25e6\u2219\u2023'
+BULLET_RE = re.compile(f'[{re.escape(BULLET_CHARS)}]')
+MIN_RESUME_EXTRACTION_SCORE = 45
+MIN_RESUME_SAVE_SCORE = 58
 
 
 def _clean_line(line: str) -> str:
-    return re.sub(r'\s+', ' ', line.replace('\u2022', ' ').strip())
+    return re.sub(r'\s+', ' ', BULLET_RE.sub(' ', line).strip())
+
+
+def _display_heading_label(value: str) -> str:
+    words = value.replace('/', ' / ').split()
+    return ' '.join(word.capitalize() if word != '/' else '/' for word in words).replace(' / ', '/')
+
+
+def _normalize_extracted_resume_text(text: str) -> str:
+    normalized = BULLET_RE.sub(' • ', text or '')
+    normalized = normalized.replace('\r\n', '\n').replace('\r', '\n').replace('\f', '\n').replace('\t', ' ')
+    normalized = re.sub(r'\n{4,}', '\n\n\n', normalized)
+
+    cleaned_lines: list[str] = []
+    for raw_line in normalized.splitlines():
+        line = re.sub(r'\s+', ' ', raw_line).strip()
+        if not line:
+            if cleaned_lines and cleaned_lines[-1] == '':
+                continue
+            cleaned_lines.append('')
+            continue
+        cleaned_lines.append(line)
+
+    normalized = '\n'.join(cleaned_lines).strip()
+    if not normalized:
+        return ''
+
+    heading_pattern = '|'.join(
+        re.escape(heading).replace(r'\ ', r'\s+')
+        for heading in INLINE_SECTION_HEADINGS
+    )
+    normalized = re.sub(
+        rf'(?:(?<=^)|(?<=\n)|(?<=\.\s)|(?<=\|\s)|(?<=\s{2}))(?P<heading>{heading_pattern})\s*:\s*',
+        lambda match: f'\n{_display_heading_label(match.group("heading"))}:\n',
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
+    normalized = re.sub(r'\s*•\s*', '\n• ', normalized)
+    normalized = re.sub(r'(?<!\n)(?P<heading>[A-Z][A-Z /&+-]{2,40})\n', lambda match: f'\n{match.group("heading")}\n', normalized)
+    normalized = re.sub(r'\n{3,}', '\n\n', normalized)
+    return normalized.strip()
+
+
+def _count_heading_matches(text: str) -> int:
+    total = 0
+    for raw_line in text.splitlines():
+        line = _clean_line(raw_line)
+        if not line:
+            continue
+        prev_blank = True
+        next_blank = True
+        if _looks_like_heading_label(line, prev_blank=prev_blank, next_blank=next_blank):
+            total += 1
+    return total
+
+
+def _build_text_quality_report(text: str, extraction_method: str) -> dict[str, Any]:
+    normalized_text = (text or '').strip()
+    raw_lines = normalized_text.splitlines()
+    non_empty_lines = [line.strip() for line in raw_lines if line.strip()]
+    text_length = len(normalized_text)
+    suspicious_char_count = sum(
+        normalized_text.count(char)
+        for char in ('\ufffd', '\x00', 'â', '�')
+    )
+    suspicious_char_ratio = suspicious_char_count / max(text_length, 1)
+    heading_count = _count_heading_matches(normalized_text)
+    average_line_length = (
+        sum(len(line) for line in non_empty_lines) / len(non_empty_lines)
+        if non_empty_lines else 0
+    )
+    long_line_ratio = (
+        sum(1 for line in non_empty_lines if len(line) >= 140) / len(non_empty_lines)
+        if non_empty_lines else 1
+    )
+    blank_line_ratio = raw_lines.count('') / max(len(raw_lines), 1)
+    signal_count = sum(
+        1
+        for present in (
+            bool(EMAIL_RE.search(normalized_text)),
+            bool(PHONE_RE.search(normalized_text)),
+            bool(URL_RE.search(normalized_text) or PLAIN_URL_RE.search(normalized_text) or GENERIC_PLAIN_URL_RE.search(normalized_text)),
+            bool(DATE_RANGE_RE.search(normalized_text) or DATE_SINGLE_RE.search(normalized_text)),
+        )
+        if present
+    )
+
+    score = 100
+    warnings: list[str] = []
+    if text_length < 500:
+        score -= 40
+        warnings.append('Very little text could be extracted from the PDF.')
+    elif text_length < 900:
+        score -= 18
+        warnings.append('Extracted text is shorter than expected for a resume.')
+
+    if len(non_empty_lines) < 10:
+        score -= 26
+        warnings.append('The extracted resume lost most line structure.')
+    elif len(non_empty_lines) < 18:
+        score -= 10
+
+    if average_line_length > 160:
+        score -= 18
+        warnings.append('Lines are unusually long, which usually means the PDF layout collapsed during extraction.')
+    elif average_line_length > 120:
+        score -= 8
+
+    if long_line_ratio > 0.6:
+        score -= 16
+    elif long_line_ratio > 0.35:
+        score -= 8
+
+    if heading_count == 0:
+        score -= 14
+        warnings.append('No clear resume section headings were detected.')
+    elif heading_count < 2:
+        score -= 6
+
+    if suspicious_char_ratio > 0.02:
+        score -= 18
+        warnings.append('The PDF text contains decoding artifacts.')
+    elif suspicious_char_ratio > 0.008:
+        score -= 8
+
+    if blank_line_ratio < 0.04:
+        score -= 8
+
+    if signal_count <= 1:
+        score -= 14
+        warnings.append('Only a small amount of contact/date signal was detected in the extracted text.')
+    elif signal_count == 2:
+        score -= 6
+
+    score = max(0, min(100, int(round(score))))
+    if score >= 80:
+        label = 'high'
+    elif score >= MIN_RESUME_SAVE_SCORE:
+        label = 'medium'
+    elif score >= MIN_RESUME_EXTRACTION_SCORE:
+        label = 'low'
+    else:
+        label = 'unsupported'
+
+    return {
+        'extraction_method': extraction_method,
+        'quality_score': score,
+        'quality_label': label,
+        'warnings': warnings,
+        'text_length': text_length,
+        'line_count': len(non_empty_lines),
+        'heading_count': heading_count,
+        'average_line_length': round(average_line_length, 1),
+        'save_recommended': score >= MIN_RESUME_SAVE_SCORE,
+        'supported_resume': score >= MIN_RESUME_EXTRACTION_SCORE,
+    }
 
 
 def _normalize_heading(line: str) -> str:
@@ -370,7 +577,7 @@ def _looks_like_heading_label(line: str, *, prev_blank: bool, next_blank: bool) 
     is_upper = stripped.isupper()
     has_colon = stripped.endswith(':')
     is_title = stripped == stripped.title()
-    if is_title and not any(keyword in normalized for keyword in HEADING_KEYWORD_HINTS):
+    if is_title and not has_colon and not any(keyword in normalized for keyword in HEADING_KEYWORD_HINTS):
         return None
 
     if not (has_colon or is_upper or is_title):
@@ -465,7 +672,47 @@ def _parse_date_token(value: str) -> dt.date | None:
     return None
 
 
-def _extract_pdf_text(data: bytes) -> str:
+def _extract_pdf_text_with_pymupdf(data: bytes) -> str:
+    try:
+        import fitz  # type: ignore
+    except Exception:
+        return ''
+
+    parts: list[str] = []
+    with fitz.open(stream=data, filetype='pdf') as document:
+        for page in document:
+            page_parts: list[str] = []
+            blocks = page.get_text('blocks') or []
+            sorted_blocks = sorted(blocks, key=lambda item: (round(item[1], 1), round(item[0], 1)))
+            for block in sorted_blocks:
+                block_text = (block[4] or '').strip()
+                if not block_text:
+                    continue
+                lines = [re.sub(r'\s+', ' ', line).strip() for line in block_text.splitlines() if line.strip()]
+                if lines:
+                    page_parts.append('\n'.join(lines))
+            page_text = '\n\n'.join(page_parts).strip()
+            if page_text:
+                parts.append(page_text)
+    return '\n\n'.join(parts).strip()
+
+
+def _extract_pdf_text_with_pdfplumber(data: bytes) -> str:
+    try:
+        import pdfplumber  # type: ignore
+    except Exception:
+        return ''
+
+    parts: list[str] = []
+    with pdfplumber.open(io.BytesIO(data)) as pdf:
+        for page in pdf.pages:
+            page_text = (page.extract_text(layout=True) or '').strip()
+            if page_text:
+                parts.append(page_text)
+    return '\n\n'.join(parts).strip()
+
+
+def _extract_pdf_text_with_pypdf(data: bytes) -> str:
     reader = None
     try:
         from pypdf import PdfReader  # type: ignore
@@ -486,7 +733,36 @@ def _extract_pdf_text(data: bytes) -> str:
         page_text = page.extract_text() or ''
         if page_text.strip():
             parts.append(page_text)
-    return '\n'.join(parts).strip()
+    return '\n\n'.join(parts).strip()
+
+
+def _extract_pdf_text(data: bytes) -> tuple[str, dict[str, Any]]:
+    candidates = [
+        ('pymupdf', _extract_pdf_text_with_pymupdf),
+        ('pdfplumber', _extract_pdf_text_with_pdfplumber),
+        ('pypdf', _extract_pdf_text_with_pypdf),
+    ]
+    best_text = ''
+    best_report: dict[str, Any] | None = None
+
+    for method_name, extractor in candidates:
+        try:
+            extracted_text = extractor(data)
+        except RuntimeError:
+            raise
+        except Exception:
+            continue
+        if not extracted_text.strip():
+            continue
+        report = _build_text_quality_report(extracted_text, method_name)
+        if not best_report or report['quality_score'] > best_report['quality_score']:
+            best_text = extracted_text
+            best_report = report
+
+    if best_report:
+        return best_text, best_report
+
+    return '', _build_text_quality_report('', 'unavailable')
 
 
 def _extract_cloudinary_asset_details(asset_url: str) -> dict[str, str] | None:
@@ -600,16 +876,16 @@ def _split_sections(text: str) -> tuple[dict[str, str], list[str]]:
         if not line:
             sections.setdefault(current, []).append('')
             continue
-        section = _resolve_heading_section(line)
-        if section:
-            current = section
-            sections.setdefault(current, [])
-            continue
         heading_candidate = _looks_like_heading_label(
             line,
             prev_blank=prev_blank,
             next_blank=next_blank,
         )
+        section = _resolve_heading_section(line) if heading_candidate else None
+        if section:
+            current = section
+            sections.setdefault(current, [])
+            continue
         if heading_candidate and heading_candidate not in HEADING_ALIASES:
             current = f'unknown:{heading_candidate}'
             sections.setdefault(current, [])
@@ -645,34 +921,150 @@ def _normalize_phone(value: str) -> str:
     return digits
 
 
+def _normalize_contact_text(value: str) -> str:
+    normalized = value or ''
+    for _ in range(3):
+        normalized = re.sub(
+            r'([A-Za-z0-9._%+-]+)\s*(?:\(|\[)?at(?:\)|\])?\s*([A-Za-z0-9.-]+)',
+            r'\1@\2',
+            normalized,
+            flags=re.IGNORECASE,
+        )
+        normalized = re.sub(
+            r'([A-Za-z0-9._%+-]+)\s*(?:\(|\[)?dot(?:\)|\])?\s*([A-Za-z0-9.-]+)',
+            r'\1.\2',
+            normalized,
+            flags=re.IGNORECASE,
+        )
+    normalized = re.sub(r'(?<=\w)\s*@\s*(?=\w)', '@', normalized)
+    normalized = re.sub(r'(?<=\w)\s*\.\s*(?=\w)', '.', normalized)
+    return normalized
+
+
+def _normalize_person_name(value: str) -> str:
+    cleaned = _clean_line(value).strip(' -|,;:')
+    if cleaned.isupper():
+        return ' '.join(part.capitalize() for part in cleaned.lower().split())
+    return cleaned
+
+
+def _split_inline_summary(value: str) -> tuple[str, str]:
+    text = value or ''
+    match = re.search(
+        r'\b(?:professional\s+summary|profile\s+summary|career\s+summary|summary|objective)\s*:\s*',
+        text,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return text.strip(), ''
+    header = text[: match.start()].strip()
+    summary = text[match.end() :].strip()
+    return header, summary
+
+
+def _extract_header_segments(value: str) -> list[str]:
+    if not value:
+        return []
+    segments = [segment.strip() for segment in re.split(r'[|•]+|\s+[–—-]\s+', value) if segment.strip()]
+    return segments
+
+
+def _strip_contact_tokens(value: str) -> str:
+    stripped = _normalize_contact_text(value or '')
+    stripped = EMAIL_RE.sub(' ', stripped)
+    stripped = PHONE_RE.sub(' ', stripped)
+    stripped = URL_RE.sub(' ', stripped)
+    stripped = PLAIN_URL_RE.sub(' ', stripped)
+    stripped = GENERIC_PLAIN_URL_RE.sub(' ', stripped)
+    stripped = re.sub(r'\s+', ' ', stripped)
+    return stripped.strip(' -|,;:')
+
+
+def _extract_tagline_from_segment(value: str) -> str:
+    candidate = _strip_contact_tokens(value)
+    if not candidate:
+        return ''
+    role_match = re.search(
+        r'\b([A-Za-z][A-Za-z/&.+-]*(?:\s+[A-Za-z][A-Za-z/&.+-]*){0,5}\s+'
+        r'(?:engineer|developer|manager|lead|intern|analyst|consultant|architect|designer|specialist|director|officer|scientist|founder|associate))\b',
+        candidate,
+        flags=re.IGNORECASE,
+    )
+    if role_match:
+        return _clean_line(role_match.group(1))[:200]
+    if len(candidate) <= 90 and not re.search(r'\d', candidate):
+        return candidate[:200]
+    return ''
+
+
+def _is_probable_personal_website(url: str) -> bool:
+    parsed = urlparse(url)
+    host = (parsed.netloc or '').lower()
+    if not host:
+        return False
+    host = host.split(':', 1)[0]
+    if host.startswith('www.'):
+        host = host[4:]
+    root = host.split('.', 1)[0]
+    normalized_known_skills = {
+        re.sub(r'[^a-z0-9]+', '', skill.lower())
+        for skill in KNOWN_SKILLS
+    }
+    if re.sub(r'[^a-z0-9]+', '', root) in normalized_known_skills:
+        return False
+    return True
+
+
+def _is_name_candidate(value: str) -> bool:
+    cleaned = _clean_line(value).strip(' -|,;:')
+    if not cleaned:
+        return False
+    lowered = cleaned.lower()
+    if any(keyword in lowered for keyword in NAME_LINE_SKIP_KEYWORDS):
+        return False
+    if '@' in cleaned or 'http://' in lowered or 'https://' in lowered:
+        return False
+    if _resolve_heading_section(cleaned):
+        return False
+    words = cleaned.split()
+    if not 2 <= len(words) <= 5:
+        return False
+    if len(cleaned) > 70 or re.search(r'\d', cleaned):
+        return False
+    return all(re.fullmatch(r"[A-Za-z][A-Za-z.'-]*", word) for word in words)
+
+
 def _extract_contact(general_text: str) -> dict[str, str]:
     contact: dict[str, str] = {}
-    normalized_text = general_text.replace('(at)', '@').replace('[at]', '@').replace(' at ', '@')
-    normalized_text = normalized_text.replace('(dot)', '.').replace('[dot]', '.').replace(' dot ', '.')
+    normalized_text = _normalize_contact_text(general_text)
+    header_text, _ = _split_inline_summary(normalized_text)
+    contact_text = header_text or normalized_text
 
-    labeled_email = re.search(r'\bemail\s*[:\-]\s*(?P<value>[^\s,;|]+@[^\s,;|]+)', normalized_text, flags=re.IGNORECASE)
-    email_match = labeled_email or EMAIL_RE.search(normalized_text)
+    labeled_email = re.search(r'\bemail\s*[:\-]\s*(?P<value>[^\s,;|]+@[^\s,;|]+)', contact_text, flags=re.IGNORECASE)
+    email_match = labeled_email or EMAIL_RE.search(contact_text)
     if email_match:
         value = email_match.group('value') if 'value' in email_match.groupdict() else email_match.group(0)
         contact['email'] = value.strip().strip('.,;')
 
     labeled_phone = re.search(
         r'\b(?:phone|mobile|contact|tel|telephone)\s*[:\-]\s*(?P<value>[+()\d][\d\s\-().]{7,})',
-        normalized_text,
+        contact_text,
         flags=re.IGNORECASE,
     )
     phone_source = labeled_phone.group('value') if labeled_phone else ''
     if not phone_source:
-        phone_match = PHONE_RE.search(normalized_text)
+        phone_match = PHONE_RE.search(contact_text)
         if phone_match:
             phone_source = phone_match.group(0)
     phone_value = _normalize_phone(phone_source)
     if phone_value:
         contact['phone'] = phone_value
 
+    url_source = EMAIL_RE.sub(' ', contact_text)
     all_urls = []
-    all_urls.extend(URL_RE.findall(normalized_text))
-    all_urls.extend(PLAIN_URL_RE.findall(normalized_text))
+    all_urls.extend(URL_RE.findall(url_source))
+    all_urls.extend(PLAIN_URL_RE.findall(url_source))
+    all_urls.extend(GENERIC_PLAIN_URL_RE.findall(url_source))
     for raw_url in all_urls:
         url = _normalize_web_url(raw_url)
         if not url:
@@ -684,37 +1076,52 @@ def _extract_contact(general_text: str) -> dict[str, str]:
             contact['github_url'] = url
         elif ('twitter.com' in lowered or 'x.com' in lowered) and not contact.get('twitter_url'):
             contact['twitter_url'] = url
+        elif not contact.get('website_url') and _is_probable_personal_website(url):
+            contact['website_url'] = url
     return contact
 
 
 def _guess_name_and_tagline(general_text: str, contact_text: str = '') -> tuple[str, str]:
-    combined_text = f'{contact_text}\n{general_text}'.strip()
+    general_header, _ = _split_inline_summary(general_text)
+    contact_header, _ = _split_inline_summary(contact_text)
+    combined_text = f'{contact_header}\n{general_header}'.strip()
     labeled_name_match = re.search(
-        r'\b(?:name|full name)\s*[:\-]\s*(?P<value>[A-Za-z][A-Za-z.\s]{1,80})',
+        r'\b(?:name|full name)\s*[:\-]\s*(?P<value>[A-Za-z][A-Za-z.\s\'-]{1,80})',
         combined_text,
         flags=re.IGNORECASE,
     )
     if labeled_name_match:
-        name_value = _clean_line(labeled_name_match.group('value'))
+        name_value = _normalize_person_name(labeled_name_match.group('value'))
         if 2 <= len(name_value.split()) <= 5 and not re.search(r'\d', name_value):
             return name_value[:100], ''
 
-    lines = [_clean_line(line) for line in general_text.splitlines() if _clean_line(line)]
+    lines = [_clean_line(line) for line in combined_text.splitlines() if _clean_line(line)]
     if not lines:
         return '', ''
 
     name = ''
     tagline = ''
-    for idx, line in enumerate(lines[:10]):
+    for idx, line in enumerate(lines[:12]):
+        segments = _extract_header_segments(line)
+        if len(segments) >= 2 and _is_name_candidate(segments[0]):
+            name = _normalize_person_name(segments[0])
+            tagline_candidate = next(
+                (
+                    _extract_tagline_from_segment(segment) for segment in segments[1:]
+                    if _extract_tagline_from_segment(segment)
+                ),
+                '',
+            )
+            tagline = tagline_candidate[:200]
+            break
+
         line_lower = line.lower()
         if '@' in line or 'http://' in line or 'https://' in line:
             continue
-        if any(keyword in line_lower for keyword in ('email', 'phone', 'mobile', 'linkedin', 'github', 'twitter', 'x.com')):
+        if any(keyword in line_lower for keyword in NAME_LINE_SKIP_KEYWORDS):
             continue
-        if _resolve_heading_section(line):
-            continue
-        if 2 <= len(line.split()) <= 6 and len(line) <= 70 and not re.search(r'\d', line):
-            name = line
+        if _is_name_candidate(line):
+            name = _normalize_person_name(line)
             if idx + 1 < len(lines):
                 next_line = lines[idx + 1]
                 next_lower = next_line.lower()
@@ -722,10 +1129,14 @@ def _guess_name_and_tagline(general_text: str, contact_text: str = '') -> tuple[
                     '@' not in next_line
                     and 'http' not in next_line
                     and len(next_line) <= 90
-                    and not any(keyword in next_lower for keyword in ('email', 'phone', 'mobile', 'linkedin', 'github', 'twitter', 'x.com'))
+                    and not any(keyword in next_lower for keyword in NAME_LINE_SKIP_KEYWORDS)
                     and not _resolve_heading_section(next_line)
                 ):
-                    tagline = next_line
+                    tagline = _extract_tagline_from_segment(next_line) or next_line
+            if not tagline and idx + 1 >= len(lines) and len(segments) >= 2:
+                tagline = _extract_tagline_from_segment(' '.join(segments[1:]))
+            if not tagline and idx == 0 and len(segments) >= 2:
+                tagline = _extract_tagline_from_segment(' '.join(segments[1:]))
             break
     return name, tagline
 
@@ -820,6 +1231,19 @@ def _extract_role_company(header: str) -> tuple[str, str]:
     if not header:
         return '', ''
 
+    def assign_pair(left: str, right: str) -> tuple[str, str]:
+        left = left.strip(' -|,;')
+        right = right.strip(' -|,;')
+        if _looks_like_company(left) and not _looks_like_company(right):
+            return right, left
+        if _looks_like_company(right) and not _looks_like_company(left):
+            return left, right
+        if _looks_like_role(left) and not _looks_like_role(right):
+            return left, right
+        if _looks_like_role(right) and not _looks_like_role(left):
+            return right, left
+        return left, right
+
     if ' at ' in header.lower():
         role, company = re.split(r'\bat\b', header, maxsplit=1, flags=re.IGNORECASE)
         return role.strip(' -|'), company.strip(' -|')
@@ -827,29 +1251,176 @@ def _extract_role_company(header: str) -> tuple[str, str]:
         role, company = header.split('@', 1)
         return role.strip(' -|'), company.strip(' -|')
 
-    parts = [part.strip() for part in re.split(r'\s+[|]\s+|\s+-\s+|\s+–\s+|\s+—\s+', header) if part.strip()]
-    if len(parts) >= 2:
-        left, right = parts[0], parts[1]
-        if _looks_like_company(left) and not _looks_like_company(right):
-            return right, left
-        if _looks_like_role(left) and not _looks_like_role(right):
-            return left, right
-        return left, right
+    pipe_parts = [part.strip() for part in re.split(r'\s+[|]\s+', header) if part.strip()]
+    if len(pipe_parts) >= 2:
+        return assign_pair(pipe_parts[0], ' | '.join(pipe_parts[1:]))
+
+    dash_parts = [part.strip() for part in re.split(r'\s+-\s+|\s+–\s+|\s+—\s+', header, maxsplit=1) if part.strip()]
+    if len(dash_parts) == 2:
+        return assign_pair(dash_parts[0], dash_parts[1])
 
     comma_parts = [part.strip() for part in header.split(',', 1) if part.strip()]
     if len(comma_parts) == 2:
-        left, right = comma_parts
-        if _looks_like_company(left) and not _looks_like_company(right):
-            return right, left
-        return left, right
+        return assign_pair(comma_parts[0], comma_parts[1])
 
+    if _looks_like_company(header) and not _looks_like_role(header):
+        return '', header
     return header, ''
 
 
-def _parse_experience(section_text: str) -> list[dict[str, Any]]:
+def _split_bullet_items(text: str) -> list[str]:
+    normalized = BULLET_RE.sub(' • ', text or '')
+    normalized = re.sub(r'\s+', ' ', normalized).strip()
+    if not normalized:
+        return []
+    return [
+        item
+        for item in (
+            _clean_line(part).strip(' -|,;:')
+            for part in re.split(r'\s*•+\s*', normalized)
+        )
+        if item
+    ]
+
+
+def _extract_experience_header(before_chunk: str) -> str:
+    cleaned = re.sub(r'\s+', ' ', before_chunk or '').strip(' -|,;')
+    if not cleaned:
+        return ''
+
+    normalized = BULLET_RE.sub(' • ', cleaned)
+    candidates = [
+        _clean_line(part).strip(' -|,;')
+        for part in re.split(
+            r'(?:•+|(?<=[.?!])\s+|(?:Web Application|Mobile Application|Application|Project)\s*:\s*)',
+            normalized,
+            flags=re.IGNORECASE,
+        )
+        if _clean_line(part)
+    ]
+    if not candidates:
+        return cleaned[-180:]
+
+    for index in range(len(candidates) - 1, -1, -1):
+        candidate = candidates[index]
+        role, company = _extract_role_company(candidate)
+        if (
+            '|' in candidate
+            or ' at ' in candidate.lower()
+            or ' @ ' in candidate
+            or _looks_like_company(candidate)
+            or _looks_like_company(company)
+        ):
+            return candidate[-180:]
+        if _looks_like_role(candidate) or _looks_like_role(role):
+            if index > 0:
+                combined = f'{candidates[index - 1]} {candidate}'.strip()
+                if '|' in combined:
+                    pipe_match = re.search(r'([A-Z][A-Za-z0-9.&\s]{0,80}\|\s*[^|]{1,140})$', combined)
+                    if pipe_match:
+                        combined = pipe_match.group(1).strip()
+                combined_role, combined_company = _extract_role_company(combined)
+                if (
+                    '|' in combined
+                    or ' at ' in combined.lower()
+                    or ' @ ' in combined
+                    or _looks_like_company(combined)
+                    or _looks_like_company(combined_company)
+                ):
+                    return combined[-180:]
+            return candidate[-180:]
+    return candidates[-1][-180:]
+
+
+def _extract_experience_segments(section_text: str) -> list[dict[str, str]]:
+    compact_text = re.sub(r'\s+', ' ', section_text or '').strip()
+    dated_matches = list(DATE_RANGE_RE.finditer(compact_text))
+    if not dated_matches:
+        return []
+
+    header_sources: list[str] = []
+    for index, date_match in enumerate(dated_matches):
+        previous_end = dated_matches[index - 1].end() if index > 0 else 0
+        before_chunk = compact_text[previous_end:date_match.start()].strip(' -|,;')
+        header_sources.append(_extract_experience_header(before_chunk))
+
+    segments: list[dict[str, str]] = []
+    for index, date_match in enumerate(dated_matches):
+        next_start = dated_matches[index + 1].start() if index + 1 < len(dated_matches) else len(compact_text)
+        body_chunk = compact_text[date_match.end() : next_start].strip(' -|,;')
+        next_header = header_sources[index + 1] if index + 1 < len(header_sources) else ''
+        if next_header:
+            body_chunk = re.sub(
+                rf'(?:[.?!]\s*)?{re.escape(next_header)}\s*$',
+                '',
+                body_chunk,
+            ).strip(' -|,;')
+
+        segments.append(
+            {
+                'header': header_sources[index],
+                'body': body_chunk,
+                'start_token': date_match.group('start'),
+                'end_token': date_match.group('end'),
+            }
+        )
+    return segments
+
+
+def _parse_experience(section_text: str, fallback_role: str = '') -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     if not section_text:
         return entries
+
+    segments = _extract_experience_segments(section_text)
+    if segments:
+        seen_compact: set[tuple[str, str, dt.date | None]] = set()
+        for segment in segments:
+            role, company = _extract_role_company(segment['header'])
+
+            start_date = _parse_date_token(segment['start_token'])
+            end_token = segment['end_token']
+            end_date = _parse_date_token(end_token)
+            is_current = end_token.lower() in {'present', 'current', 'now'}
+            if not start_date:
+                continue
+
+            highlight_source = re.sub(
+                r'\b(?:Web Application|Mobile Application|Application|Project)\s*:\s*',
+                ' • ',
+                segment['body'],
+                flags=re.IGNORECASE,
+            )
+            highlights = [
+                part[:260]
+                for part in _split_bullet_items(highlight_source)
+                if len(part) >= 12
+                and part.lower() not in {'web application', 'mobile application', 'application', 'project'}
+                and not _resolve_heading_section(part)
+            ][:6]
+
+            if not role:
+                role = fallback_role or 'Professional Experience'
+            if not company and role:
+                company = 'Unknown'
+
+            key = (role.lower().strip(), company.lower().strip(), start_date)
+            if key in seen_compact:
+                continue
+            seen_compact.add(key)
+            entries.append(
+                {
+                    'role': role[:100],
+                    'company': company[:100],
+                    'start_date': start_date,
+                    'end_date': None if is_current else end_date,
+                    'is_current': is_current,
+                    'highlights': highlights,
+                }
+            )
+
+        if entries:
+            return entries
 
     lines = [_clean_line(line) for line in section_text.splitlines() if _clean_line(line)]
     dated_lines: list[tuple[int, re.Match[str]]] = []
@@ -1015,7 +1586,11 @@ def _parse_certifications(section_text: str) -> list[dict[str, Any]]:
     if not section_text:
         return entries
     seen: set[tuple[str, str]] = set()
-    for raw_line in section_text.splitlines():
+    certification_lines = _split_bullet_items(section_text)
+    if not certification_lines:
+        certification_lines = section_text.splitlines()
+
+    for raw_line in certification_lines:
         line = _clean_line(raw_line).lstrip('-* ').strip()
         if not line:
             continue
@@ -1057,6 +1632,78 @@ def _parse_certifications(section_text: str) -> list[dict[str, Any]]:
             continue
         seen.add(dedupe_key)
         entries.append({'name': name[:180], 'issuer': issuer[:140], 'issue_date': issue_date})
+    return entries[:20]
+
+
+def _derive_projects_from_experience(
+    section_text: str,
+    experience_entries: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    seen_titles: set[str] = set()
+    segments = _extract_experience_segments(section_text)
+    if not segments:
+        return entries
+
+    for index, segment in enumerate(segments):
+        body = segment['body']
+        label_matches = list(
+            re.finditer(
+                r'\b(?P<label>Web Application|Mobile Application|Application|Project)\s*:\s*',
+                body,
+                flags=re.IGNORECASE,
+            )
+        )
+        if not label_matches:
+            continue
+
+        related_experience = experience_entries[index] if index < len(experience_entries) else {}
+        title_prefix = (
+            related_experience.get('company')
+            or related_experience.get('role')
+            or _extract_role_company(segment['header'])[1]
+            or _extract_role_company(segment['header'])[0]
+            or 'Project'
+        )
+        if title_prefix == 'Unknown':
+            title_prefix = related_experience.get('role') or 'Project'
+
+        for label_index, match in enumerate(label_matches):
+            next_start = label_matches[label_index + 1].start() if label_index + 1 < len(label_matches) else len(body)
+            label_body = body[match.end() : next_start].strip(' -|,;')
+            bullet_items = [item for item in _split_bullet_items(label_body) if len(item) >= 10]
+            if not bullet_items:
+                continue
+
+            label_text = match.group('label').lower()
+            title_suffix = 'Mobile App' if 'mobile' in label_text else 'Web App' if 'web' in label_text else 'Project'
+            title = f'{title_prefix} {title_suffix}'.strip()
+            title_key = title.lower()
+            if title_key in seen_titles:
+                continue
+            seen_titles.add(title_key)
+
+            urls = URL_RE.findall(label_body)
+            repo_url = next(
+                (
+                    url
+                    for url in urls
+                    if any(host in url.lower() for host in ('github.com', 'gitlab.com', 'bitbucket.org'))
+                ),
+                '',
+            )
+            live_url = next((url for url in urls if url != repo_url), '')
+            entries.append(
+                {
+                    'title': title[:200],
+                    'short_description': bullet_items[0][:300],
+                    'description': '\n'.join(bullet_items[:6])[:2000],
+                    'repo_url': repo_url[:300],
+                    'live_url': live_url[:300],
+                    'date_built': _parse_date_token(segment['start_token']),
+                    'category': 'frontend',
+                }
+            )
     return entries[:20]
 
 
@@ -1326,6 +1973,69 @@ def _build_section_report(
     }
 
 
+def _finalize_quality_report(
+    extraction_report: dict[str, Any],
+    *,
+    full_name: str,
+    skills: list[str],
+    languages: list[str],
+    projects: list[dict[str, Any]],
+    experience: list[dict[str, Any]],
+    education: list[dict[str, Any]],
+    activities: list[dict[str, Any]],
+    certifications: list[dict[str, Any]],
+    achievements: list[dict[str, Any]],
+    section_report: dict[str, list[str]],
+) -> dict[str, Any]:
+    report = dict(extraction_report)
+    warnings = list(report.get('warnings', []))
+
+    parsed_section_count = sum(
+        1
+        for value in (
+            bool(full_name),
+            bool(skills),
+            bool(languages),
+            bool(projects),
+            bool(experience),
+            bool(education),
+            bool(activities),
+            bool(certifications),
+            bool(achievements),
+        )
+        if value
+    )
+    report['parsed_section_count'] = parsed_section_count
+    missing_sections = len(section_report.get('missing', []))
+    report['missing_section_count'] = missing_sections
+
+    if parsed_section_count <= 2:
+        report['quality_score'] = max(0, int(report.get('quality_score', 0)) - 12)
+        warnings.append('Only a small portion of the resume could be mapped into portfolio sections.')
+    elif parsed_section_count <= 4:
+        report['quality_score'] = max(0, int(report.get('quality_score', 0)) - 6)
+
+    if missing_sections >= 6:
+        warnings.append('Most supported portfolio sections could not be found in this resume.')
+
+    quality_score = int(report.get('quality_score', 0))
+    if quality_score >= 80:
+        quality_label = 'high'
+    elif quality_score >= MIN_RESUME_SAVE_SCORE:
+        quality_label = 'medium'
+    elif quality_score >= MIN_RESUME_EXTRACTION_SCORE:
+        quality_label = 'low'
+    else:
+        quality_label = 'unsupported'
+
+    report['quality_score'] = quality_score
+    report['quality_label'] = quality_label
+    report['supported_resume'] = quality_score >= MIN_RESUME_EXTRACTION_SCORE
+    report['save_recommended'] = quality_score >= MIN_RESUME_SAVE_SCORE
+    report['warnings'] = list(dict.fromkeys(warnings))
+    return report
+
+
 @dataclass
 class ParsedResume:
     contact: dict[str, str]
@@ -1341,6 +2051,7 @@ class ParsedResume:
     certifications: list[dict[str, Any]]
     achievements: list[dict[str, Any]]
     section_report: dict[str, list[str]]
+    quality_report: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -1357,21 +2068,30 @@ class ParsedResume:
             'certifications': self.certifications,
             'achievements': self.achievements,
             'section_report': self.section_report,
+            'quality_report': self.quality_report,
         }
 
 
 def parse_resume_from_url(resume_url: str) -> ParsedResume:
-    text = _extract_pdf_text(_download_resume_bytes(resume_url))
+    extracted_text, extraction_report = _extract_pdf_text(_download_resume_bytes(resume_url))
+    text = _normalize_extracted_resume_text(extracted_text)
     if not text:
         raise RuntimeError('Resume PDF could not be read. Please upload a text-based PDF.')
+    if not extraction_report.get('supported_resume'):
+        raise RuntimeError(
+            'This resume format is not supported yet. Please upload a clean text-based PDF with selectable text.'
+        )
 
     sections, unknown_headings = _split_sections(text)
     general_text = sections.get('general', text)
     contact_text = sections.get('contact', '')
-    contact_source = f'{general_text}\n{contact_text}'.strip()
+    header_text, inline_summary = _split_inline_summary(general_text)
+    contact_source = f'{header_text}\n{contact_text}'.strip()
     contact = _extract_contact(contact_source)
-    full_name, tagline = _guess_name_and_tagline(general_text, contact_text=contact_text)
+    full_name, tagline = _guess_name_and_tagline(header_text, contact_text=contact_text)
     summary_text = sections.get('summary', '')[:1200]
+    if not summary_text:
+        summary_text = inline_summary[:1200]
     if not summary_text:
         summary_text = '\n'.join([_clean_line(line) for line in general_text.splitlines()[:6]])
     summary_text = summary_text[:1200]
@@ -1383,7 +2103,7 @@ def parse_resume_from_url(resume_url: str) -> ParsedResume:
     achievements_text = sections.get('achievements', '')
 
     parsed_projects = _parse_projects(projects_text)
-    parsed_experience = _parse_experience(experience_text)
+    parsed_experience = _parse_experience(experience_text, fallback_role=tagline)
     parsed_activities = _parse_activities(activities_text)
     parsed_education = _parse_education(sections.get('education', ''))
     parsed_certifications = _parse_certifications(certifications_text)
@@ -1400,6 +2120,9 @@ def parse_resume_from_url(resume_url: str) -> ParsedResume:
             if any(keyword in line.lower() for keyword in ('certified', 'certification', 'certificate', 'license'))
         )
         parsed_certifications = _parse_certifications(cert_lines)
+
+    if not parsed_projects and experience_text:
+        parsed_projects = _derive_projects_from_experience(experience_text, parsed_experience)
 
     if not parsed_achievements:
         achievement_lines = '\n'.join(
@@ -1423,6 +2146,19 @@ def parse_resume_from_url(resume_url: str) -> ParsedResume:
         achievements=parsed_achievements,
         unknown_headings=unknown_headings,
     )
+    quality_report = _finalize_quality_report(
+        extraction_report,
+        full_name=full_name,
+        skills=parsed_skills,
+        languages=parsed_languages,
+        projects=parsed_projects,
+        experience=parsed_experience,
+        education=parsed_education,
+        activities=parsed_activities,
+        certifications=parsed_certifications,
+        achievements=parsed_achievements,
+        section_report=section_report,
+    )
 
     return ParsedResume(
         contact=contact,
@@ -1438,6 +2174,7 @@ def parse_resume_from_url(resume_url: str) -> ParsedResume:
         certifications=parsed_certifications,
         achievements=parsed_achievements,
         section_report=section_report,
+        quality_report=quality_report,
     )
 
 
@@ -1458,9 +2195,11 @@ def apply_parsed_resume(user, profile: Profile, parsed: ParsedResume, overwrite_
     contact = parsed.contact
     profile_updates = {
         'full_name': parsed.full_name,
+        'phone': contact.get('phone', ''),
         'tagline': parsed.tagline,
         'bio': parsed.summary_text,
         'email': contact.get('email', ''),
+        'website_url': contact.get('website_url', ''),
         'github_url': contact.get('github_url', ''),
         'linkedin_url': contact.get('linkedin_url', ''),
         'twitter_url': contact.get('twitter_url', ''),

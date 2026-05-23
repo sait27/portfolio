@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaExternalLinkAlt, FaGithub, FaArrowRight } from 'react-icons/fa';
 import SectionWrapper from '../components/SectionWrapper';
@@ -27,7 +27,6 @@ export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
     const params = activeFilter ? { category: activeFilter } : {};
     publicApi.getProjects(params)
       .then((res) => {
@@ -37,6 +36,11 @@ export default function Projects() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [activeFilter]);
+
+  const handleFilterChange = (nextFilter) => {
+    setLoading(true);
+    setActiveFilter(nextFilter);
+  };
 
   const handleProjectCardKeyDown = (event, project) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -70,7 +74,7 @@ export default function Projects() {
               <button
                 key={filter.value}
                 className={`projects__filter ${activeFilter === filter.value ? 'projects__filter--active' : ''}`}
-                onClick={() => setActiveFilter(filter.value)}
+                onClick={() => handleFilterChange(filter.value)}
               >
                 {filter.label}
               </button>
@@ -82,10 +86,10 @@ export default function Projects() {
               {[1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)}
             </div>
           ) : projects.length > 0 ? (
-            <motion.div className="projects__grid" layout>
+            <Motion.div className="projects__grid" layout>
               <AnimatePresence mode="popLayout">
                 {projects.map((project) => (
-                  <motion.div
+                  <Motion.div
                     key={project.id}
                     className="project-card glass"
                     role="button"
@@ -154,10 +158,10 @@ export default function Projects() {
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 ))}
               </AnimatePresence>
-            </motion.div>
+            </Motion.div>
           ) : (
             <div className="projects__empty">
               <h3>No projects found</h3>
@@ -232,7 +236,7 @@ function ProjectModal({ project, onClose }) {
   }, [onClose]);
 
   return (
-    <motion.div
+    <Motion.div
       className="modal-overlay"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -240,7 +244,7 @@ function ProjectModal({ project, onClose }) {
       onClick={onClose}
       role="presentation"
     >
-      <motion.div
+      <Motion.div
         ref={modalRef}
         className="modal glass"
         role="dialog"
@@ -304,7 +308,7 @@ function ProjectModal({ project, onClose }) {
             )}
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </Motion.div>
+    </Motion.div>
   );
 }

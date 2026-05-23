@@ -191,6 +191,20 @@ export default function AdminMilestones() {
     });
   }, [records, activeSection]);
 
+  const milestoneInsights = useMemo(() => {
+    const total = SECTION_ORDER.reduce((sum, sectionKey) => sum + toArray(records[sectionKey]).length, 0);
+    const activeCount = toArray(records[activeSection]).length;
+    const sectionWithMostItems = SECTION_ORDER
+      .map((sectionKey) => ({ sectionKey, count: toArray(records[sectionKey]).length }))
+      .sort((left, right) => right.count - left.count)[0];
+    return [
+      { label: 'All Milestones', value: total },
+      { label: `${SECTION_CONFIG[activeSection].label}`, value: activeCount },
+      { label: 'Most Filled', value: sectionWithMostItems ? SECTION_CONFIG[sectionWithMostItems.sectionKey].label : '-' },
+      { label: 'Count (Most Filled)', value: sectionWithMostItems ? sectionWithMostItems.count : 0 },
+    ];
+  }, [records, activeSection]);
+
   const selectSection = (sectionKey) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('section', sectionKey);
@@ -360,6 +374,15 @@ export default function AdminMilestones() {
         <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
           <FaPlus /> Add {currentConfig.singular}
         </button>
+      </div>
+
+      <div className="admin-content-insights">
+        {milestoneInsights.map((item) => (
+          <div key={item.label} className="admin-content-insights__item">
+            <span className="admin-content-insights__label">{item.label}</span>
+            <strong className="admin-content-insights__value">{item.value}</strong>
+          </div>
+        ))}
       </div>
 
       <div className="admin-milestones__tabs glass">

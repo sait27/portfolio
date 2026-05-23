@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { HiMenu, HiX } from 'react-icons/hi';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -25,7 +25,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <motion.nav
+    <Motion.nav
       className={`navbar ${isScrolled ? 'navbar--scrolled' : ''}`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -47,7 +47,7 @@ export default function Navbar() {
               >
                 {link.label}
                 {location.pathname === link.path && (
-                  <motion.div
+                  <Motion.div
                     className="navbar__indicator"
                     layoutId="navbar-indicator"
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
@@ -91,7 +91,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <Motion.div
             id="navbar-mobile-menu"
             className="navbar__mobile"
             initial={{ opacity: 0, height: 0 }}
@@ -101,7 +101,7 @@ export default function Navbar() {
           >
             <ul className="navbar__mobile-links">
               {NAV_LINKS.map((link, i) => (
-                <motion.li
+                <Motion.li
                   key={link.path}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -114,9 +114,9 @@ export default function Navbar() {
                   >
                     {link.label}
                   </Link>
-                </motion.li>
+                </Motion.li>
               ))}
-              <motion.li
+              <Motion.li
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
@@ -138,11 +138,11 @@ export default function Navbar() {
                     Sign In
                   </Link>
                 )}
-              </motion.li>
+              </Motion.li>
             </ul>
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
-    </motion.nav>
+    </Motion.nav>
   );
 }

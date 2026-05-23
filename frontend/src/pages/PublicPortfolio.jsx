@@ -12,6 +12,7 @@ import {
   FaEnvelope,
   FaExternalLinkAlt,
   FaGithub,
+  FaGlobe,
   FaGraduationCap,
   FaLayerGroup,
   FaLinkedin,
@@ -22,6 +23,7 @@ import {
   FaTimes,
   FaTrophy,
   FaTwitter,
+  FaPhone,
   FaUsers,
 } from 'react-icons/fa';
 import { HiDownload } from 'react-icons/hi';
@@ -30,7 +32,7 @@ import SectionWrapper from '../components/SectionWrapper';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import SkillIcon from '../components/SkillIcon';
 import { publicApi } from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import './PublicPortfolio.css';
 import './PortfolioShared.css';
 
@@ -465,6 +467,11 @@ export default function PublicPortfolio() {
                   <FaGithub size={22} />
                 </a>
               )}
+              {profile?.website_url && (
+                <a href={profile.website_url} target="_blank" rel="noopener noreferrer" aria-label="Website">
+                  <FaGlobe size={22} />
+                </a>
+              )}
               {profile?.linkedin_url && (
                 <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                   <FaLinkedin size={22} />
@@ -478,6 +485,11 @@ export default function PublicPortfolio() {
               {profile?.email && (
                 <a href={`mailto:${profile.email}`} aria-label="Email">
                   <FaEnvelope size={22} />
+                </a>
+              )}
+              {profile?.phone && (
+                <a href={`tel:${profile.phone}`} aria-label="Phone">
+                  <FaPhone size={22} />
                 </a>
               )}
             </Motion.div>

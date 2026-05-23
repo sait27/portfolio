@@ -84,6 +84,18 @@ export default function AdminBlog() {
       });
   }, [posts, searchTerm, statusFilter]);
 
+  const blogInsights = useMemo(() => {
+    const total = posts.length;
+    const published = posts.filter((post) => post.is_published).length;
+    const featured = posts.filter((post) => post.is_featured).length;
+    return [
+      { label: 'Total', value: total },
+      { label: 'Published', value: published },
+      { label: 'Drafts', value: Math.max(total - published, 0) },
+      { label: 'Featured', value: featured },
+    ];
+  }, [posts]);
+
   const openCreate = () => {
     setEditingPost(null);
     setFormData(EMPTY_POST);
@@ -191,6 +203,15 @@ export default function AdminBlog() {
         <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
           <FaPlus /> New Post
         </button>
+      </div>
+
+      <div className="admin-content-insights">
+        {blogInsights.map((item) => (
+          <div key={item.label} className="admin-content-insights__item">
+            <span className="admin-content-insights__label">{item.label}</span>
+            <strong className="admin-content-insights__value">{item.value}</strong>
+          </div>
+        ))}
       </div>
 
       <div className="admin-content-toolbar glass">

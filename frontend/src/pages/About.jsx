@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope } from 'react-icons/fa';
+import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaGlobe, FaPhone } from 'react-icons/fa';
 import SectionWrapper from '../components/SectionWrapper';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import PageTransition from '../components/PageTransition';
@@ -40,7 +40,7 @@ function ProfileSection() {
   return (
     <SectionWrapper className="about-profile">
       <div className="about-profile__grid">
-        <motion.div
+        <Motion.div
           className="about-profile__avatar"
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -60,6 +60,9 @@ function ProfileSection() {
 
           {/* Social links */}
           <div className="about-profile__socials">
+            {profile?.website_url && (
+              <a href={profile.website_url} target="_blank" rel="noopener noreferrer"><FaGlobe /></a>
+            )}
             {profile?.github_url && (
               <a href={profile.github_url} target="_blank" rel="noopener noreferrer"><FaGithub /></a>
             )}
@@ -72,10 +75,13 @@ function ProfileSection() {
             {profile?.email && (
               <a href={`mailto:${profile.email}`}><FaEnvelope /></a>
             )}
+            {profile?.phone && (
+              <a href={`tel:${profile.phone}`}><FaPhone /></a>
+            )}
           </div>
-        </motion.div>
+        </Motion.div>
 
-        <motion.div
+        <Motion.div
           className="about-profile__info"
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -90,7 +96,7 @@ function ProfileSection() {
               <p key={i}>{para}</p>
             )) || <p>Bio not configured yet.</p>}
           </div>
-        </motion.div>
+        </Motion.div>
       </div>
     </SectionWrapper>
   );
@@ -135,7 +141,7 @@ function SkillsSection() {
       ) : (
         <div className="about-skills__grid">
           {categories.map((cat, i) => (
-            <motion.div
+            <Motion.div
               key={cat.id}
               className="about-skills__category glass"
               initial={{ opacity: 0, y: 20 }}
@@ -153,7 +159,7 @@ function SkillsSection() {
                   </span>
                 ))}
               </div>
-            </motion.div>
+            </Motion.div>
           ))}
         </div>
       )}
@@ -191,7 +197,7 @@ function ExperienceTimeline() {
 
       <div className="timeline">
         {experiences.map((exp, i) => (
-          <motion.div
+          <Motion.div
             key={exp.id}
             className={`timeline__item ${i % 2 === 0 ? 'timeline__item--left' : 'timeline__item--right'}`}
             initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
@@ -218,7 +224,7 @@ function ExperienceTimeline() {
                 </ul>
               )}
             </div>
-          </motion.div>
+          </Motion.div>
         ))}
       </div>
     </SectionWrapper>

@@ -1,12 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authApi } from '../api/client';
-
-const AuthContext = createContext(null);
+import AuthContext from './auth-context';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem('access_token')));
 
   // Check if tokens exist on mount, verify by fetching /auth/me
   useEffect(() => {
@@ -24,8 +23,6 @@ export function AuthProvider({ children }) {
           setUser(null);
         })
         .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
     }
   }, []);
 
@@ -64,12 +61,4 @@ export function AuthProvider({ children }) {
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-export default AuthContext;
+export default AuthProvider;

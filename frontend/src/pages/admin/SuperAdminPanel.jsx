@@ -9,11 +9,12 @@ import {
   FaRocket, FaBlog, FaCertificate, FaGraduationCap,
   FaTrophy, FaRunning, FaComments, FaChartBar,
   FaChevronRight, FaGithub, FaLinkedin,
+  FaGlobe,
+  FaPhone,
   FaDownload, FaSave, FaCheck,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
 import '../admin/AdminComponents.css';
 
 const TABS = [
@@ -56,8 +57,6 @@ export default function SuperAdminPanel() {
   const [drawerUser, setDrawerUser] = useState(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
-  const { user: currentUser } = useAuth();
-
   const fetchData = useCallback(async () => {
     try {
       const [statsRes, usersRes] = await Promise.all([
@@ -590,13 +589,16 @@ export default function SuperAdminPanel() {
 
                 <div className="sa-drawer__meta">
                   <div><strong>Email</strong><span>{drawerUser.email}</span></div>
+                  <div><strong>Phone</strong><span>{drawerUser.phone || 'Not provided'}</span></div>
                   <div><strong>Joined</strong><span>{formatDate(drawerUser.date_joined)}</span></div>
                   <div><strong>Last Login</strong><span>{drawerUser.last_login ? timeAgo(drawerUser.last_login) : 'Never'}</span></div>
                   <div><strong>Status</strong><span className={`chip ${drawerUser.is_active ? 'chip-status-active' : 'chip-status-inactive'}`}>{drawerUser.is_active ? 'Active' : 'Disabled'}</span></div>
                 </div>
 
-                {drawerUser.github_url && (
+                {(drawerUser.website_url || drawerUser.github_url || drawerUser.linkedin_url || drawerUser.phone) && (
                   <div className="sa-drawer__links">
+                    {drawerUser.phone && <a href={`tel:${drawerUser.phone}`}><FaPhone /> Phone</a>}
+                    {drawerUser.website_url && <a href={drawerUser.website_url} target="_blank" rel="noopener noreferrer"><FaGlobe /> Website</a>}
                     {drawerUser.github_url && <a href={drawerUser.github_url} target="_blank" rel="noopener noreferrer"><FaGithub /> GitHub</a>}
                     {drawerUser.linkedin_url && <a href={drawerUser.linkedin_url} target="_blank" rel="noopener noreferrer"><FaLinkedin /> LinkedIn</a>}
                   </div>

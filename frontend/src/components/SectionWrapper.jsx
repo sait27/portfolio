@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import useScrollReveal from '../hooks/useScrollReveal';
 
 const revealVariants = {
@@ -21,7 +21,7 @@ export default function SectionWrapper({ children, className = '', id, delay = 0
   const [ref, isInView] = useScrollReveal({ threshold: 0.1 });
 
   return (
-    <motion.section
+    <Motion.section
       ref={ref}
       id={id}
       className={`section ${className}`}
@@ -33,6 +33,6 @@ export default function SectionWrapper({ children, className = '', id, delay = 0
       <div className="container">
         {children}
       </div>
-    </motion.section>
+    </Motion.section>
   );
 }

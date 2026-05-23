@@ -109,6 +109,18 @@ export default function AdminProjects() {
       });
   }, [projects, searchTerm, statusFilter]);
 
+  const projectInsights = useMemo(() => {
+    const total = projects.length;
+    const visible = projects.filter((project) => project.is_visible).length;
+    const featured = projects.filter((project) => project.is_featured).length;
+    return [
+      { label: 'Total', value: total },
+      { label: 'Visible', value: visible },
+      { label: 'Featured', value: featured },
+      { label: 'Hidden', value: Math.max(total - visible, 0) },
+    ];
+  }, [projects]);
+
   const openCreateForm = () => {
     setEditingProject(null);
     setFormData(EMPTY_PROJECT);
@@ -213,6 +225,15 @@ export default function AdminProjects() {
         <button type="button" className="btn btn-primary btn-sm" onClick={openCreateForm}>
           <FaPlus /> New Project
         </button>
+      </div>
+
+      <div className="admin-content-insights">
+        {projectInsights.map((item) => (
+          <div key={item.label} className="admin-content-insights__item">
+            <span className="admin-content-insights__label">{item.label}</span>
+            <strong className="admin-content-insights__value">{item.value}</strong>
+          </div>
+        ))}
       </div>
 
       <div className="admin-content-toolbar glass">

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FaGithub, FaLinkedin, FaTwitter, FaHeart } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import './Footer.css';
 
 export default function Footer() {

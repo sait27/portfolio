@@ -64,9 +64,6 @@ const resolveUsername = (username) => {
   throw new Error('Username is required for public API calls');
 };
 
-const isPlainObject = (value) =>
-  value !== null && typeof value === 'object' && !Array.isArray(value);
-
 const resolveUsernameAndParams = (usernameOrParams, maybeParams = {}) => {
   if (typeof usernameOrParams === 'string') {
     return { username: resolveUsername(usernameOrParams), params: maybeParams };

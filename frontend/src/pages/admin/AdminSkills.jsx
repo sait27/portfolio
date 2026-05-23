@@ -95,6 +95,20 @@ export default function AdminSkills() {
       .filter(Boolean);
   }, [categories, skills, searchTerm]);
 
+  const skillInsights = useMemo(() => {
+    const categoryIds = new Set(categories.map((item) => String(item.id)));
+    const uncategorized = skills.filter((item) => !categoryIds.has(String(item.category))).length;
+    const emptyCategories = categories.filter((category) =>
+      skills.every((skill) => String(skill.category) !== String(category.id))
+    ).length;
+    return [
+      { label: 'Categories', value: categories.length },
+      { label: 'Skills', value: skills.length },
+      { label: 'Empty Categories', value: emptyCategories },
+      { label: 'Uncategorized', value: uncategorized },
+    ];
+  }, [categories, skills]);
+
   const skillNameSuggestions = useMemo(() => {
     const existingSkillNames = skills
       .map((item) => item?.name)
@@ -259,6 +273,15 @@ export default function AdminSkills() {
             <FaPlus /> New Skill
           </button>
         </div>
+      </div>
+
+      <div className="admin-content-insights">
+        {skillInsights.map((item) => (
+          <div key={item.label} className="admin-content-insights__item">
+            <span className="admin-content-insights__label">{item.label}</span>
+            <strong className="admin-content-insights__value">{item.value}</strong>
+          </div>
+        ))}
       </div>
 
       <div className="admin-content-toolbar glass">

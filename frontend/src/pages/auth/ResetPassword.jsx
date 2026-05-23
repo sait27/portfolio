@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { FaLock, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
-import toast from 'react-hot-toast';
 import { authApi } from '../../api/client';
 import './Auth.css';
 
@@ -46,7 +45,7 @@ export default function ResetPassword() {
         <title>Reset Password | PortfolioHub</title>
       </Helmet>
       <main id="main-content" className="auth-page">
-        <motion.div
+        <Motion.div
           className="auth-card glass"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -59,7 +58,7 @@ export default function ResetPassword() {
           </div>
 
           {done ? (
-            <motion.div
+            <Motion.div
               className="auth-success"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -72,7 +71,7 @@ export default function ResetPassword() {
               <Link to="/login" className="btn btn-primary btn-lg auth-submit">
                 Sign In
               </Link>
-            </motion.div>
+            </Motion.div>
           ) : (
             <>
               <div className="auth-header" style={{ marginTop: 0 }}>
@@ -138,7 +137,7 @@ export default function ResetPassword() {
               </div>
             </>
           )}
-        </motion.div>
+        </Motion.div>
       </main>
     </>
   );

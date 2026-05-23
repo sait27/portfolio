@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   FaRocket, FaPaintBrush, FaShieldAlt,
@@ -135,7 +135,7 @@ export default function Landing() {
 
       <div className="landing">
         {/* ─── Navbar ──────────────────────────────────────── */}
-        <motion.nav
+        <Motion.nav
           className={`landing-nav ${isScrolled ? 'landing-nav--scrolled' : ''}`}
           initial={{ y: -100 }}
           animate={{ y: 0 }}
@@ -166,7 +166,7 @@ export default function Landing() {
           </div>
           <AnimatePresence>
             {mobileMenuOpen && (
-              <motion.div
+              <Motion.div
                 id="landing-mobile-menu"
                 className="landing-nav__mobile"
                 initial={{ opacity: 0, height: 0 }}
@@ -180,13 +180,13 @@ export default function Landing() {
                 <a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
                 <Link to="/user/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                 <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
-              </motion.div>
+              </Motion.div>
             )}
           </AnimatePresence>
-        </motion.nav>
+        </Motion.nav>
         {/* ─── Hero ──────────────────────────────────────── */}
         <section id="main-content" className="landing-hero">
-          <motion.div
+          <Motion.div
             className="landing-hero__content"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -210,23 +210,23 @@ export default function Landing() {
                 Sign In
               </Link>
             </div>
-          </motion.div>
+          </Motion.div>
         </section>
 
         {/* ─── Features ─────────────────────────────────── */}
         <section id="benefits" className="landing-proof">
           <div className="landing-section-header">
-            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+            <Motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
               Built for Fast Career Momentum
-            </motion.h2>
-            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+            </Motion.h2>
+            <Motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
               PortfolioHub combines portfolio publishing, credibility, and content control in one workflow.
-            </motion.p>
+            </Motion.p>
           </div>
 
           <div className="landing-proof__grid">
             {proofStats.map((item, i) => (
-              <motion.article
+              <Motion.article
                 key={item.label}
                 className="proof-card glass"
                 initial="hidden"
@@ -237,12 +237,12 @@ export default function Landing() {
               >
                 <strong>{item.value}</strong>
                 <span>{item.label}</span>
-              </motion.article>
+              </Motion.article>
             ))}
           </div>
 
           <div className="landing-benefits">
-            <motion.article
+            <Motion.article
               className="benefit-card glass"
               initial="hidden"
               whileInView="visible"
@@ -259,8 +259,8 @@ export default function Landing() {
                 <li><FaCheckCircle /> Dedicated admin dashboard for updates</li>
                 <li><FaCheckCircle /> Professional public profile URL instantly available</li>
               </ul>
-            </motion.article>
-            <motion.article
+            </Motion.article>
+            <Motion.article
               className="benefit-card glass"
               initial="hidden"
               whileInView="visible"
@@ -278,23 +278,23 @@ export default function Landing() {
                 <li><FaCheckCircle /> Selective visibility controls for public and navigation sections</li>
                 <li><FaCheckCircle /> Built-in contact flow to capture inbound opportunities</li>
               </ul>
-            </motion.article>
+            </Motion.article>
           </div>
         </section>
 
         <section id="features" className="landing-features">
           <div className="landing-section-header">
-            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+            <Motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
               Everything You Need
-            </motion.h2>
-            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+            </Motion.h2>
+            <Motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
               All the tools to build, manage, and share your portfolio
-            </motion.p>
+            </Motion.p>
           </div>
 
           <div className="landing-features__grid">
             {features.map((f, i) => (
-              <motion.div
+              <Motion.div
                 key={f.title}
                 className="feature-card glass"
                 initial="hidden"
@@ -308,7 +308,7 @@ export default function Landing() {
                 </div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
-              </motion.div>
+              </Motion.div>
             ))}
           </div>
         </section>
@@ -316,16 +316,16 @@ export default function Landing() {
         {/* ─── How It Works ─────────────────────────────── */}
         <section id="audience" className="landing-audience">
           <div className="landing-section-header">
-            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+            <Motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
               Who PortfolioHub Helps Most
-            </motion.h2>
-            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+            </Motion.h2>
+            <Motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
               Tailored for developers at different stages of growth.
-            </motion.p>
+            </Motion.p>
           </div>
           <div className="landing-audience__grid">
             {audienceCards.map((item, i) => (
-              <motion.article
+              <Motion.article
                 key={item.title}
                 className="audience-card glass"
                 initial="hidden"
@@ -344,19 +344,19 @@ export default function Landing() {
                     </li>
                   ))}
                 </ul>
-              </motion.article>
+              </Motion.article>
             ))}
           </div>
         </section>
 
         <section id="how-it-works" className="landing-steps">
           <div className="landing-section-header">
-            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+            <Motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
               Three Simple Steps
-            </motion.h2>
-            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+            </Motion.h2>
+            <Motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
               From signup to live portfolio in under 5 minutes
-            </motion.p>
+            </Motion.p>
           </div>
 
           <div className="landing-steps__grid">
@@ -365,7 +365,7 @@ export default function Landing() {
               { num: '2', title: 'Add Your Content', desc: 'Fill in projects, skills, experience, and profile details.' },
               { num: '3', title: 'Share Everywhere', desc: 'Your portfolio is live! Share the link with recruiters and clients.' },
             ].map((step, i) => (
-              <motion.div
+              <Motion.div
                 key={step.num}
                 className="step-card"
                 initial="hidden"
@@ -377,7 +377,7 @@ export default function Landing() {
                 <div className="step-card__number">{step.num}</div>
                 <h3>{step.title}</h3>
                 <p>{step.desc}</p>
-              </motion.div>
+              </Motion.div>
             ))}
           </div>
         </section>
@@ -385,16 +385,16 @@ export default function Landing() {
         {/* ─── CTA ──────────────────────────────────────── */}
         <section id="faq" className="landing-faq">
           <div className="landing-section-header">
-            <motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
+            <Motion.h2 initial="hidden" whileInView="visible" variants={fadeUp} viewport={{ once: true }}>
               Frequently Asked Questions
-            </motion.h2>
-            <motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
+            </Motion.h2>
+            <Motion.p initial="hidden" whileInView="visible" variants={fadeUp} custom={1} viewport={{ once: true }}>
               Quick answers before you start building.
-            </motion.p>
+            </Motion.p>
           </div>
           <div className="landing-faq__grid">
             {faqs.map((item, i) => (
-              <motion.article
+              <Motion.article
                 key={item.q}
                 className="faq-card glass"
                 initial="hidden"
@@ -405,13 +405,13 @@ export default function Landing() {
               >
                 <h3>{item.q}</h3>
                 <p>{item.a}</p>
-              </motion.article>
+              </Motion.article>
             ))}
           </div>
         </section>
 
         <section className="landing-cta">
-          <motion.div
+          <Motion.div
             className="landing-cta__content"
             initial="hidden"
             whileInView="visible"
@@ -426,7 +426,7 @@ export default function Landing() {
             <Link to="/register" className="btn btn-primary btn-lg">
               Create Your Portfolio →
             </Link>
-          </motion.div>
+          </Motion.div>
         </section>
 
         {/* ─── Footer ─────────────────────────────────────── */}

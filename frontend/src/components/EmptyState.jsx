@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import './EmptyState.css';
 
 export default function EmptyState({ 
@@ -8,7 +8,7 @@ export default function EmptyState({
   action 
 }) {
   return (
-    <motion.div 
+    <Motion.div
       className="empty-state glass"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -22,6 +22,6 @@ export default function EmptyState({
       <h3 className="empty-state__title">{title}</h3>
       {description && <p className="empty-state__description">{description}</p>}
       {action && <div className="empty-state__action">{action}</div>}
-    </motion.div>
+    </Motion.div>
   );
 }
