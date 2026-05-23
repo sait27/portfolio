@@ -49,6 +49,23 @@ def get_user_by_username(username):
         return None
 
 
+def can_view_public_portfolio(request, user):
+    """Private portfolios are visible only to their owner through authenticated requests."""
+    if not user:
+        return False
+    visibility = getattr(user.profile, 'portfolio_visibility', Profile.VISIBILITY_PUBLIC)
+    if visibility != Profile.VISIBILITY_PRIVATE:
+        return True
+    return request.user.is_authenticated and request.user.id == user.id
+
+
+def get_viewable_user_by_username(request, username):
+    user = get_user_by_username(username)
+    if not can_view_public_portfolio(request, user):
+        return None
+    return user
+
+
 _CLOUDINARY_VERSION_RE = re.compile(r'^v\d+$')
 
 
@@ -101,7 +118,7 @@ class PublicProfileView(APIView):
     Returns the user's profile.
     """
     def get(self, request, username):
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(request, username)
         if not user:
             return Response({'detail': 'Portfolio not found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ProfileSerializer(user.profile, context={'request': request})
@@ -115,7 +132,7 @@ class PublicResumeView(APIView):
     when resume assets are hosted on Cloudinary.
     """
     def get(self, request, username):
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(request, username)
         if not user:
             return Response({'detail': 'Portfolio not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -176,7 +193,7 @@ class PublicSkillListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return SkillCategory.objects.none()
         return SkillCategory.objects.filter(user=user).prefetch_related('skills')
@@ -193,7 +210,7 @@ class PublicProjectListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Project.objects.none()
 
@@ -217,7 +234,7 @@ class PublicProjectDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Project.objects.none()
         return Project.objects.filter(user=user, is_visible=True).prefetch_related('tech_stack')
@@ -235,7 +252,7 @@ class PublicExperienceListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Experience.objects.none()
         return Experience.objects.filter(user=user)
@@ -253,7 +270,7 @@ class PublicEducationListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Education.objects.none()
         return Education.objects.filter(user=user)
@@ -269,7 +286,7 @@ class PublicActivityListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Activity.objects.none()
         return Activity.objects.filter(user=user)
@@ -285,7 +302,7 @@ class PublicAchievementListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Achievement.objects.none()
         return Achievement.objects.filter(user=user)
@@ -301,7 +318,7 @@ class PublicCertificationListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Certification.objects.none()
         return Certification.objects.filter(user=user)
@@ -317,7 +334,7 @@ class PublicContactView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Response({'detail': 'Portfolio not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -341,7 +358,7 @@ class PublicBlogListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return BlogPost.objects.none()
         return BlogPost.objects.filter(user=user, is_published=True)
@@ -357,7 +374,7 @@ class PublicBlogDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return BlogPost.objects.none()
         return BlogPost.objects.filter(user=user, is_published=True)
@@ -375,7 +392,7 @@ class PublicTestimonialListView(generics.ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['username']
-        user = get_user_by_username(username)
+        user = get_viewable_user_by_username(self.request, username)
         if not user:
             return Testimonial.objects.none()
         return Testimonial.objects.filter(user=user)

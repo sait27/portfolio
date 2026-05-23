@@ -7,8 +7,23 @@ from django.utils.text import slugify
 
 class Profile(models.Model):
     """User profile — one per registered user."""
+    VISIBILITY_PUBLIC = 'public'
+    VISIBILITY_UNLISTED = 'unlisted'
+    VISIBILITY_PRIVATE = 'private'
+    VISIBILITY_CHOICES = [
+        (VISIBILITY_PUBLIC, 'Public'),
+        (VISIBILITY_UNLISTED, 'Unlisted'),
+        (VISIBILITY_PRIVATE, 'Private'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     username_slug = models.SlugField(unique=True, help_text="Public URL slug, e.g., /sait27")
+    portfolio_visibility = models.CharField(
+        max_length=16,
+        choices=VISIBILITY_CHOICES,
+        default=VISIBILITY_PUBLIC,
+        help_text="Public, unlisted, or private portfolio access.",
+    )
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=32, blank=True)
     tagline = models.CharField(max_length=200, blank=True, help_text="e.g., Full-Stack Python Developer")

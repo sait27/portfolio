@@ -273,6 +273,7 @@ export default function PublicPortfolio() {
   const showNavTestimonials = isNavVisible('show_nav_testimonials');
   const showNavContact = isNavVisible('show_nav_contact');
   const resumeUrl = profile?.resume_download_url || profile?.resume || '';
+  const shouldIndexPortfolio = profile?.portfolio_visibility === 'public';
 
   const visibleProjects = useMemo(
     () => (showAllProjects ? projects : projects.slice(0, 3)),
@@ -394,6 +395,7 @@ export default function PublicPortfolio() {
       <Helmet>
         <title>{profile?.full_name || username} | Portfolio</title>
         <meta name="description" content={profile?.tagline || `${profile?.full_name || username} portfolio`} />
+        {!shouldIndexPortfolio && <meta name="robots" content="noindex, nofollow" />}
       </Helmet>
 
       <nav className="portfolio-nav">

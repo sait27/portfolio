@@ -55,6 +55,24 @@ const buildSectionStates = (profile, content) => {
   return sections;
 };
 
+const PORTFOLIO_ACCESS_COPY = {
+  public: {
+    label: 'Public',
+    description: 'Search engines may index this portfolio.',
+    urlLabel: 'Share URL',
+  },
+  unlisted: {
+    label: 'Unlisted',
+    description: 'Direct link works, but search engines receive noindex.',
+    urlLabel: 'Unlisted URL',
+  },
+  private: {
+    label: 'Private',
+    description: 'Only you can open it while logged in.',
+    urlLabel: 'Owner preview URL',
+  },
+};
+
 const readinessDefinitions = (state) => [
   {
     id: 'basics',
@@ -236,6 +254,7 @@ export default function AdminPublish() {
     const hiddenSections = sectionStates.filter((item) => !item.active);
     const publicHandle = profile?.username_slug || user?.username || '';
     const publicUrl = publicHandle ? `${window.location.origin}/${publicHandle}` : '';
+    const portfolioAccess = PORTFOLIO_ACCESS_COPY[profile?.portfolio_visibility] || PORTFOLIO_ACCESS_COPY.public;
     const portfolioSignals = [
       {
         id: 'resume',
@@ -274,6 +293,7 @@ export default function AdminPublish() {
       liveSections,
       hiddenSections,
       publicUrl,
+      portfolioAccess,
       canOpenPublicUrl: Boolean(publicUrl),
       portfolioSignals,
       publishedCount: liveSections.length,
@@ -303,12 +323,12 @@ export default function AdminPublish() {
 
   const handleCopy = async () => {
     if (!derived.publicUrl) {
-      toast.error('Public portfolio URL is not available yet.');
+      toast.error('Portfolio URL is not available yet.');
       return;
     }
     try {
       await navigator.clipboard.writeText(derived.publicUrl);
-      toast.success('Portfolio link copied.');
+      toast.success(`${derived.portfolioAccess.label} portfolio link copied.`);
     } catch {
       toast.error('Failed to copy portfolio link.');
     }
@@ -493,12 +513,16 @@ export default function AdminPublish() {
         <section className="glass admin-publish__panel">
           <div className="admin-publish__panel-header">
             <h2>Public Portfolio Preview</h2>
-            <span className="chip">{profile?.username_slug || user?.username || 'unassigned'}</span>
+            <span className="chip chip-status-active">{derived.portfolioAccess.label}</span>
           </div>
           <div className="admin-publish__meta">
             <div>
-              <span>Public URL</span>
+              <span>{derived.portfolioAccess.urlLabel}</span>
               <strong>{derived.publicUrl || 'Unavailable'}</strong>
+            </div>
+            <div>
+              <span>Access mode</span>
+              <strong>{derived.portfolioAccess.description}</strong>
             </div>
             <div>
               <span>Visible projects</span>
@@ -519,7 +543,7 @@ export default function AdminPublish() {
             </button>
             {derived.canOpenPublicUrl ? (
               <a href={derived.publicUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
-                <FaExternalLinkAlt /> Open Public View
+                <FaExternalLinkAlt /> Open Portfolio View
               </a>
             ) : (
               <Link to="/user/profile" className="btn btn-outline btn-sm">

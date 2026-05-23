@@ -1,5 +1,8 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
+from rest_framework.test import APIClient
 
+from .models import Profile
 from .resume_autofill import (
     _build_text_quality_report,
     _build_section_report,
@@ -16,6 +19,45 @@ from .resume_autofill import (
     _extract_skills,
     _split_sections,
 )
+
+
+class PublicPortfolioVisibilityTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='private-user',
+            email='private@example.com',
+            password='password123',
+        )
+        self.profile = Profile.objects.create(
+            user=self.user,
+            username_slug='private-user',
+            full_name='Private User',
+            email='private@example.com',
+            portfolio_visibility=Profile.VISIBILITY_PRIVATE,
+        )
+
+    def test_private_portfolio_profile_is_not_publicly_accessible(self):
+        response = self.client.get('/api/u/private-user/profile/')
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_private_portfolio_profile_is_accessible_to_owner(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get('/api/u/private-user/profile/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['portfolio_visibility'], Profile.VISIBILITY_PRIVATE)
+
+    def test_unlisted_portfolio_remains_link_accessible(self):
+        self.profile.portfolio_visibility = Profile.VISIBILITY_UNLISTED
+        self.profile.save(update_fields=['portfolio_visibility'])
+
+        response = self.client.get('/api/u/private-user/profile/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['portfolio_visibility'], Profile.VISIBILITY_UNLISTED)
 
 
 class ResumeAutofillParserTests(TestCase):

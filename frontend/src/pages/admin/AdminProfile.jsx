@@ -17,11 +17,13 @@ import {
   FaImage,
   FaInfoCircle,
   FaLinkedin,
+  FaLock,
   FaLayerGroup,
   FaPhone,
   FaProjectDiagram,
   FaQuoteLeft,
   FaSave,
+  FaSearch,
   FaTrophy,
   FaTwitter,
   FaUser,
@@ -91,6 +93,27 @@ const NAV_OPTION_SECTION_MAP = {
   show_nav_contact: 'show_contact',
 };
 
+const PORTFOLIO_VISIBILITY_OPTIONS = [
+  {
+    value: 'public',
+    label: 'Public',
+    hint: 'Anyone can open the portfolio and search engines may index it.',
+    icon: FaGlobe,
+  },
+  {
+    value: 'unlisted',
+    label: 'Unlisted',
+    hint: 'Anyone with the link can open it, but search engines are told not to index it.',
+    icon: FaSearch,
+  },
+  {
+    value: 'private',
+    label: 'Private',
+    hint: 'Only you can open it while logged in. Others receive a not found response.',
+    icon: FaLock,
+  },
+];
+
 const VISIBILITY_HINT_LIMIT = 5;
 
 const DEFAULT_SECTION_VISIBILITY = SECTION_VISIBILITY_OPTIONS.reduce((accumulator, option) => {
@@ -105,6 +128,7 @@ const DEFAULT_NAV_VISIBILITY = NAV_VISIBILITY_OPTIONS.reduce((accumulator, optio
 
 const EDITABLE_PROFILE_KEYS = [
   ...PROFILE_KEYS,
+  'portfolio_visibility',
   ...SECTION_VISIBILITY_OPTIONS.map((option) => option.key),
   ...NAV_VISIBILITY_OPTIONS.map((option) => option.key),
 ];
@@ -301,7 +325,12 @@ export default function AdminProfile() {
           throw profileResult.reason;
         }
 
-        const merged = { ...DEFAULT_SECTION_VISIBILITY, ...DEFAULT_NAV_VISIBILITY, ...profileResult.value.data };
+        const merged = {
+          portfolio_visibility: 'public',
+          ...DEFAULT_SECTION_VISIBILITY,
+          ...DEFAULT_NAV_VISIBILITY,
+          ...profileResult.value.data,
+        };
         setProfile(merged);
         setSavedProfileSnapshot(merged);
         setVisibilityContent({
@@ -1197,6 +1226,50 @@ export default function AdminProfile() {
 
           {activeViewMode === 'visibility' && (
           <>
+          <section className="admin-profile-section admin-profile-section--full">
+            <div id="profile-access-controls" className="admin-profile-anchor" />
+            <div className="admin-profile-section__header">
+              <div>
+                <h3 className="admin-profile-section__title">
+                  <FaLock /> Portfolio Access
+                </h3>
+                <p className="admin-profile-section__hint">
+                  Choose who can open your portfolio URL. Private access is enforced by the backend, not only hidden in the browser.
+                </p>
+              </div>
+              <span className="chip chip-active">
+                {(profile?.portfolio_visibility || 'public').replace(/^\w/, (letter) => letter.toUpperCase())}
+              </span>
+            </div>
+            <div className="admin-portfolio-access-grid">
+              {PORTFOLIO_VISIBILITY_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const checked = (profile?.portfolio_visibility || 'public') === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={`admin-portfolio-access-card ${checked ? 'admin-portfolio-access-card--active' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="portfolio_visibility"
+                      value={option.value}
+                      checked={checked}
+                      onChange={handleChange}
+                    />
+                    <span className="admin-portfolio-access-card__icon" aria-hidden="true">
+                      <Icon />
+                    </span>
+                    <span className="admin-portfolio-access-card__copy">
+                      <strong>{option.label}</strong>
+                      <small>{option.hint}</small>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+
           <section className="admin-profile-section admin-profile-section--half">
             <div id="profile-section-controls" className="admin-profile-anchor" />
             <div className="admin-profile-section__header">

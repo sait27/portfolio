@@ -2119,6 +2119,10 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+.admin-profile-section--full {
+  grid-column: 1 / -1;
+}
+
 .admin-profile-section .form-field {
   margin-bottom: 1.1rem;
 }
@@ -2257,6 +2261,73 @@
 .admin-profile-callout--warning {
   border-color: rgba(255, 122, 50, 0.28);
   background: rgba(255, 122, 50, 0.08);
+}
+
+.admin-portfolio-access-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-portfolio-access-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  min-height: 112px;
+  padding: 0.9rem;
+  border: 1px solid rgba(130, 151, 180, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  transition: border-color var(--transition-base), background var(--transition-base), transform var(--transition-fast);
+}
+
+.admin-portfolio-access-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(130, 151, 180, 0.28);
+}
+
+.admin-portfolio-access-card--active {
+  border-color: rgba(46, 211, 183, 0.38);
+  background: linear-gradient(145deg, rgba(46, 211, 183, 0.12), rgba(255, 122, 50, 0.07));
+}
+
+.admin-portfolio-access-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-portfolio-access-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.055);
+  color: #9ff1e3;
+  border: 1px solid rgba(46, 211, 183, 0.22);
+}
+
+.admin-portfolio-access-card__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.admin-portfolio-access-card__copy strong {
+  color: var(--text-primary);
+  font-size: 0.94rem;
+}
+
+.admin-portfolio-access-card__copy small {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.55;
 }
 
 .admin-visibility-list {
@@ -4090,6 +4161,10 @@
   }
 
   .admin-visibility-list {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-portfolio-access-grid {
     grid-template-columns: 1fr;
   }
 
